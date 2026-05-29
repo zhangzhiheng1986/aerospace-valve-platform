@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QJ 20156-2012 空间系统气体减压阀通用规范 - 合规工具</title>
+<style>
+:root {
+  --bg: #0a0e17;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e3a5f;
+  --accent: #00d4ff;
+  --accent2: #0077b6;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --pass: #10b981;
+  --fail: #ef4444;
+  --warn: #f59e0b;
+  --info: #3b82f6;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, var(--surface) 0%, #0d1b2a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.header-icon { font-size: 32px; }
+.header h1 { font-size: 1.2rem; color: var(--accent); }
+.header .sub { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
+.container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+.tabs {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 6px; margin-bottom: 16px;
+}
+.tab-btn {
+  padding: 8px 16px; border: none; background: transparent;
+  color: var(--text2); cursor: pointer; border-radius: 6px;
+  font-size: 0.85rem; transition: all .2s;
+}
+.tab-btn:hover { color: var(--text); background: var(--surface2); }
+.tab-btn.active { background: var(--accent2); color: #fff; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px; margin-bottom: 16px;
+}
+.card h3 { color: var(--accent); font-size: 1rem; margin-bottom: 12px; }
+.card h4 { color: var(--text); font-size: 0.9rem; margin: 12px 0 8px; }
+
+.row { display: flex; gap: 16px; flex-wrap: wrap; }
+.col { flex: 1; min-width: 280px; }
+
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; color: var(--text2); font-size: 0.8rem; margin-bottom: 4px; }
+.form-group input, .form-group select {
+  width: 100%; padding: 8px 12px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+  font-size: 0.9rem;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none; border-color: var(--accent);
+}
+
+.btn {
+  padding: 8px 20px; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 0.85rem; transition: all .2s;
+}
+.btn-primary { background: var(--accent2); color: #fff; }
+.btn-primary:hover { background: #0088cc; }
+.btn-sm { padding: 4px 12px; font-size: 0.75rem; }
+
+.result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.result-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; text-align: center;
+}
+.result-item .val { font-size: 1.3rem; font-weight: bold; color: var(--accent); }
+.result-item .lbl { font-size: 0.75rem; color: var(--text2); margin-top: 4px; }
+.result-item.pass { border-color: var(--pass); }
+.result-item.pass .val { color: var(--pass); }
+.result-item.fail { border-color: var(--fail); }
+.result-item.fail .val { color: var(--fail); }
+
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.82rem;
+}
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--accent); font-weight: 600; background: var(--surface2); }
+tr:hover { background: rgba(0,212,255,0.03); }
+
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 600;
+}
+.badge-pass { background: rgba(16,185,129,0.15); color: var(--pass); }
+.badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+.badge-warn { background: rgba(245,158,11,0.15); color: var(--warn); }
+.badge-info { background: rgba(59,130,246,0.15); color: var(--info); }
+
+.chapter-tree { padding-left: 16px; }
+.chapter-item { margin: 4px 0; cursor: pointer; }
+.chapter-item .title { color: var(--accent); font-weight: 600; }
+.chapter-item .desc { color: var(--text2); font-size: 0.8rem; margin-left: 8px; }
+.chapter-children { padding-left: 20px; border-left: 2px solid var(--border); margin: 4px 0 8px; }
+
+.def-box {
+  background: var(--surface2); border-left: 3px solid var(--accent);
+  border-radius: 4px; padding: 10px 14px; margin-bottom: 8px;
+}
+.def-box .term { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+.def-box .def { color: var(--text2); font-size: 0.8rem; margin-top: 4px; }
+
+.env-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; margin-bottom: 12px;
+}
+
+.profile-timeline {
+  display: flex; align-items: center; gap: 4px; overflow-x: auto;
+  padding: 8px 0; margin: 12px 0;
+}
+.timeline-point {
+  min-width: 80px; text-align: center; padding: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.7rem;
+}
+.timeline-point.hot { border-color: #ef4444; color: #fca5a5; }
+.timeline-point.cold { border-color: #3b82f6; color: #93c5fd; }
+
+.checklist-table .not-applicable { opacity: 0.3; }
+
+@media (max-width: 768px) {
+  .row { flex-direction: column; }
+  .result-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">📋</div>
+  <div>
+    <h1>QJ 20156-2012 标准合规工具</h1>
+    <div class="sub">空间系统气体减压阀通用规范 | General Specification for Gas PRV of Space System</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('design')">🔧 设计验证器</button>
+    <button class="tab-btn" onclick="switchTab('browser')">📖 标准浏览器</button>
+    <button class="tab-btn" onclick="switchTab('tests')">✅ 检验矩阵</button>
+    <button class="tab-btn" onclick="switchTab('environ')">🌡️ 环境试验</button>
+    <button class="tab-btn" onclick="switchTab('calc')">📐 计算器</button>
+    <button class="tab-btn" onclick="switchTab('ref')">📚 参考资料</button>
+    <button class="tab-btn" onclick="switchTab('help')">❓ 使用说明</button>
+  </div>
+
+  <!-- TAB: 设计验证器 -->
+  <div id="tab-design" class="tab-pane active">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <h3>减压阀设计参数</h3>
+          <div class="form-group">
+            <label>阀门结构类型</label>
+            <select id="dv-valve-type">
+              <option value="direct">直动式</option>
+              <option value="pilot">先导式</option>
+              <option value="load">负载式</option>
+              <option value="unload">卸荷式</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>研制成熟度</label>
+            <select id="dv-maturity">
+              <option value="new">新品研制（鉴定检验 + A + C）</option>
+              <option value="mature">成熟度高/沿用产品（鉴定检验 + A）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>最大入口工作压力（MPa）</label>
+            <input type="number" id="dv-max-wp" value="10" step="0.1" min="0.1">
+          </div>
+          <div class="form-group">
+            <label>额定出口压力（MPa）</label>
+            <input type="number" id="dv-rated-op" value="2" step="0.01" min="0.01">
+          </div>
+          <div class="row">
+            <div class="form-group" style="flex:1">
+              <label>最高工作温度（°C）</label>
+              <input type="number" id="dv-tmax" value="80" step="1">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>最低工作温度（°C）</label>
+              <input type="number" id="dv-tmin" value="-40" step="1">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="runDesignVerifier()">运行完整合规分析</button>
+        </div>
+      </div>
+      <div class="col" id="dv-results"></div>
+    </div>
+  </div>
+
+  <!-- TAB: 标准浏览器 -->
+  <div id="tab-browser" class="tab-pane">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <h3>标准章节</h3>
+          <div id="chapter-tree"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <h3>规范性引用文件</h3>
+          <div id="references-list"></div>
+        </div>
+        <div class="card">
+          <h3>装配环境要求</h3>
+          <div id="assembly-env"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>术语定义（第6章）</h3>
+      <div id="definitions-list"></div>
+    </div>
+  </div>
+
+  <!-- TAB: 检验矩阵 -->
+  <div id="tab-tests" class="tab-pane">
+    <div class="card">
+      <h3>检验与试验矩阵（表3） | 共30项</h3>
+      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="filterMatrix('all')" style="background:var(--accent2);color:#fff;">全部</button>
+        <button class="btn btn-sm" onclick="filterMatrix('qual')" style="background:var(--surface2);color:var(--text);">鉴定检验</button>
+        <button class="btn btn-sm" onclick="filterMatrix('A')" style="background:var(--surface2);color:var(--text);">A 检查（100%）</button>
+        <button class="btn btn-sm" onclick="filterMatrix('C')" style="background:var(--surface2);color:var(--text);">C 检查（抽样）</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>序号</th><th>检验项目</th><th>章节</th><th>试验方法</th><th>鉴定检验</th><th>A检查</th><th>C检查</th></tr>
+          </thead>
+          <tbody id="test-matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 环境试验 -->
+  <div id="tab-environ" class="tab-pane">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <h3>环境试验剖面生成器</h3>
+          <div class="form-group">
+            <label>试验类型</label>
+            <select id="env-type" onchange="updateEnvForm()">
+              <option value="thermal_vacuum_qual">热真空试验 - 鉴定级</option>
+              <option value="thermal_vacuum_accept">热真空试验 - 验收级</option>
+              <option value="thermal_cycle_qual">热循环试验 - 鉴定级</option>
+              <option value="thermal_cycle_accept">热循环试验 - 验收级</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="form-group" style="flex:1">
+              <label>最高工作温度（°C）</label>
+              <input type="number" id="env-tmax" value="55" step="1">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>最低工作温度（°C）</label>
+              <input type="number" id="env-tmin" value="-30" step="1">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>循环次数（0=使用标准默认值）</label>
+              <input type="number" id="env-cycles" value="0" step="1" min="0">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="generateEnvProfile()">生成试验剖面</button>
+        </div>
+      </div>
+      <div class="col" id="env-results"></div>
+    </div>
+  </div>
+
+  <!-- TAB: 计算器 -->
+  <div id="tab-calc" class="tab-pane">
+    <div class="row">
+      <div class="col">
+        <div class="card">
+          <h3>泄漏率验证</h3>
+          <div class="form-group">
+            <label>测得泄漏率（Pa·m³/s）</label>
+            <input type="number" id="calc-leak" value="5e-6" step="any">
+          </div>
+          <div class="form-group">
+            <label>泄漏类型</label>
+            <select id="calc-leak-type">
+              <option value="internal">内部泄漏（第3.8.3.1条）</option>
+              <option value="external">外部泄漏（第3.8.3.2条）</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="runLeakCalc()">验证</button>
+          <div id="calc-leak-result" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <h3>额定出口压力验证</h3>
+          <div class="form-group"><label>额定出口压力（MPa）</label><input type="number" id="calc-rated" value="2" step="0.01"></div>
+          <div class="form-group"><label>测得出口压力（MPa）</label><input type="number" id="calc-measured" value="2.015" step="0.001"></div>
+          <button class="btn btn-primary" onclick="runRatedCalc()">验证</button>
+          <div id="calc-rated-result" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <h3>锁紧压力验证</h3>
+          <div class="form-group"><label>额定出口压力（MPa）</label><input type="number" id="calc-lk-rated" value="2" step="0.01"></div>
+          <div class="form-group"><label>锁紧压力（MPa）</label><input type="number" id="calc-lk-pressure" value="2.3" step="0.01"></div>
+          <button class="btn btn-primary" onclick="runLockUpCalc()">验证</button>
+          <div id="calc-lk-result" style="margin-top:12px;"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <h3>验证压力与爆破压力计算</h3>
+          <div class="form-group"><label>最大工作压力（MPa）</label><input type="number" id="calc-pb" value="10" step="0.1"></div>
+          <button class="btn btn-primary" onclick="runPBCalc()">计算</button>
+          <div id="calc-pb-result" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <h3>寿命循环次数验证</h3>
+          <div class="form-group"><label>循环次数（要求≥20,000次）</label><input type="number" id="calc-life" value="25000" step="1000"></div>
+          <button class="btn btn-primary" onclick="runLifeCalc()">验证</button>
+          <div id="calc-life-result" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <h3>弹性元件过载试验参数</h3>
+          <div class="form-group"><label>工作压力（MPa）</label><input type="number" id="calc-ee" value="10" step="0.1"></div>
+          <button class="btn btn-primary" onclick="runEECalc()">计算</button>
+          <div id="calc-ee-result" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 参考资料 -->
+  <div id="tab-ref" class="tab-pane">
+    <div class="card">
+      <h3>试验系统图（第4.5.1条，图2）</h3>
+      <div style="background:var(--surface2);padding:20px;border-radius:8px;text-align:center;">
+        <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#00d4ff"/></marker>
+          </defs>
+          <rect x="10" y="80" width="60" height="40" rx="6" fill="#1e3a5f" stroke="#00d4ff" stroke-width="1"/><text x="40" y="104" fill="#00d4ff" text-anchor="middle" font-size="9">气源</text>
+          <line x1="70" y1="100" x2="110" y2="100" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="115" y="80" width="70" height="40" rx="6" fill="#1e3a5f" stroke="#00d4ff" stroke-width="1"/><text x="150" y="100" fill="#00d4ff" text-anchor="middle" font-size="8">高压截止阀</text><text x="150" y="112" fill="#94a3b8" text-anchor="middle" font-size="7">High Pressure</text>
+          <line x1="185" y1="100" x2="225" y2="100" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="230" y="80" width="70" height="40" rx="6" fill="#1e3a5f" stroke="#00d4ff" stroke-width="1"/><text x="265" y="100" fill="#00d4ff" text-anchor="middle" font-size="8">高压压力传感器</text><text x="265" y="112" fill="#94a3b8" text-anchor="middle" font-size="7">HP Pressure Sensor</text>
+          <line x1="300" y1="100" x2="340" y2="100" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="345" y="70" width="90" height="60" rx="8" fill="#0d1b2a" stroke="#00d4ff" stroke-width="2"/><text x="390" y="98" fill="#00d4ff" text-anchor="middle" font-size="10" font-weight="bold">被测减压阀</text><text x="390" y="115" fill="#94a3b8" text-anchor="middle" font-size="8">PRV Under Test</text>
+          <line x1="435" y1="100" x2="475" y2="100" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="480" y="80" width="70" height="40" rx="6" fill="#1e3a5f" stroke="#00d4ff" stroke-width="1"/><text x="515" y="100" fill="#00d4ff" text-anchor="middle" font-size="8">低压压力传感器</text><text x="515" y="112" fill="#94a3b8" text-anchor="middle" font-size="7">LP Pressure Sensor</text>
+          <line x1="550" y1="100" x2="570" y2="100" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="575" y="80" width="55" height="40" rx="6" fill="#1e3a5f" stroke="#f59e0b" stroke-width="1"/><text x="602" y="100" fill="#f59e0b" text-anchor="middle" font-size="8">微流量调压器</text><text x="602" y="112" fill="#94a3b8" text-anchor="middle" font-size="7">Micro Flow Reg.</text>
+          <line x1="630" y1="100" x2="650" y2="100" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="655" y="80" width="50" height="40" rx="6" fill="#1e3a5f" stroke="#00d4ff" stroke-width="1"/><text x="680" y="104" fill="#00d4ff" text-anchor="middle" font-size="9">流量计</text>
+          <line x1="705" y1="100" x2="745" y2="100" stroke="#00d4ff" stroke-width="1.5"/>
+          <rect x="750" y="85" width="45" height="30" rx="6" fill="#1e3a5f" stroke="#f59e0b" stroke-width="1"/><text x="772" y="104" fill="#94a3b8" text-anchor="middle" font-size="8">排气口</text>
+          <circle cx="380" cy="155" r="4" fill="#00d4ff"/>
+          <line x1="380" y1="159" x2="380" y2="180" stroke="#00d4ff" stroke-width="1"/>
+          <rect x="320" y="180" width="60" height="18" rx="4" fill="#1e3a5f" stroke="#f59e0b" stroke-width="1"/><text x="350" y="193" fill="#94a3b8" text-anchor="middle" font-size="7">入口电磁阀</text>
+          <circle cx="410" cy="155" r="4" fill="#00d4ff"/>
+          <line x1="410" y1="159" x2="410" y2="180" stroke="#00d4ff" stroke-width="1"/>
+          <rect x="420" y="180" width="60" height="18" rx="4" fill="#1e3a5f" stroke="#f59e0b" stroke-width="1"/><text x="450" y="193" fill="#94a3b8" text-anchor="middle" font-size="7">出口电磁阀</text>
+        </svg>
+        <p style="color:var(--text2);font-size:0.75rem;margin-top:8px;">试验系统示意图（第4.5.1条，图2） | QJ 20156-2012</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>热真空/热循环温度剖面示意图</h3>
+      <div style="background:var(--surface2);padding:20px;border-radius:8px;text-align:center;">
+        <svg viewBox="0 0 600 180" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <line x1="40" y1="140" x2="560" y2="140" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="40" y1="140" x2="40" y2="20" stroke="#94a3b8" stroke-width="1"/>
+          <text x="560" y="135" fill="#94a3b8" font-size="9" text-anchor="end">时间 (h)</text>
+          <text x="35" y="25" fill="#94a3b8" font-size="9" text-anchor="end">T (°C)</text>
+          <text x="45" y="50" fill="#00d4ff" font-size="9">Tmax</text>
+          <line x1="40" y1="45" x2="560" y2="45" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="45" y="135" fill="#00d4ff" font-size="9">Tmin</text>
+          <polyline points="50,85 120,45 180,45 220,85 270,135 340,135 390,85 440,45 500,45 530,85" fill="none" stroke="#00d4ff" stroke-width="2"/>
+          <circle cx="160" cy="45" r="3" fill="#ef4444"/><text x="155" y="38" fill="#ef4444" font-size="7">高温保温</text>
+          <circle cx="305" cy="135" r="3" fill="#3b82f6"/><text x="295" y="128" fill="#3b82f6" font-size="7">低温保温</text>
+          <text x="530" y="95" fill="#00d4ff" font-size="9">回归室温</text>
+          <text x="250" y="160" fill="#94a3b8" font-size="8">温度循环剖面示意图（第3.10.4条，图1）</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 使用说明 -->
+  <div id="tab-help" class="tab-pane">
+    <div class="card">
+      <h3>工具说明</h3>
+      <p style="color:var(--text2);line-height:1.8;">
+        本合规工具完整实现 <strong>QJ 20156-2012</strong>《空间系统气体减压阀通用规范》，
+        由中国航天科技集团（CASC）发布，生效日期：2013年5月1日。
+      </p>
+      <p style="color:var(--text2);line-height:1.8;margin-top:8px;">
+        <strong>适用范围：</strong>卫星、航天器、深空探测器、空间站用气体减压阀。
+        涵盖设计要求、材料选用、制造装配、性能验证、环境试验、质量保证（A/B/C检验）、
+        清洁度、寿命试验及安全裕度等全流程内容。
+      </p>
+    </div>
+    <div class="card">
+      <h3>功能模块说明</h3>
+      <div class="env-card">
+        <h4>1. 设计验证器</h4>
+        <p style="color:var(--text2);font-size:0.85rem;">输入减压阀设计参数，一键生成完整合规分析报告，包含验证/爆破压力、安全裕度、温度范围、热真空/热循环剖面及全部检验要求。</p>
+      </div>
+      <div class="env-card">
+        <h4>2. 标准浏览器</h4>
+        <p style="color:var(--text2);font-size:0.85rem;">交互式浏览完整标准章节结构、14项规范性引用文件、8个关键术语定义及装配/试验/存储环境条件。</p>
+      </div>
+      <div class="env-card">
+        <h4>3. 检验矩阵</h4>
+        <p style="color:var(--text2);font-size:0.85rem;">表3共30项检验项目，支持按鉴定检验（Qual）、A检查（100%）、C检查（抽样）三档过滤显示。</p>
+      </div>
+      <div class="env-card">
+        <h4>4. 环境试验</h4>
+        <p style="color:var(--text2);font-size:0.85rem;">热真空试验和热循环试验剖面生成器（鉴定级/验收级双档），自动计算温度极值及循环参数。</p>
+      </div>
+      <div class="env-card">
+        <h4>5. 计算器</h4>
+        <p style="color:var(--text2);font-size:0.85rem;">6个独立验证工具：泄漏率验证、额定出口压力验证、锁紧压力偏差验证、验证/爆破压力计算、寿命循环次数验证、弹性元件过载试验参数。</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>关键性能阈值汇总</h3>
+      <table>
+        <tr><th>参数</th><th>阈值要求</th><th>对应章节</th></tr>
+        <tr><td>内部泄漏率</td><td>≤ 1×10⁻⁵ Pa·m³/s</td><td>第3.8.3.1条</td></tr>
+        <tr><td>外部泄漏率</td><td>≤ 1×10⁻⁵ Pa·m³/s</td><td>第3.8.3.2条</td></tr>
+        <tr><td>额定出口压力偏差</td><td>小于额定值的1%</td><td>第3.8.4条</td></tr>
+        <tr><td>锁紧压力偏差</td><td>额定值的5%~20%</td><td>第3.8.5.3条</td></tr>
+        <tr><td>验证压力</td><td>1.5倍最大工作压力，保持5min</td><td>第3.8.1条</td></tr>
+        <tr><td>爆破压力</td><td>2.0倍最大工作压力，保持5min</td><td>第3.8.2条</td></tr>
+        <tr><td>寿命循环次数</td><td>≥ 20,000次</td><td>第3.12条</td></tr>
+        <tr><td>工作温度范围</td><td>-30°C ~ 55°C</td><td>第3.10.1条</td></tr>
+        <tr><td>清洁度（>10μm颗粒）</td><td>0个/10L</td><td>第3.11条</td></tr>
+        <tr><td>清洁度（6~10μm颗粒）</td><td>≤ 200个/10L</td><td>第3.11条</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let standardData = null;
+
+async function loadStandard() {
+  try {
+    const r = await fetch('/api/qj20156/info');
+    standardData = await r.json();
+    renderBrowser();
+    render试验Matrix('all');
+  } catch(e) { console.log('Standard data will load on interaction'); }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'browser' && !document.getElementById('chapter-tree').innerHTML) loadBrowser();
+  if (name === 'tests' && !document.getElementById('test-matrix-body').innerHTML) load试验Matrix();
+}
+
+// ============ DESIGN VERIFIER ============
+async function runDesignVerifier() {
+  const params = {
+    valve_type: document.getElementById('dv-valve-type').value,
+    maturity: document.getElementById('dv-maturity').value,
+    max_working_pressure_MPa: parseFloat(document.getElementById('dv-max-wp').value) || 10,
+    rated_output_pressure_MPa: parseFloat(document.getElementById('dv-rated-op').value) || 2,
+    t_max_operating_C: parseFloat(document.getElementById('dv-tmax').value) || 80,
+    t_min_operating_C: parseFloat(document.getElementById('dv-tmin').value) || -40
+  };
+  try {
+    const r = await fetch('/api/qj20156/design', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(params)
+    });
+    const d = await r.json();
+    renderDesignResults(d);
+  } catch(e) {
+    document.getElementById('dv-results').innerHTML =
+      '<div class="card"><p style="color:#ef4444;">错误：' + e.message + '</p></div>';
+  }
+}
+
+function renderDesignResults(d) {
+  const pp = d.proof_pressure, bp = d.burst_pressure, sm = d.safety_margin;
+  const tvq = d.thermal_vacuum_qual, tvl = d.life_requirement;
+  let h = '<div class="card"><h3>合规分析结果</h3>';
+  h += '<div class="result-grid">';
+  h += stat('验证压力', pp.proof_pressure_MPa.toFixed(1) + ' MPa', pp.pass);
+  h += stat('爆破压力', bp.burst_pressure_MPa.toFixed(1) + ' MPa', bp.pass);
+  h += stat('爆破安全裕度', sm.burst_vs_working + 'x (min ' + sm.burst_required + 'x)', sm.burst_pass);
+  h += stat('验证裕度', sm.proof_vs_working + 'x (min ' + sm.proof_required + 'x)', sm.proof_pass);
+  h += stat('寿命循环次数', tvl.cycles + ' (min ' + tvl.min_required + ')', tvl.pass);
+  h += stat('内部泄漏限值', d.leak_limit_internal.toExponential(1) + ' Pa*m3/s', true);
+  h += stat('额定出口压力容差', '<' + d.rated_output_tolerance_pct + '%', true);
+  h += stat('锁紧压力范围', d.lockup_range_pct + '%', true);
+  h += stat('工作温度范围', d.operating_temp_range.min_C + ' ~ ' + d.operating_temp_range.max_C + ' degC', true);
+  h += stat('热真空鉴定循环次数', tvq.cycles + ' 次', true);
+  h += stat('热真空鉴定温度', tvq.t_high_C + ' / ' + tvq.t_low_C + ' degC', true);
+  h += stat('弹性元件过载压力', d.elastic_element_overload.overload_pressure_MPa.toFixed(1) + ' MPa', true);
+  h += '</div>';
+  h += '<h4 style="margin-top:16px;">环境试验摘要</h4>';
+  h += '<table><tr><th>试验</th><th>等级</th><th>循环次数</th><th>高温</th><th>低温</th><th>预估时长</th></tr>';
+  h += tr('热真空试验', '鉴定级', tvq.cycles, tvq.t_high_C+' degC', tvq.t_low_C+' degC', tvq.total_duration_est_h+' h');
+  h += tr('热真空试验', '验收级', d.thermal_vacuum_accept.cycles, d.thermal_vacuum_accept.t_high_C+' degC', d.thermal_vacuum_accept.t_low_C+' degC', d.thermal_vacuum_accept.total_duration_est_h+' h');
+  h += tr('热循环试验', '鉴定级', d.thermal_cycle_qual.cycles, d.thermal_cycle_qual.t_high_C+' degC', d.thermal_cycle_qual.t_low_C+' degC', d.thermal_cycle_qual.total_duration_est_h+' h');
+  h += tr('热循环试验', '验收级', d.thermal_cycle_accept.cycles, d.thermal_cycle_accept.t_high_C+' degC', d.thermal_cycle_accept.t_low_C+' degC', d.thermal_cycle_accept.total_duration_est_h+' h');
+  h += '</table>';
+  h += '<p style="color:var(--text2);font-size:0.75rem;margin-top:8px;">* 所有阈值均依据 QJ 20156-2012 标准。请结合详细规范进行项目专用要求核查。</p>';
+  h += '</div>';
+  document.getElementById('dv-results').innerHTML = h;
+}
+function stat(l,v,p) { return `<div class="result-item ${p?'pass':'fail'}"><div class="val">${v}</div><div class="lbl">${l}</div></div>`; }
+function tr(a,b,c,d,e,f) { return `<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td><td>${e}</td><td>${f}</td></tr>`; }
+
+// ============ STANDARD BROWSER ============
+async function loadBrowser() {
+  if (!standardData) { const r = await fetch('/api/qj20156/info'); standardData = await r.json(); }
+  renderBrowser();
+}
+function renderBrowser() {
+  if (!standardData) return;
+  let h = '';
+  for (const ch of standardData.chapter_tree) {
+    h += '<div class="chapter-item"><span class="title">Ch ' + ch.id + ' - ' + ch.title + '</span>';
+    if (ch.desc) h += '<span class="desc">' + ch.desc + '</span>';
+    if (ch.children) {
+      h += '<div class="chapter-children">';
+      for (const sub of ch.children) {
+        h += '<div class="chapter-item"><span class="title">' + sub.id + ' ' + sub.title + '</span>';
+        if (sub.desc) h += '<span class="desc">' + sub.desc + '</span>';
+        if (sub.children) {
+          h += '<div class="chapter-children">';
+          for (const ss of sub.children) {
+            h += '<div class="chapter-item"><span class="title">' + ss.id + ' ' + ss.title + '</span>';
+            if (ss.desc) h += '<span class="desc">' + ss.desc + '</span>';
+            h += '</div>';
+          }
+          h += '</div>';
+        }
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+    h += '</div>';
+  }
+  document.getElementById('chapter-tree').innerHTML = h;
+  let rh = '';
+  for (const ref of standardData.references) {
+    rh += '<div style="padding:4px 0;font-size:0.82rem;"><strong style="color:var(--accent);">' + ref.code + '</strong> <span style="color:var(--text2);">' + ref.title + '</span></div>';
+  }
+  document.getElementById('references-list').innerHTML = rh;
+  const ae = standardData.assembly_env;
+  document.getElementById('assembly-env').innerHTML =
+    '<div style="font-size:0.82rem;color:var(--text2);">Temp: ' + ae.temperature_range + ' | RH: ' + ae.humidity_range + ' | Cleanroom: ' + ae.cleanliness_class + ' | Filter: ' + ae.filter_size_um + ' um</div>';
+  let dh = '';
+  for (const d of standardData.definitions) {
+    dh += '<div class="def-box"><div class="term">' + d.term + '</div><div class="def">' + d.def + '</div></div>';
+  }
+  document.getElementById('definitions-list').innerHTML = dh;
+}
+
+// ============ TEST MATRIX ============
+async function load试验Matrix() {
+  if (!standardData) { const r = await fetch('/api/qj20156/info'); standardData = await r.json(); }
+  render试验Matrix('all');
+}
+function render试验Matrix(filter) {
+  if (!standardData) return;
+  let h = '';
+  for (const item of standardData.inspection_items) {
+    let show = true;
+    if (filter === 'qual') show = item.qual;
+    else if (filter === 'A') show = item.A;
+    else if (filter === 'C') show = item.C;
+    if (!show) continue;
+    h += '<tr>';
+    h += '<td>' + item.no + '</td>';
+    h += '<td>' + item.item + '</td>';
+    h += '<td>' + item.chapter + '</td>';
+    h += '<td>' + item.method + '</td>';
+    h += '<td>' + (item.qual ? '<span class="badge badge-pass">&#10003;</span>' : '<span class="badge badge-fail">-</span>') + '</td>';
+    h += '<td>' + (item.A ? '<span class="badge badge-pass">&#10003;</span>' : '<span class="badge badge-fail">-</span>') + '</td>';
+    h += '<td>' + (item.C ? '<span class="badge badge-pass">&#10003;</span>' : '<span class="badge badge-fail">-</span>') + '</td>';
+    h += '</tr>';
+  }
+  document.getElementById('test-matrix-body').innerHTML = h;
+}
+function filterMatrix(f) { render试验Matrix(f); }
+
+// ============ ENV PROFILES ============
+async function generateEnvProfile() {
+  const type = document.getElementById('env-type').value;
+  const parts = type.split('_');
+  const level = parts[parts.length-1]; // qual or accept
+  const category = parts.slice(0, parts.length-1).join('_'); // thermal_vacuum or thermal_cycle
+  const params = {
+    level: level,
+    t_max_operating: parseFloat(document.getElementById('env-tmax').value) || 55,
+    t_min_operating: parseFloat(document.getElementById('env-tmin').value) || -30,
+    cycles_override: parseInt(document.getElementById('env-cycles').value) || null
+  };
+  try {
+    const endpoint = category === 'thermal_vacuum' ? '/api/qj20156/thermal_vacuum' : '/api/qj20156/thermal_cycle';
+    const r = await fetch(endpoint, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(params)
+    });
+    const d = await r.json();
+    renderEnvResults(d, category);
+  } catch(e) {
+    document.getElementById('env-results').innerHTML = '<div class="card"><p style="color:#ef4444;">错误：' + e.message + '</p></div>';
+  }
+}
+function renderEnvResults(d, cat) {
+  let h = '<div class="card"><h3>已生成试验剖面</h3>';
+  h += '<div class="result-grid">';
+  h += stat('试验 等级', d.level, true);
+  h += stat('Pressure', cat==='thermal_vacuum' ? d.min_pressure_Pa.toExponential(1)+' Pa' : 'Atmospheric', true);
+  h += stat('高温', d.t_high_C + ' degC', true);
+  h += stat('低温', d.t_low_C + ' degC', true);
+  h += stat('循环次数', d.cycles, true);
+  h += stat('Dwell/Extreme', d.dwell_per_extreme_h + ' h', true);
+  h += stat('Est. Total Duration', d.total_duration_est_h + ' h', true);
+  if (d.ramp_rate) h += stat('Ramp Rate', d.ramp_rate, true);
+  h += '</div>';
+  h += '<h4 style="margin-top:16px;">试验后性能检查项目</h4><ul style="color:var(--text2);font-size:0.82rem;padding-left:20px;">';
+  for (const c of d.post_test_checks) h += '<li>' + c + '</li>';
+  h += '</ul>';
+  if (d.notes) {
+    h += '<h4 style="margin-top:12px;">注意事项</h4><ul style="color:var(--text2);font-size:0.82rem;padding-left:20px;">';
+    for (const n of d.notes) h += '<li>' + n + '</li>';
+    h += '</ul>';
+  }
+  h += '</div>';
+  document.getElementById('env-results').innerHTML = h;
+}
+
+// ============ CALCULATORS ============
+async function runLeakCalc() {
+  const r = await fetch('/api/qj20156/verify_leak', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      measured_leak: parseFloat(document.getElementById('calc-leak').value),
+      leak_type: document.getElementById('calc-leak-type').value
+    })
+  });
+  const d = await r.json();
+  document.getElementById('calc-leak-result').innerHTML =
+    '<div class="result-item ' + (d.pass?'pass':'fail') + '">' +
+    '<div class="val">' + (d.pass ? '合格' : '不合格') + '</div>' +
+    '<div class="lbl">实测值：' + d.measured_Pa_m3_s.toExponential(2) + '  |  限值：' + d.limit_Pa_m3_s.toExponential(1) + '  |  裕度：' + d.margin_db + ' dB</div></div>';
+}
+async function runRatedCalc() {
+  const r = await fetch('/api/qj20156/verify_rated', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      rated: parseFloat(document.getElementById('calc-rated').value),
+      measured: parseFloat(document.getElementById('calc-measured').value)
+    })
+  });
+  const d = await r.json();
+  document.getElementById('calc-rated-result').innerHTML =
+    '<div class="result-item ' + (d.pass?'pass':'fail') + '">' +
+    '<div class="val">' + (d.pass ? '合格' : '不合格') + '</div>' +
+    '<div class="lbl">偏差：' + d.deviation_pct.toFixed(3) + '% (限值：<' + d.limit_pct + '%)</div></div>';
+}
+async function runLockUpCalc() {
+  const r = await fetch('/api/qj20156/verify_lockup', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      rated_pressure: parseFloat(document.getElementById('calc-lk-rated').value),
+      lockup_pressure: parseFloat(document.getElementById('calc-lk-pressure').value)
+    })
+  });
+  const d = await r.json();
+  document.getElementById('calc-lk-result').innerHTML =
+    '<div class="result-item ' + (d.pass?'pass':'fail') + '">' +
+    '<div class="val">' + (d.pass ? '合格' : '不合格') + '</div>' +
+    '<div class="lbl">偏差：' + d.deviation_pct.toFixed(2) + '% (range: ' + d.limit_min_pct + '% ~ ' + d.limit_max_pct + '%)</div></div>';
+}
+async function runPBCalc() {
+  const p = parseFloat(document.getElementById('calc-pb').value);
+  const r = await fetch('/api/qj20156/proof_burst', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({max_working_pressure_MPa: p})
+  });
+  const d = await r.json();
+  document.getElementById('calc-pb-result').innerHTML =
+    '<div class="result-grid">' +
+    stat('验证压力', d.proof.proof_pressure_MPa.toFixed(1)+' MPa (1.5x)', true) +
+    stat('爆破压力', d.burst.burst_pressure_MPa.toFixed(1)+' MPa (2x)', true) +
+    stat('Hold Time', d.proof.hold_time_min+' min', true) +
+    stat('Burst Safety', d.safety.burst_vs_working+'x', d.safety.burst_pass) +
+    '</div>';
+}
+async function runLifeCalc() {
+  const r = await fetch('/api/qj20156/verify_life', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({cycles: parseInt(document.getElementById('calc-life').value)})
+  });
+  const d = await r.json();
+  document.getElementById('calc-life-result').innerHTML =
+    '<div class="result-item ' + (d.pass?'pass':'fail') + '">' +
+    '<div class="val">' + (d.pass ? '合格' : '不合格') + '</div>' +
+    '<div class="lbl">' + d.cycles + ' 次循环（最少 ' + d.min_required + '） | 裕度：' + d.margin_pct + '%</div></div>';
+}
+async function runEECalc() {
+  const r = await fetch('/api/qj20156/elastic_element', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({working_pressure: parseFloat(document.getElementById('calc-ee').value)})
+  });
+  const d = await r.json();
+  let h = '<div class="result-item pass"><div class="val">过载压力：' + d.overload_pressure_MPa.toFixed(1) + ' MPa</div>';
+  h += '<div class="lbl">' + d.min_cycles + ' 次循环 × ' + d.min_duration_per_cycle_s + '秒/次</div></div>';
+  h += '<ul style="color:var(--text2);font-size:0.78rem;padding-left:16px;margin-top:8px;">';
+  for (const rq of d.requirements) h += '<li>' + rq + '</li>';
+  h += '</ul>';
+  document.getElementById('calc-ee-result').innerHTML = h;
+}
+
+function updateEnvForm() { /* same form for all types */ }
+
+// Initialize
+loadStandard();
+</script>
+
+</body>
+</html>

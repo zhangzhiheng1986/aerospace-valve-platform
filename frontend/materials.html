@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料数据库 - 航空航天阀门研发平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a1929 0%, #132f4c 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #00b4d8, #90e0ef);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00b4d8, #90e0ef);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        /* 主布局 */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #90e0ef;
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-list li {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-list li:hover,
+        .category-list li.active {
+            background: rgba(0, 180, 216, 0.2);
+            border-left: 3px solid #00b4d8;
+        }
+
+        .category-list li .count {
+            background: rgba(0, 180, 216, 0.3);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        /* 搜索和筛选 */
+        .search-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .filter-select {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .filter-select option {
+            background: #132f4c;
+        }
+
+        /* 材料列表 */
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .material-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .material-card:hover {
+            transform: translateY(-5px);
+            border-color: #00b4d8;
+            box-shadow: 0 10px 30px rgba(0, 180, 216, 0.2);
+        }
+
+        .material-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .material-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .material-category {
+            background: rgba(0, 180, 216, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #90e0ef;
+        }
+
+        .material-standard {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 15px;
+        }
+
+        .material-properties {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .property-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .property-item .label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 3px;
+        }
+
+        .property-item .value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #90e0ef;
+        }
+
+        .aerospace-badge {
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 详情模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0a1929 0%, #132f4c 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+        }
+
+        .detail-section h4 {
+            font-size: 16px;
+            color: #90e0ef;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-item .label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .detail-item .value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* 推荐引擎 */
+        .recommend-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .recommend-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #90e0ef;
+        }
+
+        .recommend-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #00b4d8, #0077b6);
+            border: none;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 180, 216, 0.4);
+        }
+
+        .recommend-results {
+            margin-top: 20px;
+        }
+
+        .recommend-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00b4d8;
+        }
+
+        .recommend-item .score {
+            display: inline-block;
+            background: linear-gradient(90deg, #00b4d8, #90e0ef);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .criteria-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .criteria-tag {
+            background: rgba(0, 180, 216, 0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #90e0ef;
+        }
+
+        /* 线规计算器 */
+        .calculator-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .calculator-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #90e0ef;
+        }
+
+        .calc-results {
+            background: rgba(0, 180, 216, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .calc-results h4 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #90e0ef;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .result-item {
+            text-align: center;
+        }
+
+        .result-item .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00b4d8;
+        }
+
+        .result-item .unit {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .materials-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .search-input {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🔬 材料数据库</h1>
+        <a href="/" class="back-btn">
+            <span>←</span>
+            <span>返回主界面</span>
+        </a>
+    </header>
+
+    <div class="container">
+        <!-- 统计卡片 -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="number" id="totalMaterials">-</div>
+                <div class="label">总材料数</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="aerospaceGrade">-</div>
+                <div class="label">航空航天认证</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="milSpec">-</div>
+                <div class="label">军标材料</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="categories">7</div>
+                <div class="label">材料类别</div>
+            </div>
+        </div>
+
+        <!-- 主布局 -->
+        <div class="main-layout">
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <h3>📂 材料类别</h3>
+                <ul class="category-list" id="categoryList">
+                    <li class="active" data-category="all">
+                        <span>全部材料</span>
+                        <span class="count" id="countAll">-</span>
+                    </li>
+                    <li data-category="导体材料">
+                        <span>导体材料</span>
+                        <span class="count" id="countConductor">-</span>
+                    </li>
+                    <li data-category="磁性材料">
+                        <span>磁性材料</span>
+                        <span class="count" id="countMagnetic">-</span>
+                    </li>
+                    <li data-category="绝缘材料">
+                        <span>绝缘材料</span>
+                        <span class="count" id="countInsulation">-</span>
+                    </li>
+                    <li data-category="结构材料">
+                        <span>结构材料</span>
+                        <span class="count" id="countStructural">-</span>
+                    </li>
+                    <li data-category="密封材料">
+                        <span>密封材料</span>
+                        <span class="count" id="countSealing">-</span>
+                    </li>
+                    <li data-category="弹性材料">
+                        <span>弹性材料</span>
+                        <span class="count" id="countSpring">-</span>
+                    </li>
+                    <li data-category="涂层材料">
+                        <span>涂层材料</span>
+                        <span class="count" id="countCoating">-</span>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- 主内容区 -->
+            <main class="main-content">
+                <!-- 搜索栏 -->
+                <div class="search-section">
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="searchInput" 
+                               placeholder="搜索材料名称、标准、认证...">
+                        <select class="filter-select" id="tempFilter">
+                            <option value="">温度范围</option>
+                            <option value="cryo">深冷 (-196°C以下)</option>
+                            <option value="low">低温 (-60°C以下)</option>
+                            <option value="normal">常温 (0-200°C)</option>
+                            <option value="high">高温 (200°C以上)</option>
+                            <option value="ultra">超高温 (500°C以上)</option>
+                        </select>
+                        <select class="filter-select" id="gradeFilter">
+                            <option value="">认证等级</option>
+                            <option value="space">航天级</option>
+                            <option value="aerospace">航空级</option>
+                            <option value="mil">军标</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 材料列表 -->
+                <div class="materials-grid" id="materialsGrid">
+                    <!-- 动态生成 -->
+                </div>
+
+                <!-- 材料推荐引擎 -->
+                <div class="recommend-section">
+                    <h3>🎯 智能材料推荐</h3>
+                    <div class="recommend-form">
+                        <div class="form-group">
+                            <label>应用场景</label>
+                            <select id="appScenario">
+                                <option value="solenoid_valve">电磁阀</option>
+                                <option value="high_temp">高温环境</option>
+                                <option value="cryogenic">深冷环境</option>
+                                <option value="marine">海洋环境</option>
+                                <option value="space">航天应用</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>最高工作温度 (°C)</label>
+                            <input type="number" id="reqMaxTemp" value="180" placeholder="180">
+                        </div>
+                        <div class="form-group">
+                            <label>最低工作温度 (°C)</label>
+                            <input type="number" id="reqMinTemp" value="-40" placeholder="-40">
+                        </div>
+                        <div class="form-group">
+                            <label>最小抗拉强度 (MPa)</label>
+                            <input type="number" id="reqStrength" placeholder="可选">
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="getRecommendations()">
+                        🔍 获取推荐材料
+                    </button>
+                    <div class="recommend-results" id="recommendResults"></div>
+                </div>
+
+                <!-- 绕组计算器 -->
+                <div class="calculator-section">
+                    <h3>🧮 绕组参数计算器</h3>
+                    <div class="recommend-form">
+                        <div class="form-group">
+                            <label>导线材料</label>
+                            <select id="wireMaterial">
+                                <option value="T2纯铜（航空航天级）">T2纯铜（航空航天级）</option>
+                                <option value="镀银铜线TRAg">镀银铜线TRAg</option>
+                                <option value="B10铜镍合金">B10铜镍合金</option>
+                                <option value="镍铬合金Cr20Ni80">镍铬合金Cr20Ni80</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>线规 (AWG)</label>
+                            <select id="wireAWG">
+                                <option value="20">AWG 20 (0.812mm)</option>
+                                <option value="22">AWG 22 (0.644mm)</option>
+                                <option value="24">AWG 24 (0.511mm)</option>
+                                <option value="26">AWG 26 (0.405mm)</option>
+                                <option value="27" selected>AWG 27 (0.361mm)</option>
+                                <option value="28">AWG 28 (0.321mm)</option>
+                                <option value="30">AWG 30 (0.255mm)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>匝数</label>
+                            <input type="number" id="wireTurns" value="1500" placeholder="1500">
+                        </div>
+                        <div class="form-group">
+                            <label>平均直径 (mm)</label>
+                            <input type="number" id="meanDiameter" value="25" placeholder="25">
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="calculateWireProperties()">
+                        📊 计算绕组参数
+                    </button>
+                    <div class="calc-results" id="calcResults" style="display:none;">
+                        <h4>计算结果</h4>
+                        <div class="result-grid" id="resultGrid"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">材料详情</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allMaterials = [];
+        let currentCategory = 'all';
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            loadMaterials();
+            setupEventListeners();
+        });
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 类别切换
+            document.querySelectorAll('.category-list li').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.category-list li').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category;
+                    filterAndDisplayMaterials();
+                });
+            });
+
+            // 搜索
+            document.getElementById('searchInput').addEventListener('input', filterAndDisplayMaterials);
+            document.getElementById('tempFilter').addEventListener('change', filterAndDisplayMaterials);
+            document.getElementById('gradeFilter').addEventListener('change', filterAndDisplayMaterials);
+        }
+
+        // 加载统计信息
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/materials/statistics');
+                const stats = await response.json();
+                
+                document.getElementById('totalMaterials').textContent = stats.total_materials;
+                document.getElementById('aerospaceGrade').textContent = stats.with_aerospace_grade;
+                document.getElementById('milSpec').textContent = stats.with_mil_spec;
+                
+                // 更新类别计数
+                document.getElementById('countAll').textContent = stats.total_materials;
+                document.getElementById('countConductor').textContent = stats.by_category['导体材料'] || 0;
+                document.getElementById('countMagnetic').textContent = stats.by_category['磁性材料'] || 0;
+                document.getElementById('countInsulation').textContent = stats.by_category['绝缘材料'] || 0;
+                document.getElementById('countStructural').textContent = stats.by_category['结构材料'] || 0;
+                document.getElementById('countSealing').textContent = stats.by_category['密封材料'] || 0;
+                document.getElementById('countSpring').textContent = stats.by_category['弹性材料'] || 0;
+                document.getElementById('countCoating').textContent = stats.by_category['涂层材料'] || 0;
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+            }
+        }
+
+        // 加载材料列表
+        async function loadMaterials() {
+            try {
+                const response = await fetch('/api/materials/list');
+                allMaterials = await response.json();
+                filterAndDisplayMaterials();
+            } catch (error) {
+                console.error('加载材料列表失败:', error);
+            }
+        }
+
+        // 筛选并显示材料
+        function filterAndDisplayMaterials() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const tempFilter = document.getElementById('tempFilter').value;
+            const gradeFilter = document.getElementById('gradeFilter').value;
+
+            let filtered = allMaterials;
+
+            // 类别筛选
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(m => m.category === currentCategory);
+            }
+
+            // 搜索筛选
+            if (searchTerm) {
+                filtered = filtered.filter(m => 
+                    m.name.toLowerCase().includes(searchTerm) ||
+                    m.standard.toLowerCase().includes(searchTerm) ||
+                    (m.aerospace_grade && m.aerospace_grade.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            // 温度筛选
+            if (tempFilter) {
+                filtered = filtered.filter(m => {
+                    const maxTemp = m.max_temp || 0;
+                    const minTemp = m.min_temp || 0;
+                    switch(tempFilter) {
+                        case 'cryo': return minTemp <= -196;
+                        case 'low': return minTemp <= -60;
+                        case 'normal': return maxTemp <= 200 && minTemp >= -40;
+                        case 'high': return maxTemp >= 200;
+                        case 'ultra': return maxTemp >= 500;
+                        default: return true;
+                    }
+                });
+            }
+
+            // 认证筛选
+            if (gradeFilter) {
+                filtered = filtered.filter(m => {
+                    if (!m.aerospace_grade) return false;
+                    const grade = m.aerospace_grade.toLowerCase();
+                    switch(gradeFilter) {
+                        case 'space': return grade.includes('space');
+                        case 'aerospace': return grade.includes('aerospace') || grade.includes('grade');
+                        case 'mil': return m.mil_spec !== null;
+                        default: return true;
+                    }
+                });
+            }
+
+            displayMaterials(filtered);
+        }
+
+        // 显示材料卡片
+        function displayMaterials(materials) {
+            const grid = document.getElementById('materialsGrid');
+            
+            if (materials.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5);">未找到匹配的材料</div>';
+                return;
+            }
+
+            grid.innerHTML = materials.map(m => `
+                <div class="material-card" onclick="showMaterialDetail('${m.name}')">
+                    <div class="material-header">
+                        <div class="material-name">${m.name}</div>
+                        <div class="material-category">${m.category}</div>
+                    </div>
+                    <div class="material-standard">标准: ${m.standard}</div>
+                    <div class="material-properties">
+                        ${m.density ? `<div class="property-item"><div class="label">密度</div><div class="value">${m.density} g/cm³</div></div>` : ''}
+                        ${m.max_temp ? `<div class="property-item"><div class="label">最高温度</div><div class="value">${m.max_temp}°C</div></div>` : ''}
+                        ${m.min_temp ? `<div class="property-item"><div class="label">最低温度</div><div class="value">${m.min_temp}°C</div></div>` : ''}
+                        ${m.tensile_strength ? `<div class="property-item"><div class="label">抗拉强度</div><div class="value">${m.tensile_strength} MPa</div></div>` : ''}
+                        ${m.conductivity ? `<div class="property-item"><div class="label">电导率</div><div class="value">${m.conductivity}%IACS</div></div>` : ''}
+                        ${m.permeability ? `<div class="property-item"><div class="label">磁导率</div><div class="value">${m.permeability}</div></div>` : ''}
+                    </div>
+                    ${m.aerospace_grade ? `<div class="aerospace-badge">✈ ${m.aerospace_grade}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 显示材料详情
+        async function showMaterialDetail(name) {
+            try {
+                const response = await fetch(`/api/materials/detail?name=${encodeURIComponent(name)}`);
+                const material = await response.json();
+                
+                if (!material) {
+                    alert('材料信息获取失败');
+                    return;
+                }
+
+                document.getElementById('modalTitle').textContent = material.name;
+                
+                let bodyHTML = `
+                    <div class="detail-section">
+                        <h4>📋 基本信息</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="label">材料类别</div>
+                                <div class="value">${material.category}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="label">执行标准</div>
+                                <div class="value">${material.standard}</div>
+                            </div>
+                            ${material.aerospace_grade ? `
+                            <div class="detail-item">
+                                <div class="label">航空航天等级</div>
+                                <div class="value" style="color:#ff6b6b">${material.aerospace_grade}</div>
+                            </div>
+                            ` : ''}
+                            ${material.mil_spec ? `
+                            <div class="detail-item">
+                                <div class="label">军标编号</div>
+                                <div class="value">${material.mil_spec}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                // 物理性能
+                if (material.density || material.melting_point) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>⚛️ 物理性能</h4>
+                            <div class="detail-grid">
+                                ${material.density ? `<div class="detail-item"><div class="label">密度</div><div class="value">${material.density} g/cm³</div></div>` : ''}
+                                ${material.melting_point ? `<div class="detail-item"><div class="label">熔点</div><div class="value">${material.melting_point}°C</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 电学性能
+                if (material.resistivity || material.conductivity) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>⚡ 电学性能</h4>
+                            <div class="detail-grid">
+                                ${material.resistivity ? `<div class="detail-item"><div class="label">电阻率</div><div class="value">${material.resistivity.toExponential(2)} Ω·m</div></div>` : ''}
+                                ${material.conductivity ? `<div class="detail-item"><div class="label">电导率</div><div class="value">${material.conductivity}%IACS</div></div>` : ''}
+                                ${material.temp_coeff_resist ? `<div class="detail-item"><div class="label">电阻温度系数</div><div class="value">${material.temp_coeff_resist}/°C</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 磁学性能
+                if (material.permeability || material.saturation_flux) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>🧲 磁学性能</h4>
+                            <div class="detail-grid">
+                                ${material.permeability ? `<div class="detail-item"><div class="label">相对磁导率</div><div class="value">${material.permeability}</div></div>` : ''}
+                                ${material.saturation_flux ? `<div class="detail-item"><div class="label">饱和磁感应强度</div><div class="value">${material.saturation_flux} T</div></div>` : ''}
+                                ${material.coercivity ? `<div class="detail-item"><div class="label">矫顽力</div><div class="value">${material.coercivity} A/m</div></div>` : ''}
+                                ${material.core_loss ? `<div class="detail-item"><div class="label">铁损</div><div class="value">${material.core_loss} W/kg</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 力学性能
+                if (material.tensile_strength || material.yield_strength) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>💪 力学性能</h4>
+                            <div class="detail-grid">
+                                ${material.tensile_strength ? `<div class="detail-item"><div class="label">抗拉强度</div><div class="value">${material.tensile_strength} MPa</div></div>` : ''}
+                                ${material.yield_strength ? `<div class="detail-item"><div class="label">屈服强度</div><div class="value">${material.yield_strength} MPa</div></div>` : ''}
+                                ${material.elongation ? `<div class="detail-item"><div class="label">延伸率</div><div class="value">${material.elongation}%</div></div>` : ''}
+                                ${material.hardness ? `<div class="detail-item"><div class="label">硬度</div><div class="value">${material.hardness}</div></div>` : ''}
+                                ${material.elastic_modulus ? `<div class="detail-item"><div class="label">弹性模量</div><div class="value">${material.elastic_modulus} GPa</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 热学性能
+                if (material.thermal_conductivity || material.thermal_expansion) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>🌡️ 热学性能</h4>
+                            <div class="detail-grid">
+                                ${material.thermal_conductivity ? `<div class="detail-item"><div class="label">热导率</div><div class="value">${material.thermal_conductivity} W/m·K</div></div>` : ''}
+                                ${material.thermal_expansion ? `<div class="detail-item"><div class="label">热膨胀系数</div><div class="value">${material.thermal_expansion}×10⁻⁶/°C</div></div>` : ''}
+                                ${material.max_temp ? `<div class="detail-item"><div class="label">最高工作温度</div><div class="value">${material.max_temp}°C</div></div>` : ''}
+                                ${material.min_temp ? `<div class="detail-item"><div class="label">最低工作温度</div><div class="value">${material.min_temp}°C</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 环境适应性
+                if (material.corrosion_resistance || material.radiation_resistance) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>🌍 环境适应性</h4>
+                            <div class="detail-grid">
+                                ${material.corrosion_resistance ? `<div class="detail-item"><div class="label">耐腐蚀性</div><div class="value">${material.corrosion_resistance}</div></div>` : ''}
+                                ${material.radiation_resistance ? `<div class="detail-item"><div class="label">抗辐射性</div><div class="value">${material.radiation_resistance}</div></div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 备注
+                if (material.notes) {
+                    bodyHTML += `
+                        <div class="detail-section">
+                            <h4>📝 备注</h4>
+                            <p style="color:rgba(255,255,255,0.8);line-height:1.6;">${material.notes}</p>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('modalBody').innerHTML = bodyHTML;
+                document.getElementById('detailModal').classList.add('active');
+            } catch (error) {
+                console.error('获取材料详情失败:', error);
+            }
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // 获取材料推荐
+        async function getRecommendations() {
+            const scenario = document.getElementById('appScenario').value;
+            const maxTemp = parseFloat(document.getElementById('reqMaxTemp').value) || null;
+            const minTemp = parseFloat(document.getElementById('reqMinTemp').value) || null;
+            const strength = parseFloat(document.getElementById('reqStrength').value) || null;
+
+            const requirements = {};
+            if (maxTemp) requirements.max_temp = maxTemp;
+            if (minTemp) requirements.min_temp = minTemp;
+            if (strength) requirements.min_strength = strength;
+
+            try {
+                const response = await fetch('/api/materials/recommend', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({scenario, requirements})
+                });
+                const recommendations = await response.json();
+                
+                const resultsDiv = document.getElementById('recommendResults');
+                
+                if (recommendations.length === 0) {
+                    resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.5);">未找到匹配的材料</div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = recommendations.map((rec, i) => `
+                    <div class="recommend-item">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <strong style="font-size:18px;">${i+1}. ${rec.material}</strong>
+                                <span style="margin-left:10px;color:rgba(255,255,255,0.6);font-size:13px;">${rec.category}</span>
+                            </div>
+                            <div class="score">${rec.score}分</div>
+                        </div>
+                        <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.6);">
+                            标准: ${rec.standard}
+                        </div>
+                        <div class="criteria-list">
+                            ${rec.matched_criteria.map(c => `<span class="criteria-tag">${c}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('获取推荐失败:', error);
+            }
+        }
+
+        // 计算绕组参数
+        async function calculateWireProperties() {
+            const material = document.getElementById('wireMaterial').value;
+            const awg = parseInt(document.getElementById('wireAWG').value);
+            const turns = parseInt(document.getElementById('wireTurns').value);
+            const meanDiameter = parseFloat(document.getElementById('meanDiameter').value);
+
+            try {
+                const response = await fetch('/api/materials/calculate-wire', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({material, awg, turns, mean_diameter: meanDiameter})
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    alert(result.error);
+                    return;
+                }
+
+                document.getElementById('calcResults').style.display = 'block';
+                document.getElementById('resultGrid').innerHTML = `
+                    <div class="result-item">
+                        <div class="value">${result.total_length_m}</div>
+                        <div class="unit">导线长度 (m)</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="value">${result.total_resistance_ohm}</div>
+                        <div class="unit">总电阻 (Ω)</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="value">${result.mass_kg}</div>
+                        <div class="unit">质量 (kg)</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="value">${result.max_operating_temp || '-'}</div>
+                        <div class="unit">最高温度 (°C)</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="value">${result.conductivity_percent_IACS || '-'}</div>
+                        <div class="unit">电导率 (%IACS)</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('计算失败:', error);
+            }
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

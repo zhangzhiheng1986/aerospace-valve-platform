@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>专业知识文章 - 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg: #0f1923; --card-bg: #1a2332; --border: #2a3a4a;
+  --text: #e0e6ed; --text-secondary: #8899aa; --accent: #4fc3f7;
+  --input-bg: #0d1520; --hover: #1e2d3d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", sans-serif; min-height: 100vh; line-height: 1.6; }
+
+.header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; color: var(--accent); cursor: pointer; }
+.header a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+.header a:hover { color: var(--accent); }
+
+.layout { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 260px 1fr; gap: 24px; min-height: calc(100vh - 70px); }
+@media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+
+/* Sidebar */
+.sidebar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; height: fit-content; position: sticky; top: 24px; }
+.sidebar h3 { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.sidebar .cat-item { display: block; padding: 8px 12px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); font-size: 14px; transition: all .2s; margin-bottom: 2px; }
+.sidebar .cat-item:hover { background: var(--hover); color: var(--text); }
+.sidebar .cat-item.active { background: rgba(79,195,247,.15); color: var(--accent); }
+.sidebar .cat-item .count { float: right; font-size: 12px; opacity: .6; }
+
+/* Search */
+.search wrap { position: relative; margin-bottom: 16px; }
+.search-box { width: 100%; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+.search-box:focus { outline: none; border-color: var(--accent); }
+
+/* Article cards */
+.article-list { display: flex; flex-direction: column; gap: 16px; }
+.article-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all .2s; }
+.article-card:hover { border-color: var(--accent); transform: translateX(4px); }
+.article-card .title { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+.article-card .title:hover { color: var(--accent); }
+.article-card .meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 16px; flex-wrap: wrap; }
+.article-card .summary { font-size: 14px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5; }
+.article-card .tags { margin-top: 8px; }
+
+.tag-badge { display: inline-block; padding: 2px 8px; background: rgba(79,195,247,.15); color: var(--accent); border-radius: 4px; font-size: 11px; margin: 2px; }
+.pin-badge { display: inline-block; padding: 2px 10px; background: rgba(255,167,38,.15); color: #ffa726; border-radius: 4px; font-size: 11px; }
+
+/* Article detail */
+.article-detail { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 32px; }
+.article-detail h1 { font-size: 26px; margin-bottom: 16px; color: var(--accent); }
+.article-detail .meta-line { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.article-detail .content { font-size: 15px; line-height: 1.8; }
+.article-detail .content h1, .article-detail .content h2, .article-detail .content h3 { color: var(--accent); margin: 24px 0 12px; }
+.article-detail .content h2 { font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.article-detail .content h3 { font-size: 16px; }
+.article-detail .content p { margin-bottom: 12px; }
+.article-detail .content ul, .article-detail .content ol { margin: 8px 0 16px 24px; }
+.article-detail .content li { margin-bottom: 4px; }
+.article-detail .content blockquote { border-left: 3px solid var(--accent); padding: 8px 16px; margin: 16px 0; background: rgba(79,195,247,.05); color: var(--text-secondary); }
+.article-detail .content code { background: var(--input-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.article-detail .content pre { background: var(--input-bg); padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; border: 1px solid var(--border); }
+.article-detail .content pre code { background: none; padding: 0; }
+.article-detail .content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.article-detail .content th, .article-detail .content td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+.article-detail .content th { background: var(--input-bg); font-weight: 600; }
+.article-detail .content strong { color: #fff; }
+
+/* Navigation */
+.nav-articles { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+.nav-articles a { color: var(--accent); text-decoration: none; font-size: 14px; }
+.nav-articles a:hover { opacity: .8; }
+.nav-articles .disabled { color: var(--text-secondary); opacity: .5; cursor: default; }
+
+/* Pagination */
+.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
+.pagination button { background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+.pagination button.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.pagination button:hover:not(.active) { background: var(--hover); }
+.pagination button:disabled { opacity: .3; cursor: default; }
+
+.back-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); cursor: pointer; font-size: 14px; margin-bottom: 16px; background: none; border: none; }
+.back-btn:hover { opacity: .8; }
+
+.loading { text-align: center; padding: 60px; color: var(--text-secondary); }
+.empty { text-align: center; padding: 80px 20px; color: var(--text-secondary); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 onclick="showList()">专业知识文章</h1>
+  <a href="/">返回平台</a>
+</div>
+
+<div class="layout" id="mainLayout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <h3>📂 文章分类</h3>
+    <div class="cat-item active" data-id="" onclick="filterCategory('')">📄 全部文章</div>
+    <div id="catList"></div>
+  </aside>
+
+  <!-- Main content -->
+  <main>
+    <!-- List view -->
+    <div id="listView">
+      <div class="search-wrap">
+        <input type="text" class="search-box" id="searchInput" placeholder="搜索文章..." onkeyup="debounceSearch()">
+      </div>
+      <div class="article-list" id="articleList"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- Detail view -->
+    <div id="detailView" style="display:none"></div>
+  </main>
+</div>
+
+<script>
+const API = '/api/cms';
+let currentCat = '';
+let currentPage = 1;
+let currentSearch = '';
+let searchTimer;
+
+// History state
+window.onpopstate = function(e) {
+  if (e.state && e.state.articleId) {
+    loadDetail(e.state.articleId, false);
+  } else if (e.state && e.state.cat !== undefined) {
+    currentCat = e.state.cat; currentPage = e.state.page || 1; currentSearch = e.state.search || '';
+    document.getElementById('searchInput').value = currentSearch;
+    showList(false);
+  } else {
+    showList(false);
+  }
+};
+
+// Load categories
+async function loadCategories() {
+  const cats = await fetch(API + '/categories').then(x => x.json());
+  document.getElementById('catList').innerHTML = (cats||[]).map(c =>
+    '<div class="cat-item" data-id="'+c.id+'" onclick="filterCategory(\''+c.id+'\')">' +
+    esc(c.name) + '<span class="count">'+(c.article_count||0)+'</span></div>'
+  ).join('');
+}
+
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function filterCategory(id) {
+  currentCat = id; currentPage = 1;
+  loadArticles();
+  // highlight
+  document.querySelectorAll('#sidebar .cat-item').forEach(el => el.classList.toggle('active', el.dataset.id == id));
+}
+
+// Render markdown-like content
+function renderMD(content) {
+  if (!content) return '';
+  let html = content;
+  // Code blocks (pre)
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Headers
+  html = html.replace(/^#### (.+)/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.+)/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)/gm, '<h1>$1</h1>');
+  // Bold/italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Blockquote
+  html = html.replace(/^&gt; (.+)/gm, '<blockquote>$1</blockquote>');
+  // Horizontal rule
+  html = html.replace(/^---$/gm, '<hr>');
+  // Tables (simple)
+  html = html.replace(/^\|(.+)\|$/gm, function(m) {
+    const cells = m.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    if (cells.every(c => /^[-:]+$/.test(c))) return ''; // separator row
+    const tag = m.includes('---') ? 'td' : 'td';
+    return '<tr>' + cells.map(c => '<'+tag+'>'+c+'</'+tag+'>').join('') + '</tr>';
+  });
+  // Wrap tables
+  html = html.replace(/(<tr>[\s\S]*?<\/tr>){2,}/g, '<table>$&</table>');
+  // Lists
+  html = html.replace(/^- (.+)/gm, '<li>$1</li>');
+  html = html.replace(/^(\d+)\. (.+)/gm, '<li>$2</li>');
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  // Paragraphs
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = '<p>' + html + '</p>';
+  // Clean empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '');
+  html = html.replace(/<p>(<(?:h[1-4]|table|ul|ol|blockquote|pre|hr))/g, '$1');
+  html = html.replace(/(<\/(?:h[1-4]|table|ul|ol|blockquote|pre)>)\s*<\/p>/g, '$1');
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  return html;
+}
+
+async function loadArticles() {
+  const params = new URLSearchParams({ limit: '12', offset: ((currentPage-1)*12).toString() });
+  if (currentCat) params.set('category_id', currentCat);
+  if (currentSearch) params.set('search', currentSearch);
+  params.set('status', 'published');
+
+  const r = await fetch(API + '/articles?' + params).then(x => x.json());
+  const articles = r.articles || [];
+  const total = r.total || 0;
+
+  document.getElementById('articleList').innerHTML = articles.length ? articles.map(a =>
+    '<div class="article-card" onclick="loadDetail('+a.id+')">' +
+    '<div class="title">' + (a.is_pinned?'<span class="pin-badge">置顶</span> ':'') + esc(a.title) + '</div>' +
+    '<div class="meta">' +
+      '<span>'+esc(a.author||'')+'</span>' +
+      '<span>'+esc(a.category_name||'未分类')+'</span>' +
+      '<span>'+ (a.updated_at||'').substring(0,10) +'</span>' +
+      '<span>'+ (a.view_count||0) +' 次浏览</span>' +
+    '</div>' +
+    (a.summary ? '<div class="summary">'+esc(a.summary)+'</div>' : '') +
+    '<div class="tags">' + (a.tags||'').split(',').filter(t=>t).map(t=>'<span class="tag-badge">'+esc(t.trim())+'</span>').join('') + '</div>' +
+    '</div>'
+  ).join('') : '<div class="empty">暂无文章</div>';
+
+  const pages = Math.ceil(total / 12);
+  let pg = '';
+  if (pages > 1) {
+    for (let i = 1; i <= pages; i++) {
+      pg += '<button class="' + (i===currentPage?'active':'') + '" onclick="currentPage='+i+';loadArticles()">'+i+'</button>';
+    }
+  }
+  document.getElementById('pagination').innerHTML = pg;
+}
+
+async function loadDetail(id, pushState=true) {
+  const r = await fetch(API + '/articles/' + id).then(x => x.json());
+  if (!r.success) { document.getElementById('detailView').innerHTML = '<div class="empty">文章不存在</div>'; return; }
+  const a = r.article;
+
+  const prevHtml = a.prev ? '<a href="javascript:void(0)" onclick="loadDetail('+a.prev.id+')">' + esc(a.prev.title) + '</a>' : '<span class="disabled">已是第一篇</span>';
+  const nextHtml = a.next ? '<a href="javascript:void(0)" onclick="loadDetail('+a.next.id+')">' + esc(a.next.title) + '</a>' : '<span class="disabled">已是最后一篇</span>';
+
+  document.getElementById('detailView').innerHTML =
+    '<button class="back-btn" onclick="showList()"> &larr; 返回文章列表</button>' +
+    '<div class="article-detail">' +
+    '<h1>' + esc(a.title) + '</h1>' +
+    '<div class="meta-line">' +
+      '<span>作者: '+esc(a.author||'匿名')+'</span> &nbsp;|&nbsp; ' +
+      '<span>分类: '+esc(a.category_name||'未分类')+'</span> &nbsp;|&nbsp; ' +
+      '<span>发布于 '+ (a.created_at||'').substring(0,10) +'</span> &nbsp;|&nbsp; ' +
+      '<span>'+ (a.view_count||0) +' 次浏览</span>' +
+      (a.tags ? '<br><br><span>' + a.tags.split(',').filter(t=>t).map(t=>'<span class="tag-badge">'+esc(t.trim())+'</span>').join(' ') + '</span>' : '') +
+    '</div>' +
+    '<div class="content">' + renderMD(a.content) + '</div>' +
+    '<div class="nav-articles">' +
+      '<div>' + prevHtml + '</div>' +
+      '<div>' + nextHtml + '</div>' +
+    '</div></div>';
+
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('detailView').style.display = '';
+
+  if (pushState) {
+    history.pushState({ articleId: id }, '', '/knowledge_articles/' + id);
+  }
+}
+
+function showList(pushState=true) {
+  document.getElementById('listView').style.display = '';
+  document.getElementById('sidebar').style.display = '';
+  document.getElementById('detailView').style.display = 'none';
+  loadArticles();
+  if (pushState) {
+    history.pushState({ cat: currentCat, page: currentPage, search: currentSearch }, '', '/knowledge_articles');
+  }
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentSearch = document.getElementById('searchInput').value.trim();
+    currentPage = 1;
+    loadArticles();
+  }, 400);
+}
+
+// Init
+loadCategories();
+loadArticles();
+</script>
+</body>
+</html>

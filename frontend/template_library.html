@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研发模板库 - 航空航天阀门研发平台</title>
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg2: #111827;
+            --bg-card: rgba(17,24,39,0.85);
+            --border: rgba(255,255,255,0.06);
+            --text1: #e2e8f0;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --accent: #00b4d8;
+            --accent2: #48cae4;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --purple: #8b5cf6;
+            --red: #ef4444;
+            --pink: #ec4899;
+            --indigo: #6366f1;
+            --radius: 10px;
+            --radius-sm: 7px;
+            --mono: 'JetBrains Mono','Cascadia Code','Consolas',monospace;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text1);min-height:100vh}
+
+        /* ===== Back link ===== */
+        .back-bar{padding:14px 28px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:rgba(13,19,33,0.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50}
+        .back-link{color:var(--text2);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;transition:color .2s}
+        .back-link:hover{color:var(--accent)}
+        .back-title{font-size:15px;font-weight:700;color:var(--text1)}
+        .back-badge{font-size:10px;background:rgba(0,180,216,0.12);color:var(--accent);padding:2px 10px;border-radius:10px;font-weight:600}
+
+        /* ===== Layout ===== */
+        .page-layout{display:flex;min-height:calc(100vh - 53px)}
+        .sidebar{width:240px;min-width:240px;border-right:1px solid var(--border);background:var(--bg2);padding:16px 0;overflow-y:auto}
+        .content-area{flex:1;padding:24px 28px;overflow-y:auto}
+
+        /* ===== Sidebar nav ===== */
+        .sb-section{margin-bottom:4px}
+        .sb-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;user-select:none;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;transition:background .2s}
+        .sb-header:hover{background:rgba(255,255,255,0.03)}
+        .sb-arrow{font-size:9px;transition:transform .2s}
+        .sb-section.collapsed .sb-arrow{transform:rotate(-90deg)}
+        .sb-section.collapsed .sb-items{display:none}
+        .sb-items{list-style:none}
+        .sb-item{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 12px;margin:1px 6px;border-radius:var(--radius-sm);font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;text-decoration:none}
+        .sb-item:hover{background:rgba(255,255,255,0.04);color:var(--text1)}
+        .sb-item.active{background:rgba(0,180,216,0.12);color:var(--accent);font-weight:600}
+        .sb-item .sb-icon{font-size:14px;width:24px;text-align:center;flex-shrink:0}
+        .sb-count{margin-left:auto;font-size:10px;background:rgba(255,255,255,0.06);color:var(--text3);padding:1px 7px;border-radius:8px;font-family:var(--mono)}
+        .sb-item.active .sb-count{background:rgba(0,180,216,0.15);color:var(--accent)}
+        .sb-admin{margin-top:12px;padding:12px 16px;border-top:1px solid var(--border)}
+        .sb-admin-btn{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;color:var(--text3);cursor:pointer;background:rgba(139,92,246,0.08);border:1px dashed rgba(139,92,246,0.3);transition:all .2s}
+        .sb-admin-btn:hover{background:rgba(139,92,246,0.15);color:var(--purple);border-color:rgba(139,92,246,0.5)}
+
+        /* ===== Content header ===== */
+        .content-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+        .content-header h2{font-size:20px;font-weight:700}
+        .search-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;min-width:280px;transition:all .2s}
+        .search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,180,216,0.1)}
+        .search-box input{flex:1;background:none;border:none;outline:none;color:var(--text1);font-size:13px}
+        .search-box input::placeholder{color:var(--text3)}
+
+        /* ===== Template grid ===== */
+        .tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:24px}
+        .tmpl-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;text-decoration:none;color:inherit;display:block}
+        .tmpl-card:hover{border-color:rgba(0,180,216,0.35);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.3)}
+        .tmpl-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-accent,var(--accent));opacity:0;transition:opacity .2s}
+        .tmpl-card:hover::after{opacity:1}
+        .tmpl-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+        .tmpl-card-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .tmpl-card h3{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text1)}
+        .tmpl-card p{font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:10px}
+        .tmpl-card-tags{display:flex;flex-wrap:wrap;gap:6px}
+        .tmpl-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,0.04);color:var(--text3)}
+        .tmpl-tag.standard{background:rgba(245,158,11,0.1);color:var(--amber)}
+        .tmpl-version{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+        /* ===== Detail view ===== */
+        .detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;backdrop-filter:blur(4px)}
+        .detail-overlay.show{display:block}
+        .detail-panel{position:fixed;top:0;right:0;bottom:0;width:min(780px,92vw);background:var(--bg2);border-left:1px solid var(--border);z-index:101;display:none;flex-direction:column}
+        .detail-panel.show{display:flex}
+        .detail-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+        .detail-header h2{font-size:18px;font-weight:700;flex:1;margin-right:16px}
+        .detail-close{width:34px;height:34px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
+        .detail-close:hover{background:rgba(239,68,68,0.15);color:var(--red);border-color:rgba(239,68,68,0.3)}
+        .detail-meta{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--text3);flex-shrink:0}
+        .detail-meta span{display:flex;align-items:center;gap:4px}
+        .detail-actions{display:flex;gap:8px;margin-left:auto}
+        .detail-body{flex:1;overflow-y:auto;padding:24px}
+        .detail-content{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:720px}
+        /* Markdown render */
+        .md-render h1{font-size:22px;font-weight:700;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+        .md-render h1:first-child{margin-top:0}
+        .md-render h2{font-size:18px;font-weight:700;margin:20px 0 10px;color:var(--accent)}
+        .md-render h3{font-size:15px;font-weight:700;margin:16px 0 8px;color:var(--text1)}
+        .md-render p{font-size:13px;line-height:1.7;color:var(--text2);margin-bottom:10px}
+        .md-render table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+        .md-render thead{background:rgba(255,255,255,0.04)}
+        .md-render th,.md-render td{padding:8px 12px;border:1px solid var(--border);text-align:left;color:var(--text2)}
+        .md-render th{font-weight:600;color:var(--text1);font-size:12px}
+        .md-render tr:nth-child(even){background:rgba(255,255,255,0.02)}
+        .md-render ul,.md-render ol{font-size:13px;line-height:1.7;color:var(--text2);margin:8px 0 8px 24px}
+        .md-render li{margin-bottom:4px}
+        .md-render blockquote{border-left:3px solid var(--accent);padding:8px 16px;margin:12px 0;font-size:12px;color:var(--text3);background:rgba(0,180,216,0.03);border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+        .md-render code{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;color:var(--accent)}
+        .md-render hr{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+        /* ===== Buttons ===== */
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none;text-decoration:none}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#0077b6);color:#fff}
+        .btn-primary:hover{box-shadow:0 4px 12px rgba(0,180,216,0.3);transform:translateY(-1px)}
+        .btn-ghost{background:rgba(255,255,255,0.04);color:var(--text2);border:1px solid var(--border)}
+        .btn-ghost:hover{background:rgba(255,255,255,0.08);color:var(--text1)}
+        .btn-danger{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+        .btn-danger:hover{background:rgba(239,68,68,0.2)}
+
+        /* ===== Empty ===== */
+        .empty{text-align:center;padding:60px 20px;color:var(--text3)}
+        .empty-icon{font-size:48px;margin-bottom:16px;opacity:.5}
+        .empty h3{font-size:16px;color:var(--text2);margin-bottom:8px}
+
+        /* ===== Toast ===== */
+        .toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;z-index:300;transform:translateX(120%);transition:transform .3s;max-width:360px}
+        .toast.show{transform:translateX(0)}
+        .toast-success{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3)}
+        .toast-error{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+
+        /* ===== Create Modal ===== */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(4px)}
+        .modal-overlay.show{display:flex;align-items:center;justify-content:center}
+        .modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);width:min(560px,92vw);max-height:85vh;display:flex;flex-direction:column}
+        .modal-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .modal-header h3{font-size:16px;font-weight:700}
+        .modal-body{padding:20px 24px;flex:1;overflow-y:auto}
+        .form-group{margin-bottom:16px}
+        .form-group label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+        .form-input{width:100%;padding:9px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text1);font-size:13px;outline:none;transition:all .2s}
+        .form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,180,216,0.1)}
+        .form-textarea{min-height:240px;resize:vertical;font-family:var(--mono);line-height:1.6}
+        .form-select{cursor:pointer}
+        .modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+        /* Responsive */
+        @media(max-width:768px){
+            .page-layout{flex-direction:column}
+            .sidebar{width:100%;min-width:auto;border-right:none;border-bottom:1px solid var(--border);max-height:200px}
+            .search-box{min-width:auto;flex:1}
+            .tmpl-grid{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+<!-- Back bar -->
+<div class="back-bar">
+    <a href="/" class="back-link">&#x2190; 仪表盘</a>
+    <span class="back-title">研发模板库</span>
+    <span class="back-badge">Template Library</span>
+</div>
+
+<div class="page-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- Content -->
+    <div class="content-area">
+        <div class="content-header">
+            <h2 id="sectionTitle">全部模板</h2>
+            <div class="search-box">
+                <span>&#x1F50D;</span>
+                <input type="text" id="searchInput" placeholder="搜索模板名称、描述、标准..." oninput="debounceSearch()">
+            </div>
+        </div>
+        <div class="tmpl-grid" id="tmplGrid"></div>
+        <div class="empty" id="emptyState" style="display:none">
+            <div class="empty-icon">&#x1F50D;</div>
+            <h3>未找到匹配模板</h3>
+            <p>请尝试其他关键词</p>
+        </div>
+    </div>
+</div>
+
+<!-- Detail overlay -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+        <h2 id="detailTitle">模板标题</h2>
+        <div class="detail-actions">
+            <button class="btn btn-ghost" onclick="copyTemplate()">&#x1F4CB; 复制内容</button>
+            <button class="btn btn-ghost" onclick="downloadTemplate()">&#x2B07; 下载</button>
+            <button class="detail-close" onclick="closeDetail()">&#x2715;</button>
+        </div>
+    </div>
+    <div class="detail-meta" id="detailMeta"></div>
+    <div class="detail-body">
+        <div class="detail-content md-render" id="detailContent"></div>
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>&#x2795; 新建模板</h3>
+            <button class="detail-close" onclick="closeCreateModal()">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>模板标题 *</label>
+                <input class="form-input" id="newTitle" placeholder="例: XX阀设计计算报告">
+            </div>
+            <div class="form-group">
+                <label>所属分类</label>
+                <select class="form-input form-select" id="newCategory"></select>
+            </div>
+            <div class="form-group">
+                <label>模板描述</label>
+                <input class="form-input" id="newDesc" placeholder="简要描述模板用途">
+            </div>
+            <div class="form-group">
+                <label>参考标准</label>
+                <input class="form-input" id="newStd" placeholder="例: QJ 20156-2012, GJB 899A">
+            </div>
+            <div class="form-group">
+                <label>模板内容 (Markdown)</label>
+                <textarea class="form-input form-textarea" id="newContent" placeholder="# 报告标题&#10;&#10;## 1. 概述&#10;&#10;[填写内容]"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeCreateModal()">取消</button>
+            <button class="btn btn-primary" onclick="submitCreate()">&#x2714; 创建模板</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+var currentCategory = null;
+var currentDetail = null;
+var searchTimer = null;
+
+function apiFetch(url, opts) {
+    var token = localStorage.getItem('token');
+    var headers = opts && opts.headers ? Object.assign({}, opts.headers) : {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var fetchOpts = Object.assign({}, opts, {headers: headers});
+    return fetch(url, fetchOpts);
+}
+
+function toast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast toast-' + (type||'success') + ' show';
+    setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function(){ loadTemplates(); }, 300);
+}
+
+function toggleSbSection(el) {
+    el.parentElement.classList.toggle('collapsed');
+}
+
+/* ===== Simple Markdown → HTML ===== */
+function mdToHtml(md) {
+    if (!md) return '';
+    var html = md
+        // Code blocks (simplified)
+        .replace(/```[\s\S]*?```/g, function(m){return '<pre><code>' + m.slice(3,-3).replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</code></pre>';})
+        // Headers
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        // Horizontal rules
+        .replace(/^---$/gm, '<hr>')
+        // Bold
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Inline code
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Tables
+        .replace(/((?:\|.+\|\n)+)/g, function(tableBlock){
+            var rows = tableBlock.trim().split('\n');
+            if (rows.length < 2) return tableBlock;
+            var isHeader = rows[1].match(/^\|[\s\-:|]+\|$/);
+            var html = '<table><thead>';
+            html += '<tr>' + rows[0].split('|').filter(function(c){return c.trim()}).map(function(c){return '<th>' + c.trim() + '</th>';}).join('') + '</tr>';
+            html += '</thead><tbody>';
+            var startIdx = isHeader ? 2 : 1;
+            for (var i = startIdx; i < rows.length; i++) {
+                if (!rows[i].trim()) continue;
+                html += '<tr>' + rows[i].split('|').filter(function(c){return c.trim()}).map(function(c){return '<td>' + c.trim() + '</td>';}).join('') + '</tr>';
+            }
+            html += '</tbody></table>';
+            return html;
+        })
+        // Blockquote
+        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+        // Unordered list
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        // Paragraphs (lines not already tagged)
+        .replace(/^(?!<[hublop]|<li|<hr|<pre|<code|<\/)(.+)$/gm, '<p>$1</p>')
+        // Merge consecutive blockquotes
+        .replace(/<\/blockquote>\n<blockquote>/g, '\n')
+        // Merge consecutive paragraphs
+        .replace(/<\/p>\n<p>/g, '\n');
+    return html;
+}
+
+/* ===== Load sidebar ===== */
+function loadSidebar() {
+    apiFetch('/api/templates/categories').then(function(r){return r.json();}).then(function(d){
+        if (!d.success) return;
+        var cats = d.categories;
+        var isAdmin = checkAdmin();
+        var html = '<div class="sb-section"><a class="sb-item active" onclick="filterByCategory(null,this)">';
+        html += '<span class="sb-icon">&#x1F4C2;</span> 全部模板';
+        html += '<span class="sb-count">' + cats.reduce(function(s,c){return s+c.template_count;},0) + '</span>';
+        html += '</a></div>';
+
+        cats.forEach(function(cat){
+            html += '<div class="sb-section">';
+            html += '<div class="sb-header" onclick="toggleSbSection(this)">';
+            html += '<span>' + (cat.icon||'&#x1F4C4;') + ' ' + cat.name + '</span>';
+            html += '<span class="sb-arrow">&#x25BC;</span></div>';
+            html += '<ul class="sb-items">';
+            html += '<li><a class="sb-item" onclick="filterByCategory('+cat.id+',this)">';
+            html += '<span class="sb-icon">'+(cat.icon||'&#x1F4C4;')+'</span> '+cat.name;
+            html += '<span class="sb-count">'+cat.template_count+'</span></a></li>';
+            html += '</ul></div>';
+        });
+
+        if (isAdmin) {
+            html += '<div class="sb-admin"><button class="sb-admin-btn" onclick="openCreateModal()">';
+            html += '&#x2795; 新建模板</button></div>';
+        }
+
+        document.getElementById('sidebar').innerHTML = html;
+    });
+}
+
+function checkAdmin() {
+    var user = localStorage.getItem('user');
+    if (!user) return false;
+    try {
+        var u = JSON.parse(user);
+        return u.role === '\u7BA1\u7406\u5458';
+    } catch(e){ return false; }
+}
+
+/* ===== Load templates ===== */
+function loadTemplates() {
+    var q = document.getElementById('searchInput').value.trim();
+    var url = '/api/templates?limit=100';
+    if (currentCategory) url += '&category_id=' + currentCategory;
+    if (q) url += '&search=' + encodeURIComponent(q);
+
+    apiFetch(url).then(function(r){return r.json();}).then(function(d){
+        if (!d.success) return;
+        var grid = document.getElementById('tmplGrid');
+        var empty = document.getElementById('emptyState');
+
+        if (!d.templates.length) {
+            grid.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+
+        var colors = ['#00b4d8','#10b981','#8b5cf6','#f59e0b','#ec4899','#ef4444','#0ea5e9','#6366f1'];
+        grid.innerHTML = d.templates.map(function(t, i){
+            var ci = i % colors.length;
+            var stdTags = '';
+            if (t.standard_refs) {
+                t.standard_refs.split(',').slice(0,3).forEach(function(s){
+                    s = s.trim();
+                    if (s) stdTags += '<span class="tmpl-tag standard">' + s + '</span>';
+                });
+            }
+            return '<div class="tmpl-card" style="--card-accent:'+colors[ci]+'" onclick="openDetail('+t.id+')">'
+                + '<div class="tmpl-card-top">'
+                + '<div class="tmpl-card-icon" style="background:'+colors[ci]+'18;color:'+colors[ci]+'">'+(t.category_icon||'&#x1F4C4;')+'</div>'
+                + '<span class="tmpl-version">v'+(t.version||'1.0')+'</span>'
+                + '</div>'
+                + '<h3>'+esc(t.title)+'</h3>'
+                + '<p>'+esc(t.description||'')+'</p>'
+                + '<div class="tmpl-card-tags">'
+                + '<span class="tmpl-tag">'+esc(t.category_name||'')+'</span>'
+                + stdTags
+                + '</div></div>';
+        }).join('');
+    });
+}
+
+function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+/* ===== Filter ===== */
+function filterByCategory(catId, el) {
+    currentCategory = catId;
+    document.querySelectorAll('.sb-item').forEach(function(e){e.classList.remove('active');});
+    if (el) el.classList.add('active');
+    document.getElementById('sectionTitle').textContent = catId ? '' : '全部模板';
+    loadTemplates();
+    if (catId) {
+        apiFetch('/api/templates/categories/' + catId).then(function(r){return r.json();}).then(function(d){
+            if (d.success) document.getElementById('sectionTitle').textContent = d.category.icon + ' ' + d.category.name;
+        });
+    }
+}
+
+/* ===== Detail ===== */
+function openDetail(id) {
+    apiFetch('/api/templates/' + id).then(function(r){return r.json();}).then(function(d){
+        if (!d.success) { toast('模板不存在','error'); return; }
+        currentDetail = d.template;
+        document.getElementById('detailTitle').textContent = d.template.title;
+        document.getElementById('detailMeta').innerHTML = ''
+            + '<span>&#x1F4C2; ' + esc(d.template.category_name||'未分类') + '</span>'
+            + '<span>&#x1F4CB; v' + esc(d.template.version||'1.0') + '</span>'
+            + (d.template.standard_refs ? '<span>&#x1F4D6; ' + esc(d.template.standard_refs) + '</span>' : '')
+            + '<span>&#x1F554; ' + esc(d.template.updated_at||'') + '</span>';
+        document.getElementById('detailContent').innerHTML = mdToHtml(d.template.content);
+        document.getElementById('detailOverlay').classList.add('show');
+        document.getElementById('detailPanel').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    });
+}
+
+function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('show');
+    document.getElementById('detailPanel').classList.remove('show');
+    document.body.style.overflow = '';
+    currentDetail = null;
+}
+
+function copyTemplate() {
+    if (!currentDetail) return;
+    navigator.clipboard.writeText(currentDetail.content).then(function(){
+        toast('模板内容已复制到剪贴板');
+    }).catch(function(){
+        toast('复制失败','error');
+    });
+}
+
+function downloadTemplate() {
+    if (!currentDetail) return;
+    var blob = new Blob([currentDetail.content], {type:'text/markdown;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (currentDetail.title||'template') + '.md';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('模板已下载');
+}
+
+/* ===== Create Modal ===== */
+function openCreateModal() {
+    apiFetch('/api/templates/categories').then(function(r){return r.json();}).then(function(d){
+        if (!d.success) return;
+        var sel = document.getElementById('newCategory');
+        sel.innerHTML = '<option value="">-- 选择分类 --</option>' + d.categories.map(function(c){
+            return '<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>';
+        }).join('');
+    });
+    document.getElementById('createModal').classList.add('show');
+}
+
+function closeCreateModal() {
+    document.getElementById('createModal').classList.remove('show');
+    ['newTitle','newDesc','newStd','newContent'].forEach(function(id){document.getElementById(id).value='';});
+}
+
+function submitCreate() {
+    var title = document.getElementById('newTitle').value.trim();
+    if (!title) { toast('标题不能为空','error'); return; }
+    apiFetch('/api/templates', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            title: title,
+            category_id: document.getElementById('newCategory').value || null,
+            description: document.getElementById('newDesc').value.trim(),
+            standard_refs: document.getElementById('newStd').value.trim(),
+            content: document.getElementById('newContent').value
+        })
+    }).then(function(r){return r.json();}).then(function(d){
+        if (d.success) {
+            toast('模板创建成功');
+            closeCreateModal();
+            loadSidebar();
+            loadTemplates();
+        } else {
+            toast(d.error||'创建失败','error');
+        }
+    });
+}
+
+/* ===== Keyboard shortcuts ===== */
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+        if (document.getElementById('createModal').classList.contains('show')) { closeCreateModal(); return; }
+        if (document.getElementById('detailPanel').classList.contains('show')) { closeDetail(); return; }
+    }
+});
+
+/* ===== Init ===== */
+loadSidebar();
+loadTemplates();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "6eadd32420226fa3",
+    "username": "admin",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "admin@aerospace-valve.com",
+    "role": "管理员",
+    "real_name": "系统管理员",
+    "department": "系统管理部",
+    "created_at": "2026-05-15T07:24:47.358368",
+    "last_login": "2026-05-27T07:19:02.368537",
+    "is_active": true,
+    "avatar": null
+  },
+  {
+    "id": "8d1eb01d1278a32c",
+    "username": "zzh",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "email": "408458763@qq.com",
+    "role": "访客",
+    "real_name": "zzh",
+    "department": "zzh",
+    "created_at": "2026-05-15T07:29:20.227250",
+    "last_login": "2026-05-15T07:29:25.659991",
+    "is_active": true,
+    "avatar": null
+  }
+]

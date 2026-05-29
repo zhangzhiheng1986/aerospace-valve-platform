@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弹簧设计 - 航空航天阀门研发平台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:#111827;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff88;--text:#e0e7ff;--dim:#6b7fa3;--danger:#ff4757;--warn:#ffa502;--purple:#a855f7}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.header h1{font-size:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .back{color:var(--dim);text-decoration:none;font-size:14px}.header .back:hover{color:var(--accent)}
+.header .sub{margin-left:auto;font-size:10px;color:var(--dim)}
+.main{max-width:1400px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:960px){.main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.card h2{font-size:16px;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:11px;color:var(--dim);font-weight:500}
+.fg input,.fg select{background:#0d1525;border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;transition:border-color .2s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
+.fg .u{font-size:10px;color:var(--dim)}.full{grid-column:1/-1}
+.sec-title{font-size:13px;color:var(--accent2);margin:12px 0 6px;padding-bottom:3px;border-bottom:1px solid rgba(0,255,136,.2)}
+.btn-go{background:linear-gradient(135deg,#0066ff,#00d4ff);color:#fff;border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:transform .1s,box-shadow .2s}
+.btn-go:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,.3)}
+.btn-go:disabled{opacity:.5;cursor:not-allowed}
+.preset-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{background:#1a2540;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .2s}.pbtn:hover{border-color:var(--accent);color:var(--accent)}.pbtn.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.loading{display:none;text-align:center;padding:40px}.loading.show{display:block}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
+.results{display:none}.results.show{display:block}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ri{background:#0d1525;border-radius:6px;padding:8px 10px;border:1px solid rgba(30,58,95,.5)}
+.ri .l{font-size:10px;color:var(--dim)}.ri .v{font-size:16px;font-weight:700;color:var(--accent);margin-top:1px}
+.ri .v.ok{color:var(--accent2)}.ri .v.wn{color:var(--warn)}.ri .v.ng{color:var(--danger)}
+.ri .s{font-size:9px;color:var(--dim)}
+.tabs{display:flex;gap:3px;margin-bottom:12px;flex-wrap:wrap}
+.tb{background:transparent;border:1px solid var(--border);color:var(--dim);padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.tb.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.tc{display:none}.tc.active{display:block}
+.wl{list-style:none;padding:0}
+.wl li{padding:6px 10px;margin:3px 0;background:rgba(255,165,2,.08);border-radius:6px;border-left:3px solid var(--warn);font-size:12px;line-height:1.5}
+.conclusion{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:13px;font-weight:600;color:var(--accent2)}
+.conclusion.has-warn{background:rgba(255,165,2,.08);border-color:rgba(255,165,2,.3);color:var(--warn)}
+.conclusion.has-fail{background:rgba(255,71,87,.08);border-color:rgba(255,71,87,.3);color:var(--danger)}
+
+/* Spring visualization */
+.spring-viz{background:#080c18;border-radius:8px;padding:20px;text-align:center;margin-top:12px;height:200px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.spring-svg{width:100%;height:180px}
+/* Dimension diagram */
+.dim-diagram{background:#080c18;border-radius:8px;padding:16px;margin-top:12px;text-align:center}
+.dim-diagram canvas{max-width:100%}
+
+/* Material card */
+.mat-card{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:12px;margin-top:8px}
+.mat-card h4{color:var(--accent);font-size:13px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/" class="back">&larr; 返回</a>
+<h1>圆柱螺旋压缩弹簧设计</h1>
+<span class="sub">航空航天级 | 迭代求解 | 强度/疲劳/稳定性/共振全检</span>
+</div>
+
+<div class="main">
+<!-- Left: Input -->
+<div>
+<div class="card">
+<h2>⚙️ 设计输入</h2>
+<div class="preset-bar">
+<button class="pbtn active" onclick="loadPreset('valve_return',this)">阀门回位弹簧</button>
+<button class="pbtn" onclick="loadPreset('actuator',this)">作动器弹簧</button>
+<button class="pbtn" onclick="loadPreset('high_temp',this)">高温环境</button>
+<button class="pbtn" onclick="loadPreset('lightweight',this)">轻量化设计</button>
+</div>
+
+<div class="form-grid">
+<div class="fg full"><label>弹簧材料</label>
+<select id="material"><option value="Inconel718">Inconel 718 (镍基高温合金)</option><option value="50CrVA">50CrVA (合金弹簧钢)</option><option value="SWP-A">SWP-A (琴钢丝)</option><option value="TC4">TC4 (钛合金)</option></select></div>
+</div>
+
+<div class="sec-title">载荷参数</div>
+<div class="form-grid">
+<div class="fg"><label>预紧力 F1</label><input type="number" id="F1" value="50" step="1"><span class="u">N</span></div>
+<div class="fg"><label>最大工作载荷 F2</label><input type="number" id="F2" value="150" step="1"><span class="u">N</span></div>
+<div class="fg"><label>行程 / H1高度</label><input type="number" id="L1_or_Stroke" value="8" step="0.5"><span class="u">mm</span></div>
+<div class="fg"><label>输入模式</label>
+<select id="is_stroke"><option value="true">行程 (delta)</option><option value="false">H1 高度</option></select></div>
+</div>
+
+<div class="sec-title">环境与约束</div>
+<div class="form-grid">
+<div class="fg"><label>工作温度</label><input type="number" id="env_temp" value="300" step="10"><span class="u">°C</span></div>
+<div class="fg"><label>目标疲劳寿命</label><input type="number" id="fatigue_life" value="10000000" step="1000000"><span class="u">次</span></div>
+<div class="fg"><label>安装方式</label>
+<select id="support_type"><option value="fixed_both">两端固定</option><option value="fixed_free">一端固定一端自由</option><option value="free_both">两端自由</option></select></div>
+<div class="fg"><label>工作频率 (Hz, 0=不检查)</label><input type="number" id="f_work" value="50" step="5"><span class="u">Hz</span></div>
+</div>
+
+<button class="btn-go" id="btnCalc" onclick="runCalc()">🔧 开始设计计算</button>
+</div>
+</div>
+
+<!-- Right: Results -->
+<div>
+<div class="loading" id="ld"><div class="spinner"></div><p>正在迭代求解...</p></div>
+<div class="results" id="rp">
+
+<div class="card" style="margin-bottom:14px">
+<h2>📐 设计结果</h2>
+<div class="tabs" id="tabBar"></div>
+
+<div id="tc-geo" class="tc active"></div>
+<div id="tc-mech" class="tc"></div>
+<div id="tc-check" class="tc"></div>
+<div id="tc-mat" class="tc"></div>
+</div>
+
+<div class="spring-viz" id="vizBox">
+<svg class="spring-svg" viewBox="0 0 400 160" id="springSvg"></svg>
+</div>
+
+<div class="card" id="warnCard" style="display:none;margin-bottom:14px">
+<h2>⚠️ 设计警告</h2>
+<ul class="wl" id="warnList"></ul>
+</div>
+
+<div id="conclusionBox" class="conclusion"></div>
+</div>
+</div>
+</div>
+
+<script>
+const PRESETS={
+valve_return:{material:'Inconel718',F1:50,F2:150,L1_or_Stroke:8,is_stroke:true,env_temp:300,fatigue_life:10000000,support_type:'fixed_both',f_work:50},
+actuator:{material:'Inconel718',F1:200,F2:500,L1_or_Stroke:12,is_stroke:true,env_temp:250,fatigue_life:5000000,support_type:'fixed_both',f_work:30},
+high_temp:{material:'Inconel718',F1:30,F2:120,L1_or_Stroke:6,is_stroke:true,env_temp:550,fatigue_life:5000000,support_type:'fixed_both',f_work:20},
+lightweight:{material:'TC4',F1:20,F2:60,L1_or_Stroke:5,is_stroke:true,env_temp:150,fatigue_life:10000000,support_type:'fixed_both',f_work:100}
+};
+function loadPreset(name,el){
+document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+el.classList.add('active');
+const p=PRESETS[name];if(!p)return;
+for(const[k,v]of Object.entries(p)){const e=document.getElementById(k);if(e)e.value=v;}
+}
+function rv(l,v,u,cls){return`<div class="ri"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div>${u?`<div class="s">${u}</div>`:''}</div>`}
+function drawSpring(d,D,H0,H2,Hs){
+const svg=document.getElementById('springSvg');
+if(!svg)return;
+const cx=200,cy=130;
+const scale=Math.min(280/D,100/H0);
+const W=D*scale,h0=H0*scale,h2=H2*scale,hs=Hs*scale;
+let s=`<defs><linearGradient id="sg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0066ff"/></linearGradient></defs>`;
+// Ground
+s+=`<line x1="${cx-W/2-20}" y1="${cy}" x2="${cx+W/2+20}" y2="${cy}" stroke="#334" stroke-width="2"/>`;
+for(let i=-3;i<=3;i++)s+=`<line x1="${cx+i*15}" y1="${cy}" x2="${cx+i*15}" y2="${cy+6}" stroke="#334" stroke-width="1"/>`;
+// Spring coils
+const coils=6;
+const coilW=W/(coils);
+const startY=cy-h0;
+s+=`<path d="M${cx-W/2} ${cy}" `;
+for(let i=0;i<=coils*2;i++){
+const x=cx-W/2+i*(W/(coils*2));
+const y=startY+(i%2===0?0:-coilW*0.8);
+s+=i===0?'M':'L';
+s+=`${x} ${y} `;
+}
+s+=`L${cx+W/2} ${cy}" fill="none" stroke="url(#sg)" stroke-width="${Math.max(2,d*scale)}" stroke-linecap="round"/>`;
+// Dimension lines - H0
+s+=`<line x1="${cx+W/2+15}" y1="${cy-h0}" x2="${cx+W/2+35}" y2="${cy-h0}" stroke="#00d4ff" stroke-width="1"/><line x1="${cx+W/2+25}" y1="${cy-h0}" x2="${cx+W/2+25}" y2="${cy}" stroke="#00d4ff" stroke-width="1" stroke-dasharray="3,3"/>`;
+s+=`<text x="${cx+W/2+38}" y="${cy-h0+h0/2}" fill="#00d4ff" font-size="10" text-anchor="start">H0=${H0.toFixed(1)}</text>`;
+// H2
+s+=`<line x1="${cx-W/2-15}" y1="${cy-h2}" x2="${cx-W/2-35}" y2="${cy-h2}" stroke="#ffa502" stroke-width="1"/><line x1="${cx-W/2-25}" y1="${cy-h2}" x2="${cx-W/2-25}" y2="${cy}" stroke="#ffa502" stroke-width="1" stroke-dasharray="3,3"/>`;
+s+=`<text x="${cx-W/2-38}" y="${cy-h2+(h0-h2)/2}" fill="#ffa502" font-size="10" text-anchor="end">H2=${H2.toFixed(1)}</text>`;
+// D dimension
+s+=`<line x1="${cx-W/2}" y1="${cy+10}" x2="${cx+W/2}" y2="${cy+10}" stroke="#a855f7" stroke-width="1"/><line x1="${cx-W/2}" y1="${cy+5}" x2="${cx-W/2}" y2="${cy+15}" stroke="#a855f7" stroke-width="1"/><line x1="${cx+W/2}" y1="${cy+5}" x2="${cx+W/2}" y2="${cy+15}" stroke="#a855f7" stroke-width="1"/>`;
+s+=`<text x="${cx}" y="${cy+26}" fill="#a855f7" font-size="10" text-anchor="middle">D=${D.toFixed(1)} d=${d.toFixed(2)}</text>`;
+svg.innerHTML=s;
+}
+const TABS=[['tc-geo','几何参数'],['tc-mech','力学性能'],['tc-check','安全校核'],['tc-mat','材料信息']];
+function initTabs(){document.getElementById('tabBar').innerHTML=TABS.map(([id,n],i)=>`<button class="tb${i===0?' active':''}" onclick="switchTab('${id}',this)">${n}</button>`).join('')}
+function switchTab(id,btn){document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.tc').forEach(t=>t.classList.toggle('active',t.id===id))}
+function render(data){
+const g=data.geometry,m=data.mechanics,c=data.checks,mass=data.mass,mi=data.material_info;
+// Geometry tab
+document.getElementById('tc-geo').innerHTML='<div class="rg">'+
+rv('线径 d',g.wire_diameter_mm,'mm')+rv('中径 D',g.mean_diameter_mm,'mm')+
+rv('外径 Do',g.outer_diameter_mm,'mm')+rv('内径 Di',g.inner_diameter_mm,'mm')+
+rv('旋绕比 C',g.spring_index_C,'')+rv('有效圈数 n',g.active_coils_n,'')+
+rv('总圈数 nt',g.total_coils_nt,'')+rv('节距 p',g.pitch_p_mm,'mm')+
+rv('螺旋角',g.helix_angle_deg,'°')+rv('展开长度',g.wire_length_mm,'mm')+
+'</div><div style="margin-top:8px"></div><div class="rg">'+
+rv('自由高度 H0',g.free_height_H0_mm,'mm')+rv('工作高度 H1',g.working_height_H1_mm,'mm')+
+rv('最大载荷高度 H2',g.max_load_height_H2_mm,'mm')+rv('压并高度 Hs',g.solid_height_Hs_mm,'mm')+'</div>';
+// Mechanics tab
+document.getElementById('tc-mech').innerHTML='<div class="rg">'+
+rv('刚度 k',m.stiffness_k_Nmm,'N/mm')+rv('变形量 delta1',m.deformation_delta1_mm,'mm')+
+rv('变形量 delta2',m.deformation_delta2_mm,'mm')+rv('最大剪应力',m.max_shear_stress_tau_max_MPa,'MPa')+
+rv('最小剪应力',m.min_shear_stress_tau_min_MPa,'MPa')+rv('Wahl系数 Kw',m.wahl_factor_Kw,'')+
+'</div><div style="margin-top:8px;font-size:11px;color:var(--dim)">'+
+'载荷比 F2/F1='+(data.input_summary.F2/data.input_summary.F1).toFixed(1)+
+' | 行程='+(m.deformation_delta2_mm-m.deformation_delta1_mm).toFixed(2)+' mm</div>';
+// Checks tab
+const sfCls=c.static_safety_factor>=c.static_allowable?'ok':'ng';
+const fatCls=c.fatigue_safety_factor>=1.5?'ok':c.fatigue_safety_factor>=1?'wn':'ng';
+const stabCls=c.stability_ok?'ok':'ng';
+const resCls=c.resonance_ok?'ok':'wn';
+document.getElementById('tc-check').innerHTML='<div class="rg">'+
+rv('静态安全系数 Sf',c.static_safety_factor,'≥'+c.static_allowable,sfCls)+
+rv('疲劳安全系数 Sf_f',c.fatigue_safety_factor,'≥1.5',fatCls)+
+rv('高径比 b',c.slenderness_ratio_b,'<'+c.stability_limit,stabCls)+
+rv('自振频率 fn',c.natural_frequency_Hz,'Hz')+
+rv('共振检查',c.resonance_info,'',resCls)+
+rv('质量',mass.mass_g,'g')+'</div>';
+// Material tab
+document.getElementById('tc-mat').innerHTML=
+'<div class="mat-card"><h4>'+mi.name+'</h4><div class="rg">'+
+rv('切变模量 G',mi.G_MPa,'MPa')+rv('弹性模量 E',mi.E_MPa,'MPa')+
+rv('抗拉屈服极限',mi.tau_s_MPa,'MPa')+rv('疲劳强度极限',mi.tau_0_MPa,'MPa')+
+rv('许用温度',mi.temp_max_C,'°C')+'</div></div>'+
+'<div style="margin-top:8px;font-size:11px;color:var(--dim)">工作温度: '+data.input_summary.env_temp_C+'°C | 疲劳寿命目标: '+(data.input_summary.fatigue_life/1e6).toFixed(0)+'M 次 | 安装方式: '+data.input_summary.support_type+'</div>';
+
+// Draw spring visualization
+drawSpring(g.wire_diameter_mm,g.mean_diameter_mm,g.free_height_H0_mm,g.max_load_height_H2_mm,g.solid_height_Hs_mm);
+
+// Warnings
+const w=data.warnings||[];
+const wc=document.getElementById('warnCard');
+if(w.length){wc.style.display='';document.getElementById('warnList').innerHTML=w.map(x=>`<li>${x}</li>`).join('')}else wc.style.display='none';
+
+// Conclusion
+const cb=document.getElementById('conclusionBox');
+cb.textContent=data.conclusion;
+cb.className='conclusion'+(w.some(x=>x.includes('不足')||x.includes('风险'))?' has-fail':w.length?' has-warn':'');
+}
+async function runCalc(){
+const btn=document.getElementById('btnCalc');const ld=document.getElementById('ld');const rp=document.getElementById('rp');
+btn.disabled=true;ld.classList.add('show');rp.classList.remove('show');
+const body={};
+['F1','F2','L1_or_Stroke','env_temp','fatigue_life','f_work'].forEach(f=>{body[f]=parseFloat(document.getElementById(f).value)||0});
+body.material=document.getElementById('material').value;
+body.is_stroke=document.getElementById('is_stroke').value==='true';
+body.support_type=document.getElementById('support_type').value;
+try{
+const r=await fetch('/api/spring/design',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+const d=await r.json();
+if(d.error){alert('Error: '+d.error)}else{initTabs();render(d);rp.classList.add('show')}
+}catch(e){alert('Request failed: '+e.message)}
+finally{btn.disabled=false;ld.classList.remove('show')}
+}
+initTabs();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dev scripts (route fixers, test scripts)
+backend/add_route.py
+backend/add_route_final.py
+backend/clean_routes.py
+backend/fix_app_route.py
+backend/fix_duplication.py
+backend/fix_route.py
+backend/fix_route_v2.py
+backend/test_api.py
+backend/test_api_simple.py
+
+# Large PDF (optional: keep for deployment if needed)
+# QJ20156-2012.pdf
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Temp files
+*.tmp
+*.log

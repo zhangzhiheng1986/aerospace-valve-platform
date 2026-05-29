@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 航空航天电磁阀研发平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+        }
+        
+        /* 左侧品牌区域 */
+        .brand-section {
+            flex: 1;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .brand-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 10s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .brand-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            color: white;
+        }
+        
+        .brand-logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .brand-title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .brand-subtitle {
+            font-size: 18px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        
+        .feature-list {
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 30px;
+            margin-right: 15px;
+        }
+        
+        .feature-text h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #00d4ff;
+        }
+        
+        .feature-text p {
+            font-size: 13px;
+            color: #aaa;
+        }
+        
+        /* 右侧登录区域 */
+        .login-section {
+            width: 450px;
+            background: #f5f7fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 380px;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .login-header h2 {
+            font-size: 28px;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* 标签页切换 */
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #0099cc;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 表单 */
+        .form-container {
+            display: none;
+        }
+        
+        .form-container.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: #aaa;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .form-footer a {
+            color: #0099cc;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 消息提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .toast-success {
+            background: #00c853;
+        }
+        
+        .toast-error {
+            background: #ff4d4d;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* 默认账户提示 */
+        .default-account {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            border: 1px dashed #00d4ff;
+        }
+        
+        .default-account h4 {
+            font-size: 13px;
+            color: #0099cc;
+            margin-bottom: 8px;
+        }
+        
+        .default-account p {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .default-account code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .brand-section {
+                padding: 30px;
+                min-height: auto;
+            }
+            
+            .brand-logo {
+                font-size: 50px;
+            }
+            
+            .brand-title {
+                font-size: 24px;
+            }
+            
+            .feature-list {
+                display: none;
+            }
+            
+            .login-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧品牌区域 -->
+    <div class="brand-section">
+        <div class="brand-content">
+            <div class="brand-logo">🚀</div>
+            <h1 class="brand-title">航空航天电磁阀研发平台</h1>
+            <p class="brand-subtitle">Aerospace Solenoid Valve R&D Platform</p>
+            
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-icon">⚙️</div>
+                    <div class="feature-text">
+                        <h3>电磁阀优化设计</h3>
+                        <p>基于PSO算法的多参数优化，快速找到最佳设计方案</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔬</div>
+                    <div class="feature-text">
+                        <h3>专业材料数据库</h3>
+                        <p>21种航空航天级材料，智能推荐与绕组计算</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-text">
+                        <h3>可视化数据分析</h3>
+                        <p>实时图表、参数对比、优化结果可视化</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🛡️</div>
+                    <div class="feature-text">
+                        <h3>安全可靠</h3>
+                        <p>JWT认证、角色权限、数据加密存储</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧登录区域 -->
+    <div class="login-section">
+        <div class="login-container">
+            <div class="login-header">
+                <h2>欢迎回来</h2>
+                <p>登录以继续使用平台功能</p>
+            </div>
+            
+            <!-- 标签页 -->
+            <div class="tabs">
+                <div class="tab active" data-tab="login">登录</div>
+                <div class="tab" data-tab="register">注册</div>
+            </div>
+            
+            <!-- 登录表单 -->
+            <div id="loginForm" class="form-container active">
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="loginUsername" placeholder="请输入用户名" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="loginPassword" placeholder="请输入密码" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">登录</button>
+                </form>
+                <div class="form-footer">
+                    <p>还没有账户？<a href="#" onclick="switchTab('register')">立即注册</a></p>
+                </div>
+                
+                <div class="default-account">
+                    <h4>💡 默认账户</h4>
+                    <p>管理员: <code>admin</code> / <code>admin123</code></p>
+                </div>
+            </div>
+            
+            <!-- 注册表单 -->
+            <div id="registerForm" class="form-container">
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="regUsername" placeholder="请输入用户名" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="regPassword" placeholder="请输入密码（至少6位）" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>确认密码</label>
+                        <input type="password" id="regPassword2" placeholder="请再次输入密码" required>
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" id="regEmail" placeholder="请输入邮箱" required>
+                    </div>
+                    <div class="form-group">
+                        <label>真实姓名</label>
+                        <input type="text" id="regRealName" placeholder="请输入真实姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label>部门</label>
+                        <input type="text" id="regDepartment" placeholder="请输入所属部门" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">注册</button>
+                </form>
+                <div class="form-footer">
+                    <p>已有账户？<a href="#" onclick="switchTab('login')">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // API基础路径
+        const API_BASE = '/api';
+        
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                switchTab(tab.dataset.tab);
+            });
+        });
+        
+        function switchTab(tabName) {
+            // 更新标签页样式
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tabName);
+            });
+            
+            // 更新表单显示
+            document.getElementById('loginForm').classList.toggle('active', tabName === 'login');
+            document.getElementById('registerForm').classList.toggle('active', tabName === 'register');
+        }
+        
+        // 处理登录
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 保存token和用户信息
+                    localStorage.setItem('token', data.user.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    showToast('登录成功！', 'success');
+
+                    // 支持redirect参数
+                    const params = new URLSearchParams(window.location.search);
+                    const redirect = params.get('redirect');
+                    setTimeout(() => {
+                        window.location.href = redirect || '/';
+                    }, 800);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('登录失败，请检查网络', 'error');
+            }
+        }
+        
+        // 处理注册
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const password = document.getElementById('regPassword').value;
+            const password2 = document.getElementById('regPassword2').value;
+            
+            // 验证密码
+            if (password !== password2) {
+                showToast('两次密码输入不一致', 'error');
+                return;
+            }
+            
+            const userData = {
+                username: document.getElementById('regUsername').value,
+                password: password,
+                email: document.getElementById('regEmail').value,
+                real_name: document.getElementById('regRealName').value,
+                department: document.getElementById('regDepartment').value,
+                role: '访客'  // 默认角色
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('注册成功！请登录', 'success');
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('loginUsername').value = userData.username;
+                    }, 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('注册失败，请检查网络', 'error');
+            }
+        }
+        
+        // 显示提示消息
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        // 检查是否已登录
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // 验证token有效性
+                fetch(`${API_BASE}/auth/verify`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // 已登录，跳转到主页
+                        window.location.href = '/';
+                    }
+                })
+                .catch(() => {
+                    // token无效，清除
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

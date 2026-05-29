@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  aerospace-platform:
+    build: .
+    container_name: aerospace-valve-platform
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist databases and user data
+      - ./backend/data:/app/backend/data
+      - ./backend/cms.db:/app/backend/cms.db
+      - ./backend/templates.db:/app/backend/templates.db
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - TZ=Asia/Shanghai

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: aerospace-valve-platform
+    repo: https://github.com/zhangzhiheng1986/aerospace-valve-platform
+    branch: master
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn --chdir backend wsgi:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /
+    autoDeploy: true

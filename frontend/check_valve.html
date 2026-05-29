@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单向阀设计 - 航空航天阀门研发平台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:#111827;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff88;--text:#e0e7ff;--dim:#6b7fa3;--danger:#ff4757;--warn:#ffa502;--purple:#a855f7}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.header h1{font-size:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .back{color:var(--dim);text-decoration:none;font-size:14px}
+.header .back:hover{color:var(--accent)}
+.main{max-width:1400px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:960px){.main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.card h2{font-size:16px;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:11px;color:var(--dim);font-weight:500}
+.fg input,.fg select{background:#0d1525;border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px;transition:border-color .2s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
+.fg .u{font-size:10px;color:var(--dim)}
+.full{grid-column:1/-1}
+.sec-title{font-size:13px;color:var(--accent2);margin:12px 0 6px;padding-bottom:3px;border-bottom:1px solid rgba(0,255,136,.2)}
+.btn-go{background:linear-gradient(135deg,#0066ff,#00d4ff);color:#fff;border:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:transform .1s,box-shadow .2s}
+.btn-go:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,.3)}
+.btn-go:disabled{opacity:.5;cursor:not-allowed}
+.preset-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{background:#1a2540;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .2s}
+.pbtn:hover{border-color:var(--accent);color:var(--accent)}
+.pbtn.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.loading{display:none;text-align:center;padding:40px}
+.loading.show{display:block}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.results{display:none}.results.show{display:block}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ri{background:#0d1525;border-radius:6px;padding:8px 10px;border:1px solid rgba(30,58,95,.5)}
+.ri .l{font-size:10px;color:var(--dim)}.ri .v{font-size:16px;font-weight:700;color:var(--accent);margin-top:1px}
+.ri .v.ok{color:var(--accent2)}.ri .v.wn{color:var(--warn)}.ri .v.ng{color:var(--danger)}
+.ri .s{font-size:9px;color:var(--dim)}
+.tabs{display:flex;gap:3px;margin-bottom:12px;flex-wrap:wrap}
+.tb{background:transparent;border:1px solid var(--border);color:var(--dim);padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.tb.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.tc{display:none}.tc.active{display:block}
+.wl{list-style:none;padding:0}
+.wl li{padding:6px 10px;margin:3px 0;background:rgba(255,165,2,.08);border-radius:6px;border-left:3px solid var(--warn);font-size:12px;line-height:1.5}
+.conclusion{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:13px;font-weight:600;color:var(--accent2)}
+.conclusion.has-warn{background:rgba(255,165,2,.08);border-color:rgba(255,165,2,.3);color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/" class="back">&larr; 返回</a>
+<h1>单向阀设计计算</h1>
+<span style="margin-left:auto;font-size:10px;color:var(--dim)">HB 6456-2014 | QJ 1142A-2008</span>
+</div>
+<div class="main">
+<div>
+<div class="card">
+<h2>⚙️ 设计输入</h2>
+<div class="preset-bar">
+<button class="pbtn active" onclick="loadPreset('hydraulic',this)">航空液压</button>
+<button class="pbtn" onclick="loadPreset('gas',this)">航天气体</button>
+<button class="pbtn" onclick="loadPreset('fuel',this)">航空煤油</button>
+<button class="pbtn" onclick="loadPreset('udmh',this)">推进剂</button>
+</div>
+<div class="form-grid">
+<div class="fg full"><label>工作介质</label>
+<select id="medium"><option value="hydraulic_oil">液压油 (MIL-PRF-83282)</option><option value="hydraulic_oil_5606">液压油 (MIL-PRF-5606)</option><option value="skydrol">磷酸酯液压油 (Skydrol)</option><option value="nitrogen">氮气</option><option value="helium">氦气</option><option value="fuel_jet_a">航空煤油 (Jet A-1)</option><option value="udmh">偏二甲肼 (UDMH)</option><option value="n2o4">四氧化二氮 (N₂O₄)</option></select></div>
+<div class="fg"><label>阀门类型</label>
+<select id="valve_type"><option value="poppet_conical">锥阀芯式</option><option value="poppet_ball">球阀芯式</option><option value="poppet_flat">平面阀芯式</option><option value="disc_spring">盘式/簧片式</option><option value="swing">旋启式</option></select></div>
+<div class="fg"><label>密封形式</label>
+<select id="seal_type"><option value="metal_to_metal">金属-金属硬密封</option><option value="soft_seat">软阀座密封</option><option value="elastomer_o_ring">弹性体O形圈</option></select></div>
+<div class="fg"><label>弹簧材料</label>
+<select id="spring_material"><option value="inconel_x750">Inconel X-750</option><option value="inconel_718">Inconel 718</option><option value="mp35n">MP35N</option><option value="elgiloy">Elgiloy</option><option value="ss302">不锈钢 302</option><option value="ss316">不锈钢 316</option></select></div>
+</div>
+<div class="sec-title">工况参数</div>
+<div class="form-grid">
+<div class="fg"><label>额定流量</label><input type="number" id="nominal_flow_rate" value="50" step="1"><span class="u">L/min</span></div>
+<div class="fg"><label>最大流量</label><input type="number" id="max_flow_rate" value="62.5" step="1"><span class="u">L/min</span></div>
+<div class="fg"><label>工作压力</label><input type="number" id="operating_pressure" value="21" step="0.1"><span class="u">MPa</span></div>
+<div class="fg"><label>最大设计压力</label><input type="number" id="max_pressure" value="31.5" step="0.1"><span class="u">MPa</span></div>
+<div class="fg"><label>开启压力</label><input type="number" id="cracking_pressure" value="0.3" step="0.01"><span class="u">MPa</span></div>
+<div class="fg"><label>最大允许压降</label><input type="number" id="max_pressure_drop" value="0.05" step="0.01"><span class="u">MPa</span></div>
+<div class="fg"><label>最大反向泄漏</label><input type="number" id="max_reverse_leakage" value="0.25" step="0.01"><span class="u">cm³/min</span></div>
+<div class="fg"><label>响应时间要求</label><input type="number" id="response_time" value="10" step="1"><span class="u">ms</span></div>
+<div class="fg"><label>最低温度</label><input type="number" id="min_temperature" value="-55" step="1"><span class="u">°C</span></div>
+<div class="fg"><label>最高温度</label><input type="number" id="max_temperature" value="135" step="1"><span class="u">°C</span></div>
+</div>
+<div class="sec-title">安装约束</div>
+<div class="form-grid">
+<div class="fg"><label>包络直径</label><input type="number" id="max_envelope_diameter" value="45" step="1"><span class="u">mm</span></div>
+<div class="fg"><label>包络长度</label><input type="number" id="max_envelope_length" value="90" step="1"><span class="u">mm</span></div>
+<div class="fg"><label>入口端口直径</label><input type="number" id="inlet_port_diameter" value="10" step="1"><span class="u">mm</span></div>
+<div class="fg"><label>出口端口直径</label><input type="number" id="outlet_port_diameter" value="10" step="1"><span class="u">mm</span></div>
+<div class="fg"><label>屈服安全系数</label><input type="number" id="sf_yield" value="1.5" step="0.1"></div>
+<div class="fg"><label>疲劳安全系数</label><input type="number" id="sf_fatigue" value="1.5" step="0.1"></div>
+</div>
+<button class="btn-go" id="btnCalc" onclick="runCalc()">🚀 开始设计计算</button>
+</div>
+</div>
+<div>
+<div class="loading" id="ld"><div class="spinner"></div><p>正在计算...</p></div>
+<div class="results" id="rp">
+<div class="card" style="margin-bottom:14px">
+<h2>📊 设计结果</h2>
+<div class="tabs" id="tabBar"></div>
+<div id="tc-seat" class="tc active"></div>
+<div id="tc-spring" class="tc"></div>
+<div id="tc-seal" class="tc"></div>
+<div id="tc-flow" class="tc"></div>
+<div id="tc-body" class="tc"></div>
+<div id="tc-dynamic" class="tc"></div>
+</div>
+<div class="card" id="warnCard" style="display:none;margin-bottom:14px">
+<h2>⚠️ 设计警告</h2>
+<ul class="wl" id="warnList"></ul>
+</div>
+<div id="conclusionBox" class="conclusion"></div>
+</div>
+</div>
+</div>
+<script>
+const PRESETS={
+hydraulic:{medium:'hydraulic_oil',valve_type:'poppet_conical',seal_type:'metal_to_metal',spring_material:'inconel_x750',nominal_flow_rate:50,max_flow_rate:62.5,operating_pressure:21,max_pressure:31.5,cracking_pressure:0.3,max_pressure_drop:0.05,max_reverse_leakage:0.25,response_time:10,min_temperature:-55,max_temperature:135,max_envelope_diameter:45,max_envelope_length:90,inlet_port_diameter:10,outlet_port_diameter:10,sf_yield:1.5,sf_fatigue:1.5},
+gas:{medium:'nitrogen',valve_type:'poppet_conical',seal_type:'soft_seat',spring_material:'mp35n',nominal_flow_rate:20,max_flow_rate:30,operating_pressure:5,max_pressure:10,cracking_pressure:0.1,max_pressure_drop:0.01,max_reverse_leakage:0.001,response_time:5,min_temperature:-55,max_temperature:135,max_envelope_diameter:30,max_envelope_length:70,inlet_port_diameter:6,outlet_port_diameter:6,sf_yield:1.5,sf_fatigue:1.5},
+fuel:{medium:'fuel_jet_a',valve_type:'poppet_conical',seal_type:'soft_seat',spring_material:'inconel_718',nominal_flow_rate:100,max_flow_rate:150,operating_pressure:10,max_pressure:15,cracking_pressure:0.2,max_pressure_drop:0.03,max_reverse_leakage:0.5,response_time:8,min_temperature:-40,max_temperature:120,max_envelope_diameter:50,max_envelope_length:100,inlet_port_diameter:12,outlet_port_diameter:12,sf_yield:1.5,sf_fatigue:1.5},
+udmh:{medium:'udmh',valve_type:'poppet_conical',seal_type:'metal_to_metal',spring_material:'inconel_x750',nominal_flow_rate:80,max_flow_rate:100,operating_pressure:15,max_pressure:22.5,cracking_pressure:0.15,max_pressure_drop:0.04,max_reverse_leakage:0.1,response_time:6,min_temperature:-30,max_temperature:80,max_envelope_diameter:40,max_envelope_length:85,inlet_port_diameter:10,outlet_port_diameter:10,sf_yield:2.0,sf_fatigue:1.8}
+};
+function loadPreset(name,el){
+document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+el.classList.add('active');
+const p=PRESETS[name];if(!p)return;
+for(const[k,v]of Object.entries(p)){const e=document.getElementById(k);if(e)e.value=v;}
+}
+const TABS=[['tc-seat','阀座/节流孔'],['tc-spring','弹簧设计'],['tc-seal','密封性能'],['tc-flow','流动分析'],['tc-body','阀体结构'],['tc-dynamic','动态特性']];
+function initTabs(){
+document.getElementById('tabBar').innerHTML=TABS.map(([id,n],i)=>`<button class="tb${i===0?' active':''}" onclick="switchTab('${id}',this)">${n}</button>`).join('');
+}
+function switchTab(id,btn){
+document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+document.querySelectorAll('.tc').forEach(t=>t.classList.toggle('active',t.id===id));
+}
+function rv(l,v,u,cls){return `<div class="ri"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div>${u?`<div class="s">${u}</div>`:''}</div>`}
+function render(data){
+const s=data.seat,sp=data.spring,sgeo=sp.geometry,sperf=sp.performance,sl=data.seal,fl=data.flow,bd=data.body,dy=data.dynamic;
+document.getElementById('tc-seat').innerHTML='<div class="rg">'+
+rv('阀孔直径',s.orifice_diameter,'mm')+rv('阀孔面积',s.orifice_area,'mm²')+
+rv('密封面直径',s.seat_diameter,'mm')+rv('密封面宽度',s.seat_width,'mm')+
+rv('密封面积',s.seat_area,'mm²')+rv('阀座锥角',s.seat_angle,'°')+
+(s.poppet_cone_angle?rv('阀芯锥角',s.poppet_cone_angle,'°'):'')+
+(s.ball_diameter?rv('球直径',s.ball_diameter,'mm'):'')+'</div>';
+document.getElementById('tc-spring').innerHTML='<div class="sec-title" style="margin:0 0 8px;color:var(--accent)">几何参数</div><div class="rg">'+
+rv('丝径 d',sgeo.wire_diameter,'mm')+rv('中径 D2',sgeo.mean_coil_diameter,'mm')+
+rv('外径 D',sgeo.outer_diameter,'mm')+rv('内径 D1',sgeo.inner_diameter,'mm')+
+rv('旋绕比 C',sgeo.spring_index,'')+rv('有效圈数',sgeo.active_coils,'')+
+rv('总圈数',sgeo.total_coils,'')+rv('自由长度 H0',sgeo.free_length,'mm')+
+rv('压并长度',sgeo.solid_length,'mm')+rv('节距',sgeo.pitch,'mm')+
+rv('螺旋升角',sgeo.helix_angle,'°')+rv('展开长度',sgeo.material_length,'mm')+
+'</div><div class="sec-title">性能参数</div><div class="rg">'+
+rv('刚度 k',sperf.stiffness,'N/mm')+rv('最大载荷',sperf.max_load,'N')+
+rv('最大应力',sperf.max_stress,'MPa')+rv('许用应力',sperf.allowable_stress,'MPa')+
+rv('最大变形',sperf.max_deformation,'mm')+rv('开启变形',sperf.deformation_at_cracking,'mm')+
+rv('固有频率',sperf.natural_frequency,'Hz')+rv('疲劳安全系数',sperf.fatigue_safety_factor,'')+
+rv('长径比',sperf.buckling_ratio,'')+rv('稳定性',sperf.is_buckling_safe?'✓ 通过':'✗ 不通过','',sperf.is_buckling_safe?'ok':'ng')+
+'</div><div style="font-size:11px;color:var(--dim);margin-top:6px">弹簧材料: '+sp.material_name+'</div>';
+const sealCls=sl.seal_ok?'ok':'ng';
+document.getElementById('tc-seal').innerHTML='<div class="rg">'+
+rv('密封比压 q',sl.specific_pressure,'MPa')+rv('必需密封比压 qb',sl.required_qb,'MPa')+
+rv('许用密封比压 [q]',sl.allowable_q,'MPa')+rv('密封裕度',sl.margin,'%')+
+rv('弹簧密封力',sl.spring_force,'N')+rv('介质压力密封力',sl.pressure_force,'N')+
+rv('总密封力',sl.total_force,'N')+rv('估算泄漏率',sl.leakage_estimated,'cm³/min')+
+rv('密封状态',sl.seal_ok?'✓ 合格':'✗ 不足','',sealCls)+'</div>';
+const cavCls=fl.cavitation_risk.includes('严重')?'ng':fl.cavitation_risk.includes('中度')?'wn':'ok';
+document.getElementById('tc-flow').innerHTML='<div class="rg">'+
+rv('Cv值',fl.cv,'')+rv('流量系数 Cd',fl.Cd,'')+
+rv('雷诺数 Re',fl.Re,'')+rv('额定压降',fl.pd_nominal,'MPa')+
+rv('最大压降',fl.pd_max,'MPa')+rv('阀口流速',fl.vel_orifice,'m/s')+
+rv('管路流速',fl.vel_pipe,'m/s')+rv('气蚀指数',fl.cavitation_index,'')+
+rv('气蚀风险',fl.cavitation_risk,'',cavCls)+'</div>';
+const smCls=bd.stress_margin>=10?'ok':bd.stress_margin>0?'wn':'ng';
+document.getElementById('tc-body').innerHTML='<div class="rg">'+
+rv('阀体材料',bd.material_name,'')+rv('外径',bd.outer_diameter,'mm')+
+rv('总长',bd.length,'mm')+rv('壁厚',bd.wall_thickness,'mm')+
+rv('计算应力',bd.calc_stress,'MPa')+rv('许用应力',bd.allowable_stress,'MPa')+
+rv('应力裕度',bd.stress_margin,'%',smCls)+'</div>';
+const rtCls=dy.response_time_ms<=data.input.response_time?'ok':'wn';
+document.getElementById('tc-dynamic').innerHTML='<div class="rg">'+
+rv('阀芯运动质量',dy.moving_mass_kg,'kg')+rv('响应时间',dy.response_time_ms,'ms',rtCls)+
+rv('阀芯固有频率',dy.valve_natural_freq,'Hz')+rv('弹簧固有频率',dy.spring_natural_freq,'Hz')+
+rv('估算总质量',dy.estimated_total_mass_kg,'kg')+'</div>';
+const w=data.warnings||[];
+const wc=document.getElementById('warnCard');
+if(w.length){wc.style.display='';document.getElementById('warnList').innerHTML=w.map(x=>`<li>${x}</li>`).join('')}else{wc.style.display='none'}
+const cb=document.getElementById('conclusionBox');
+cb.textContent=data.conclusion;
+cb.className='conclusion'+(w.length?' has-warn':'');
+}
+async function runCalc(){
+const btn=document.getElementById('btnCalc');
+const ld=document.getElementById('ld');
+const rp=document.getElementById('rp');
+btn.disabled=true;ld.classList.add('show');rp.classList.remove('show');
+const fields=['medium','valve_type','seal_type','spring_material','nominal_flow_rate','max_flow_rate','operating_pressure','max_pressure','cracking_pressure','max_pressure_drop','max_reverse_leakage','response_time','min_temperature','max_temperature','max_envelope_diameter','max_envelope_length','inlet_port_diameter','outlet_port_diameter'];
+const body={};
+fields.forEach(f=>{const e=document.getElementById(f);if(e)body[f]=e.type==='number'?parseFloat(e.value):e.value});
+body.safety_factor_yield=parseFloat(document.getElementById('sf_yield').value);
+body.safety_factor_fatigue=parseFloat(document.getElementById('sf_fatigue').value);
+try{
+const r=await fetch('/api/check_valve/design',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+const d=await r.json();
+if(d.error){alert('设计失败: '+d.error)}else{initTabs();render(d);rp.classList.add('show')}
+}catch(e){alert('请求失败: '+e.message)}
+finally{btn.disabled=false;ld.classList.remove('show')}
+}
+initTabs();
+</script>
+</body>
+</html>

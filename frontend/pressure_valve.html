@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>减压阀设计 - 航空航天阀门研发平台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:#111827;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff88;--text:#e0e7ff;--dim:#6b7fa3;--danger:#ff4757;--warn:#ffa502}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.header h1{font-size:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .back{color:var(--dim);text-decoration:none;font-size:14px}
+.header .back:hover{color:var(--accent)}
+.main{max-width:1400px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:960px){.main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.card h2{font-size:17px;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;color:var(--dim);font-weight:500}
+.form-group input,.form-group select{background:#0d1525;border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:14px;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent)}
+.form-group .unit{font-size:11px;color:var(--dim)}
+.full-width{grid-column:1/-1}
+.btn-primary{background:linear-gradient(135deg,#0066ff,#00d4ff);color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:transform .1s,box-shadow .2s;width:100%;margin-top:12px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,.3)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.section-title{font-size:14px;color:var(--accent2);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(0,255,136,.2)}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.result-item{background:#0d1525;border-radius:6px;padding:10px 12px;border:1px solid rgba(30,58,95,.5)}
+.result-item .label{font-size:11px;color:var(--dim)}
+.result-item .value{font-size:18px;font-weight:700;color:var(--accent);margin-top:2px}
+.result-item .value.good{color:var(--accent2)}
+.result-item .value.warn{color:var(--warn)}
+.result-item .value.danger{color:var(--danger)}
+.result-item .sub{font-size:10px;color:var(--dim);margin-top:2px}
+.suggestion-list{list-style:none;padding:0}
+.suggestion-list li{padding:8px 12px;margin:4px 0;background:#0d1525;border-radius:6px;border-left:3px solid var(--accent2);font-size:13px;line-height:1.5}
+.warning-list{list-style:none;padding:0}
+.warning-list li{padding:8px 12px;margin:4px 0;background:rgba(255,71,87,.1);border-radius:6px;border-left:3px solid var(--danger);font-size:13px;line-height:1.5}
+.sensitivity-bar{display:flex;align-items:center;gap:8px;margin:4px 0}
+.sensitivity-bar .name{font-size:12px;color:var(--dim);width:100px;text-align:right}
+.sensitivity-bar .bar{flex:1;height:8px;background:#1a2540;border-radius:4px;overflow:hidden}
+.sensitivity-bar .bar-fill{height:100%;border-radius:4px;transition:width .5s}
+.sensitivity-bar .pct{font-size:11px;color:var(--dim);width:40px}
+.preset-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.preset-btn{background:#1a2540;border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.preset-btn:hover{border-color:var(--accent);color:var(--accent)}
+.preset-btn.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.loading{display:none;text-align:center;padding:40px}
+.loading.show{display:block}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.results-panel{display:none}
+.results-panel.show{display:block}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px}
+.tab-btn{background:transparent;border:1px solid var(--border);color:var(--dim);padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/" class="back">&larr; &#x8FD4;&#x56DE;&#x4E3B;&#x754C;&#x9762;</a>
+<h1>&#x51CF;&#x538B;&#x9600;&#x8BBE;&#x8BA1;&#x8BA1;&#x7B97;</h1>
+</div>
+<div class="main">
+<div>
+<div class="card">
+<h2>&#x2699;&#xFE0F; &#x8F93;&#x5165;&#x53C2;&#x6570;</h2>
+<div class="preset-bar">
+<button class="preset-btn active" onclick="loadPreset('rocket_kerosene')">&#x706B;&#x7BAD;&#x7164;&#x6CB9;</button>
+<button class="preset-btn" onclick="loadPreset('satellite_helium')">&#x536B;&#x661F;&#x6C26;&#x6C14;</button>
+<button class="preset-btn" onclick="loadPreset('lox_valve')">&#x6DB2;&#x6C27;&#x4F4E;&#x6E29;</button>
+<button class="preset-btn" onclick="loadPreset('custom')">&#x81EA;&#x5B9A;&#x4E49;</button>
+</div>
+<div class="form-grid">
+<div class="form-group full-width">
+<label>&#x6D41;&#x4F53;&#x4ECB;&#x8D28;</label>
+<select id="fluid_type">
+<option value="kerosene">RP-1/RP-2 &#x822A;&#x7A7A;&#x7164;&#x6CB9;</option>
+<option value="nitrogen">&#x6C2E;&#x6C14; (GN2)</option>
+<option value="helium">&#x6C26;&#x6C14; (GHe)</option>
+<option value="oxygen">&#x6DB2;&#x6C27; (LOX)/&#x6C14;&#x6C27; (GOX)</option>
+<option value="hydrogen">&#x6DB2;&#x6C22; (LH2)/&#x6C14;&#x6C22; (GH2)</option>
+</select>
+</div>
+<div class="form-group">
+<label>&#x5165;&#x53E3;&#x538B;&#x529B;</label>
+<input type="number" id="inlet_pressure" value="28" step="0.1" min="0.1">
+<span class="unit">MPa</span>
+</div>
+<div class="form-group">
+<label>&#x51FA;&#x53E3;&#x538B;&#x529B;(&#x8BBE;&#x5B9A;&#x538B;&#x529B;)</label>
+<input type="number" id="outlet_pressure" value="7" step="0.1" min="0.1">
+<span class="unit">MPa</span>
+</div>
+<div class="form-group">
+<label>&#x6700;&#x5C0F;&#x5165;&#x53E3;&#x538B;&#x529B;</label>
+<input type="number" id="min_inlet_pressure" value="5" step="0.1">
+<span class="unit">MPa</span>
+</div>
+<div class="form-group">
+<label>&#x989D;&#x5B9A;&#x6D41;&#x91CF;</label>
+<input type="number" id="flow_rate" value="800" step="10">
+<span class="unit">L/min</span>
+</div>
+<div class="form-group">
+<label>&#x6D41;&#x4F53;&#x6E29;&#x5EA6;</label>
+<input type="number" id="fluid_temperature" value="300" step="1">
+<span class="unit">K</span>
+</div>
+<div class="form-group">
+<label>&#x8C03;&#x538B;&#x7CBE;&#x5EA6;</label>
+<input type="number" id="regulation_accuracy" value="0.5" step="0.1">
+<span class="unit">%</span>
+</div>
+<div class="form-group">
+<label>&#x7A33;&#x5B9A;&#x5E26;&#x5BBD;</label>
+<input type="number" id="stability_band" value="0.15" step="0.01">
+<span class="unit">MPa</span>
+</div>
+<div class="form-group">
+<label>&#x54CD;&#x5E94;&#x65F6;&#x95F4;</label>
+<input type="number" id="response_time" value="0.05" step="0.01">
+<span class="unit">s</span>
+</div>
+<div class="form-group">
+<label>&#x632F;&#x52A8;&#x7B49;&#x7EA7;</label>
+<input type="number" id="vibration_level" value="15" step="1">
+<span class="unit">g</span>
+</div>
+</div>
+<div class="section-title">&#x5305;&#x7EDC;&#x4E0E;&#x8D28;&#x91CF;&#x7EA6;&#x675F;</div>
+<div class="form-grid">
+<div class="form-group">
+<label>&#x6700;&#x5927;&#x5305;&#x7EDC;&#x76F4;&#x5F84;</label>
+<input type="number" id="max_envelope_diameter" value="90" step="1">
+<span class="unit">mm</span>
+</div>
+<div class="form-group">
+<label>&#x6700;&#x5927;&#x5305;&#x7EDC;&#x957F;&#x5EA6;</label>
+<input type="number" id="max_envelope_length" value="160" step="1">
+<span class="unit">mm</span>
+</div>
+<div class="form-group">
+<label>&#x8D28;&#x91CF;&#x9650;&#x5236;</label>
+<input type="number" id="mass_limit" value="1.8" step="0.1">
+<span class="unit">kg</span>
+</div>
+<div class="form-group">
+<label>&#x8BBE;&#x8BA1;&#x5BFF;&#x547D;</label>
+<input type="number" id="design_life" value="5000" step="100">
+<span class="unit">cycles</span>
+</div>
+<div class="form-group">
+<label>&#x53EF;&#x9760;&#x6027;&#x76EE;&#x6807;</label>
+<input type="number" id="reliability_target" value="0.999" step="0.001" min="0.9">
+<span class="unit">R</span>
+</div>
+<div class="form-group">
+<label>&#x6E29;&#x5EA6;&#x8303;&#x56F4;&#xFF08;&#x4F4E;&#xFF09;</label>
+<input type="number" id="temp_range_low" value="233" step="1">
+<span class="unit">K</span>
+</div>
+<div class="form-group">
+<label>&#x6E29;&#x5EA6;&#x8303;&#x56F4;&#xFF08;&#x9AD8;&#xFF09;</label>
+<input type="number" id="temp_range_high" value="350" step="1">
+<span class="unit">K</span>
+</div>
+</div>
+<button class="btn-primary" id="calcBtn" onclick="runCalculation()">&#x1F680; &#x5F00;&#x59CB;&#x8BBE;&#x8BA1;&#x8BA1;&#x7B97;</button>
+</div>
+</div>
+<div>
+<div class="loading" id="loading">
+<div class="spinner"></div>
+<p>&#x6B63;&#x5728;&#x8BA1;&#x7B97;...</p>
+</div>
+<div class="results-panel" id="resultsPanel">
+<div class="card" style="margin-bottom:16px">
+<h2>&#x1F4CA; &#x8BBE;&#x8BA1;&#x7ED3;&#x679C;</h2>
+<div class="tab-bar">
+<button class="tab-btn active" onclick="switchTab('tab-geometry')">&#x51E0;&#x4F55;&#x53C2;&#x6570;</button>
+<button class="tab-btn" onclick="switchTab('tab-spring')">&#x5F39;&#x7C27;&#x8BBE;&#x8BA1;</button>
+<button class="tab-btn" onclick="switchTab('tab-performance')">&#x6027;&#x80FD;&#x53C2;&#x6570;</button>
+<button class="tab-btn" onclick="switchTab('tab-strength')">&#x5F3A;&#x5EA6;&#x4E0E;&#x53EF;&#x9760;&#x6027;</button>
+</div>
+<div id="tab-geometry" class="tab-content active">
+<div class="result-grid" id="geoResults"></div>
+</div>
+<div id="tab-spring" class="tab-content">
+<div class="result-grid" id="springResults"></div>
+</div>
+<div id="tab-performance" class="tab-content">
+<div class="result-grid" id="perfResults"></div>
+</div>
+<div id="tab-strength" class="tab-content">
+<div class="result-grid" id="strengthResults"></div>
+<div style="margin-top:16px">
+<div class="section-title">&#x654F;&#x611F;&#x6027;&#x56E0;&#x5B50;</div>
+<div id="sensitivityBars"></div>
+</div>
+</div>
+</div>
+<div class="card" id="materialsCard" style="margin-bottom:16px">
+<h2>&#x1F9EA; &#x63A8;&#x8350;&#x6750;&#x6599;</h2>
+<div class="result-grid" id="materialResults"></div>
+</div>
+<div class="card" id="suggestionsCard" style="margin-bottom:16px">
+<h2>&#x1F4A1; &#x4F18;&#x5316;&#x5EFA;&#x8BAE;</h2>
+<ul class="suggestion-list" id="suggestionList"></ul>
+</div>
+<div class="card" id="warningsCard" style="margin-bottom:16px;display:none">
+<h2>&#x26A0;&#xFE0F; &#x8B66;&#x544A;</h2>
+<ul class="warning-list" id="warningList"></ul>
+</div>
+</div>
+</div>
+</div>
+<script>
+const PRESETS={
+rocket_kerosene:{fluid_type:'kerosene',inlet_pressure:28,outlet_pressure:7,min_inlet_pressure:5,flow_rate:800,fluid_temperature:300,regulation_accuracy:0.5,stability_band:0.15,response_time:0.05,vibration_level:15,max_envelope_diameter:90,max_envelope_length:160,mass_limit:1.8,design_life:5000,reliability_target:0.999,temp_range_low:233,temp_range_high:350},
+satellite_helium:{fluid_type:'helium',inlet_pressure:35,outlet_pressure:1.5,min_inlet_pressure:2,flow_rate:200,fluid_temperature:290,regulation_accuracy:1.0,stability_band:0.05,response_time:0.03,vibration_level:12,max_envelope_diameter:70,max_envelope_length:120,mass_limit:0.8,design_life:10000,reliability_target:0.9999,temp_range_low:270,temp_range_high:320},
+lox_valve:{fluid_type:'oxygen',inlet_pressure:12,outlet_pressure:3,min_inlet_pressure:2.5,flow_rate:350,fluid_temperature:90,regulation_accuracy:0.8,stability_band:0.1,response_time:0.08,vibration_level:20,max_envelope_diameter:85,max_envelope_length:150,mass_limit:1.2,design_life:3000,reliability_target:0.998,temp_range_low:80,temp_range_high:320}
+};
+function loadPreset(name){
+document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+event.target.classList.add('active');
+if(name==='custom')return;
+const p=PRESETS[name];if(!p)return;
+for(const[key,val]of Object.entries(p)){
+const el=document.getElementById(key);
+if(el)el.value=val;
+}
+}
+function switchTab(id){
+document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+b.classList.toggle('active',b.getAttribute('onclick').includes(id));
+});
+document.querySelectorAll('.tab-content').forEach(t=>{
+t.classList.toggle('active',t.id===id);
+});
+}
+function rv(label,value,unit,cls){
+return `<div class="result-item"><div class="label">${label}</div><div class="value ${cls||''}">${value}</div>${unit?`<div class="sub">${unit}</div>`:''}</div>`;
+}
+function renderResult(data){
+const g=data.geometry,s=data.spring,p=data.performance,st=data.strength,r=data.reliability,m=data.materials;
+document.getElementById('geoResults').innerHTML=
+rv('&#x9600;&#x53E3;&#x76F4;&#x5F84;',g.orifice_diameter,'mm')+
+rv('&#x6700;&#x5927;&#x5347;&#x7A0B;',g.max_lift,'mm')+
+rv('&#x9600;&#x5EA7;&#x9525;&#x89D2;',g.seat_angle,'&#x00B0;')+
+rv('&#x6D41;&#x901A;&#x9762;&#x79EF;',g.flow_area,'mm&#x00B2;')+
+rv('&#x654F;&#x611F;&#x5143;&#x4EF6;&#x76F4;&#x5F84;',g.sensor_diameter,'mm')+
+rv('&#x6709;&#x6548;&#x9762;&#x79EF;',g.sensor_effective_area,'mm&#x00B2;')+
+rv('&#x819C;&#x7247;&#x539A;&#x5EA6;',g.sensor_thickness,'mm');
+document.getElementById('springResults').innerHTML=
+rv('&#x5F39;&#x7C27;&#x521A;&#x5EA6;',s.stiffness,'N/mm')+
+rv('&#x9884;&#x7D27;&#x529B;',s.preload,'N')+
+rv('&#x4E1D;&#x5F84;',s.wire_diameter,'mm')+
+rv('&#x4E2D;&#x5F84;',s.coil_diameter,'mm')+
+rv('&#x6709;&#x6548;&#x5708;&#x6570;',s.active_coils,'')+
+rv('&#x81EA;&#x7531;&#x957F;&#x5EA6;',s.free_length,'mm')+
+rv('&#x526A;&#x5207;&#x5E94;&#x529B;',s.shear_stress,'MPa')+
+rv('&#x5141;&#x8BB8;&#x5E94;&#x529B;',s.allowable_stress,'MPa');
+document.getElementById('perfResults').innerHTML=
+rv('&#x6D41;&#x91CF;&#x7CFB;&#x6570; Cv',p.flow_coefficient_Cv,'')+
+rv('&#x538B;&#x529B;&#x635F;&#x5931;',p.pressure_drop,'MPa')+
+rv('&#x5185;&#x6CC4;&#x6F0F;&#x91CF;',p.internal_leakage,'L/min')+
+rv('&#x56FA;&#x6709;&#x9891;&#x7387;',p.natural_frequency,'Hz')+
+rv('&#x6D41;&#x52A8;&#x529B;',p.flow_force,'N(&#x4F18;&#x5316;&#x540E;)')+
+rv('&#x54CD;&#x5E94;&#x65F6;&#x95F4;',p.response_time,'s');
+const sf=st.safety_factor;
+const sfCls=sf>=2?'good':sf>=1.5?'warn':'danger';
+const massCls=st.mass<=data.input.mass_limit?'good':'warn';
+document.getElementById('strengthResults').innerHTML=
+rv('&#x6700;&#x5927;&#x5E94;&#x529B;',st.max_stress,'MPa')+
+rv('&#x5B89;&#x5168;&#x7CFB;&#x6570;',st.safety_factor,'',sfCls)+
+rv('&#x75B2;&#x52B3;&#x5BFF;&#x547D;',st.fatigue_life,'cycles')+
+rv('&#x4F30;&#x7B97;&#x8D28;&#x91CF;',st.mass,'kg',massCls)+
+rv('&#x53EF;&#x9760;&#x6027;&#x6307;&#x6807; &#x03B2;',r.reliability_index,'');
+let sensHtml='';
+const colors=['#00d4ff','#00ff88','#ff6b6b','#ffa502','#a855f7','#22d3ee'];
+const factors=Object.entries(r.sensitivity_factors).sort((a,b)=>b[1]-a[1]);
+factors.forEach(([k,v],i)=>{
+const c=colors[i%colors.length];
+sensHtml+=`<div class="sensitivity-bar"><span class="name">${k.replace(/_/g,' ')}</span><div class="bar"><div class="bar-fill" style="width:${v}%;background:${c}"></div></div><span class="pct">${v}%</span></div>`;
+});
+document.getElementById('sensitivityBars').innerHTML=sensHtml;
+document.getElementById('materialResults').innerHTML=
+rv('&#x9600;&#x4F53;&#x6750;&#x6599;',m.body+' ('+m.body_cn+')')+
+rv('&#x5F39;&#x7C27;&#x6750;&#x6599;',m.spring+' ('+m.spring_cn+')')+
+rv('&#x819C;&#x7247;&#x6750;&#x6599;',m.diaphragm+' ('+m.diaphragm_cn+')');
+let sugHtml='';
+(data.suggestions||[]).forEach(s=>{sugHtml+=`<li>${s}</li>`});
+document.getElementById('suggestionList').innerHTML=sugHtml||'<li>&#x65E0;&#x7279;&#x6B8A;&#x5EFA;&#x8BAE;</li>';
+const warns=data.warnings||[];
+const warnCard=document.getElementById('warningsCard');
+if(warns.length){
+warnCard.style.display='';
+let wHtml='';warns.forEach(w=>{wHtml+=`<li>${w}</li>`});
+document.getElementById('warningList').innerHTML=wHtml;
+}else{warnCard.style.display='none'}
+}
+async function runCalculation(){
+const btn=document.getElementById('calcBtn');
+const loading=document.getElementById('loading');
+const panel=document.getElementById('resultsPanel');
+btn.disabled=true;
+loading.classList.add('show');
+panel.classList.remove('show');
+const body={};
+const fields=['fluid_type','inlet_pressure','outlet_pressure','min_inlet_pressure','flow_rate','fluid_temperature','regulation_accuracy','stability_band','response_time','vibration_level','max_envelope_diameter','max_envelope_length','mass_limit','design_life','reliability_target'];
+fields.forEach(f=>{
+const el=document.getElementById(f);
+if(el){
+body[f]=el.type==='number'?parseFloat(el.value):el.value;
+}
+});
+body.temperature_range_low=parseFloat(document.getElementById('temp_range_low').value);
+body.temperature_range_high=parseFloat(document.getElementById('temp_range_high').value);
+try{
+const resp=await fetch('/api/pressure_valve/design',{
+method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify(body)
+});
+if(!resp.ok)throw new Error('HTTP '+resp.status);
+const data=await resp.json();
+renderResult(data);
+panel.classList.add('show');
+}catch(e){
+alert('\u8BA1\u7B97\u5931\u8D25: '+e.message);
+}finally{
+btn.disabled=false;
+loading.classList.remove('show');
+}
+}
+</script>
+</body>
+</html>

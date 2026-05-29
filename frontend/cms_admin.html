@@ -1,0 +1,522 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMS 内容管理 - 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg: #0f1923; --card-bg: #1a2332; --border: #2a3a4a;
+  --text: #e0e6ed; --text-secondary: #8899aa; --accent: #4fc3f7;
+  --success: #66bb6a; --danger: #ef5350; --warning: #ffa726;
+  --input-bg: #0d1520; --hover: #1e2d3d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", sans-serif; min-height: 100vh; }
+.header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; color: var(--accent); }
+.header a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+.header a:hover { color: var(--accent); }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px 40px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+.tab { padding: 10px 24px; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 14px; color: var(--text-secondary); transition: all .2s; border: 1px solid transparent; border-bottom: none; }
+.tab:hover { color: var(--text); background: var(--hover); }
+.tab.active { color: var(--accent); background: var(--card-bg); border-color: var(--border); }
+
+/* Cards */
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.card h3 { font-size: 16px; margin-bottom: 16px; color: var(--accent); }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+.stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+
+/* Forms */
+input, textarea, select { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; width: 100%; font-family: inherit; }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+textarea { min-height: 300px; resize: vertical; font-family: "Cascadia Code", "Consolas", monospace; line-height: 1.6; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Buttons */
+.btn { padding: 8px 20px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; transition: all .2s; font-family: inherit; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { opacity: .9; }
+.btn-success { background: var(--success); color: #000; }
+.btn-success:hover { opacity: .9; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: .9; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--hover); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+tr:hover td { background: var(--hover); }
+.status-draft { color: var(--warning); }
+.status-published { color: var(--success); }
+
+/* Search bar */
+.search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-bar input { max-width: 320px; }
+.tag-badge { display: inline-block; padding: 2px 8px; background: rgba(79,195,247,.15); color: var(--accent); border-radius: 4px; font-size: 11px; margin: 2px; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; justify-content: center; align-items: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 90%; max-width: 900px; max-height: 85vh; overflow-y: auto; }
+.modal h2 { color: var(--accent); margin-bottom: 20px; }
+
+/* Markdown toolbar */
+.md-toolbar { display: flex; gap: 4px; margin-bottom: 8px; padding: 6px; background: var(--input-bg); border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none; flex-wrap: wrap; }
+.md-toolbar button { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 12px; font-family: inherit; }
+.md-toolbar button:hover { color: var(--accent); border-color: var(--accent); }
+.md-toolbar .sep { width: 1px; background: var(--border); margin: 0 4px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 200; animation: fadeIn .3s; }
+.toast.success { background: var(--success); color: #000; }
+.toast.error { background: var(--danger); color: #fff; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+.empty { text-align: center; padding: 60px; color: var(--text-secondary); font-size: 15px; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .form-row { grid-template-columns: 1fr; }
+  .tabs { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CMS 内容管理系统</h1>
+  <div>
+    <span id="headerUser" style="font-size:13px;color:var(--text-secondary);margin-right:16px"></span>
+    <a href="/knowledge_articles">浏览文章</a> &nbsp;|&nbsp;
+    <a href="/">返回平台</a> &nbsp;|&nbsp;
+    <a href="#" onclick="doLogout()" style="color:var(--danger)">退出</a>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-tab="dashboard">仪表盘</div>
+  <div class="tab" data-tab="articles">文章管理</div>
+  <div class="tab" data-tab="categories">分类管理</div>
+  <div class="tab" data-tab="tags">标签管理</div>
+</div>
+
+<!-- Dashboard -->
+<div id="panel-dashboard">
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="card">
+    <h3>最近更新</h3>
+    <table id="recentTable"><thead><tr><th>标题</th><th>状态</th><th>更新时间</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<!-- Articles -->
+<div id="panel-articles" style="display:none">
+  <div class="toolbar">
+    <div class="search-bar">
+      <input type="text" id="articleSearch" placeholder="搜索文章..." onkeyup="loadArticles()">
+      <select id="articleStatus" onchange="loadArticles()" style="width:auto">
+        <option value="">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option>
+      </select>
+      <select id="articleCat" onchange="loadArticles()" style="width:auto"><option value="">全部分类</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="openArticleModal()">+ 新建文章</button>
+  </div>
+  <table id="articleTable">
+    <thead><tr><th>标题</th><th>分类</th><th>标签</th><th>状态</th><th>浏览</th><th>更新时间</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div id="articlePagination" style="text-align:center;margin-top:16px"></div>
+</div>
+
+<!-- Categories -->
+<div id="panel-categories" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3>分类列表</h3>
+    <button class="btn btn-primary btn-sm" onclick="openCatModal()">+ 新建分类</button>
+  </div>
+  <table id="catTable">
+    <thead><tr><th>名称</th><th>Slug</th><th>描述</th><th>排序</th><th>文章数</th><th>操作</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Tags -->
+<div id="panel-tags" style="display:none">
+  <div class="card"><h3>所有标签</h3><div id="tagCloud" style="display:flex;flex-wrap:wrap;gap:8px;min-height:80px"></div></div>
+</div>
+
+</div>
+
+<!-- Article Modal -->
+<div class="modal-overlay" id="articleModal">
+<div class="modal">
+  <h2 id="articleModalTitle">新建文章</h2>
+  <div class="form-row">
+    <div class="form-group"><label>标题 *</label><input type="text" id="artTitle" placeholder="文章标题"></div>
+    <div class="form-group"><label>Slug</label><input type="text" id="artSlug" placeholder="留空自动生成"></div>
+  </div>
+  <div class="form-group"><label>摘要</label><input type="text" id="artSummary" placeholder="文章摘要（可选）"></div>
+  <div class="form-row">
+    <div class="form-group"><label>分类</label><select id="artCategory"><option value="">无分类</option></select></div>
+    <div class="form-group"><label>状态</label><select id="artStatus"><option value="draft">草稿</option><option value="published">已发布</option></select></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>标签（逗号分隔）</label><input type="text" id="artTags" placeholder="可靠性,电磁阀,设计指南"></div>
+    <div class="form-group"><label>作者</label><input type="text" id="artAuthor" placeholder="作者名"></div>
+  </div>
+  <div class="form-group">
+    <label>正文（Markdown）</label>
+    <div class="md-toolbar">
+      <button onclick="insertMD('**','**')" title="粗体">B</button>
+      <button onclick="insertMD('*','*')" title="斜体">I</button>
+      <button onclick="insertMD('\n## ','')">H2</button>
+      <button onclick="insertMD('\n### ','')">H3</button>
+      <span class="sep"></span>
+      <button onclick="insertMD('\n- ','')">列表</button>
+      <button onclick="insertMD('\n1. ','')">编号</button>
+      <button onclick="insertMD('\n> ','')">引用</button>
+      <span class="sep"></span>
+      <button onclick="insertMD('[','](url)')">链接</button>
+      <button onclick="insertMD('![alt](','url)')">图片</button>
+      <button onclick="insertMD('\n```\n','\n```')">代码块</button>
+      <span class="sep"></span>
+      <button onclick="insertMD('\n| 列1 | 列2 |\n|-----|-----|\n|','|')">表格</button>
+      <button onclick="insertMD('\n---\n','')">分隔线</button>
+    </div>
+    <textarea id="artContent" placeholder="使用 Markdown 编写文章内容..."></textarea>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-primary" id="artSaveBtn" onclick="saveArticle()">保存</button>
+    <button class="btn btn-outline" onclick="closeArticleModal()">取消</button>
+    <input type="hidden" id="artEditId">
+  </div>
+</div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay" id="catModal">
+<div class="modal" style="max-width:500px">
+  <h2 id="catModalTitle">新建分类</h2>
+  <div class="form-group"><label>名称 *</label><input type="text" id="catName"></div>
+  <div class="form-group"><label>描述</label><input type="text" id="catDesc"></div>
+  <div class="form-group"><label>排序</label><input type="number" id="catOrder" value="0"></div>
+  <div class="btn-group">
+    <button class="btn btn-primary" onclick="saveCategory()">保存</button>
+    <button class="btn btn-outline" onclick="closeCatModal()">取消</button>
+    <input type="hidden" id="catEditId">
+  </div>
+</div>
+</div>
+
+<script>
+const API = '/api/cms';
+const AUTH_API = '/api/auth';
+let currentTab = 'dashboard';
+let articlePage = 1;
+let allCategories = [];
+
+// ===== Auth =====
+function getToken() { return localStorage.getItem('token') || ''; }
+
+async function apiFetch(url, options = {}) {
+  const headers = { ...options.headers, 'Authorization': 'Bearer ' + getToken() };
+  if (options.body && typeof options.body === 'string') {
+    headers['Content-Type'] = 'application/json';
+  }
+  return fetch(url, { ...options, headers });
+}
+
+async function checkAuth() {
+  const token = getToken();
+  if (!token) { window.location.href = '/login?redirect=/cms_admin'; return; }
+  try {
+    const r = await fetch(AUTH_API + '/verify', { headers: { 'Authorization': 'Bearer ' + token } });
+    const d = await r.json();
+    if (!d.success || !d.user || d.user.role !== '管理员') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login?redirect=/cms_admin';
+      return;
+    }
+    document.getElementById('headerUser').textContent = d.user.real_name || d.user.username;
+  } catch(e) {
+    window.location.href = '/login?redirect=/cms_admin';
+  }
+}
+
+async function doLogout() {
+  await fetch(AUTH_API + '/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() } });
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  this.classList.add('active');
+  currentTab = this.dataset.tab;
+  document.querySelectorAll('[id^="panel-"]').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-' + currentTab).style.display = '';
+  if (currentTab === 'dashboard') loadStats();
+  if (currentTab === 'articles') loadArticles();
+  if (currentTab === 'categories') loadCategories();
+  if (currentTab === 'tags') loadTags();
+});
+
+// Toast
+function toast(msg, type) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+  t.className = 'toast ' + type; t.textContent = msg;
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+// Stats
+async function loadStats() {
+  const r = await apiFetch(API + '/stats').then(x => x.json());
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="num">${r.total_articles||0}</div><div class="label">文章总数</div></div>
+    <div class="stat-card"><div class="num">${r.published||0}</div><div class="label">已发布</div></div>
+    <div class="stat-card"><div class="num">${r.drafts||0}</div><div class="label">草稿</div></div>
+    <div class="stat-card"><div class="num">${r.total_views||0}</div><div class="label">总浏览</div></div>
+    <div class="stat-card"><div class="num">${r.total_categories||0}</div><div class="label">分类数</div></div>
+  `;
+  const recent = r.recent_articles || [];
+  document.querySelector('#recentTable tbody').innerHTML = recent.map(a =>
+    '<tr><td>' + esc(a.title) + '</td><td class="status-' + a.status + '">' + statusText(a.status) + '</td><td>' + (a.updated_at||'') + '</td></tr>'
+  ).join('');
+}
+
+function statusText(s) { return {'published':'已发布','draft':'草稿'}[s] || s; }
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// Articles
+async function loadArticles() {
+  const params = new URLSearchParams();
+  const s = document.getElementById('articleStatus').value;
+  const c = document.getElementById('articleCat').value;
+  const q = document.getElementById('articleSearch').value;
+  if (s) params.set('status', s);
+  if (c) params.set('category_id', c);
+  if (q) params.set('search', q);
+  params.set('limit', '20');
+  params.set('offset', ((articlePage-1)*20).toString());
+
+  const r = await apiFetch(API + '/articles?' + params).then(x => x.json());
+  const tbody = document.querySelector('#articleTable tbody');
+  tbody.innerHTML = (r.articles||[]).map(a =>
+    '<tr>' +
+    '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><strong>' + esc(a.title) + '</strong></td>' +
+    '<td>' + esc(a.category_name||'-') + '</td>' +
+    '<td>' + (a.tags||'').split(',').filter(t=>t).map(t=>'<span class="tag-badge">'+esc(t.trim())+'</span>').join('') + '</td>' +
+    '<td class="status-' + a.status + '">' + statusText(a.status) + '</td>' +
+    '<td>' + (a.view_count||0) + '</td>' +
+    '<td>' + (a.updated_at||'').substring(0,10) + '</td>' +
+    '<td>' +
+      '<button class="btn btn-outline btn-sm" onclick="editArticle('+a.id+')">编辑</button> ' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteArticle('+a.id+',\''+esc(a.title)+'\')">删除</button>' +
+    '</td></tr>'
+  ).join('') || '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-secondary)">暂无文章</td></tr>';
+
+  const total = r.total || 0;
+  const pages = Math.ceil(total / 20);
+  let pg = '';
+  if (pages > 1) {
+    for (let i = 1; i <= pages; i++) {
+      pg += '<button class="btn btn-sm ' + (i===articlePage?'btn-primary':'btn-outline') + '" onclick="articlePage='+i+';loadArticles()">'+i+'</button> ';
+    }
+  }
+  document.getElementById('articlePagination').innerHTML = pg;
+
+  // Also populate category dropdown
+  if (!allCategories.length) await loadCategoriesData();
+  const sel = document.getElementById('articleCat');
+  sel.innerHTML = '<option value="">全部分类</option>' + allCategories.map(c => '<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+  sel.value = c;
+}
+
+async function loadCategoriesData() {
+  allCategories = await apiFetch(API + '/categories').then(x => x.json());
+  return allCategories;
+}
+
+function openArticleModal(id) {
+  document.getElementById('articleModal').classList.add('active');
+  document.getElementById('artEditId').value = '';
+  document.getElementById('articleModalTitle').textContent = '新建文章';
+  document.getElementById('artTitle').value = '';
+  document.getElementById('artSlug').value = '';
+  document.getElementById('artSummary').value = '';
+  document.getElementById('artContent').value = '';
+  document.getElementById('artTags').value = '';
+  document.getElementById('artAuthor').value = '';
+  document.getElementById('artStatus').value = 'draft';
+  loadCategoriesData().then(() => {
+    const sel = document.getElementById('artCategory');
+    sel.innerHTML = '<option value="">无分类</option>' + allCategories.map(c => '<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+  });
+}
+
+async function editArticle(id) {
+  document.getElementById('artEditId').value = id;
+  document.getElementById('articleModalTitle').textContent = '编辑文章';
+  const r = await apiFetch(API + '/articles/' + id).then(x => x.json());
+  if (!r.success) return toast('加载失败', 'error');
+  const a = r.article;
+  document.getElementById('artTitle').value = a.title || '';
+  document.getElementById('artSlug').value = a.slug || '';
+  document.getElementById('artSummary').value = a.summary || '';
+  document.getElementById('artContent').value = a.content || '';
+  document.getElementById('artTags').value = a.tags || '';
+  document.getElementById('artAuthor').value = a.author || '';
+  document.getElementById('artStatus').value = a.status || 'draft';
+  await loadCategoriesData();
+  const sel = document.getElementById('artCategory');
+  sel.innerHTML = '<option value="">无分类</option>' + allCategories.map(c => '<option value="'+c.id+'"'+(c.id==a.category_id?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+  document.getElementById('articleModal').classList.add('active');
+}
+
+async function saveArticle() {
+  const id = document.getElementById('artEditId').value;
+  const data = {
+    title: document.getElementById('artTitle').value.trim(),
+    slug: document.getElementById('artSlug').value.trim() || undefined,
+    content: document.getElementById('artContent').value,
+    summary: document.getElementById('artSummary').value.trim(),
+    category_id: parseInt(document.getElementById('artCategory').value) || null,
+    tags: document.getElementById('artTags').value.trim(),
+    status: document.getElementById('artStatus').value,
+    author: document.getElementById('artAuthor').value.trim()
+  };
+  if (!data.title) return toast('请输入标题', 'error');
+
+  const url = id ? API + '/articles/' + id : API + '/articles';
+  const method = id ? 'PUT' : 'POST';
+  const r = await apiFetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).then(x => x.json());
+  if (r.success) {
+    toast(id ? '更新成功' : '创建成功', 'success');
+    closeArticleModal();
+    loadArticles();
+    loadStats();
+  } else {
+    toast(r.error || '保存失败', 'error');
+  }
+}
+
+function closeArticleModal() {
+  document.getElementById('articleModal').classList.remove('active');
+}
+
+async function deleteArticle(id, title) {
+  if (!confirm('确定删除文章「' + title + '」?')) return;
+  const r = await apiFetch(API + '/articles/' + id, { method: 'DELETE' }).then(x => x.json());
+  if (r.success) { toast('删除成功', 'success'); loadArticles(); loadStats(); }
+  else toast(r.error || '删除失败', 'error');
+}
+
+function insertMD(before, after) {
+  const ta = document.getElementById('artContent');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  const t = ta.value, sel = t.substring(s, e);
+  ta.value = t.substring(0, s) + before + sel + after + t.substring(e);
+  ta.focus();
+  const np = before.startsWith('\n') ? s + before.length + sel.length + after.length : s + before.length + sel.length;
+  ta.setSelectionRange(np, np);
+  if (before.startsWith('\n')) ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+}
+
+// Categories
+async function loadCategories() {
+  const cats = await loadCategoriesData();
+  document.querySelector('#catTable tbody').innerHTML = cats.map(c =>
+    '<tr>' +
+    '<td>' + esc(c.name) + '</td>' +
+    '<td>' + esc(c.slug||'') + '</td>' +
+    '<td>' + esc(c.description||'') + '</td>' +
+    '<td>' + (c.sort_order||0) + '</td>' +
+    '<td>' + (c.article_count||0) + '</td>' +
+    '<td>' +
+      '<button class="btn btn-outline btn-sm" onclick="openCatModal('+c.id+')">编辑</button> ' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteCat('+c.id+',\''+esc(c.name)+'\')">删除</button>' +
+    '</td></tr>'
+  ).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px">暂无分类</td></tr>';
+}
+
+async function openCatModal(id) {
+  document.getElementById('catEditId').value = '';
+  document.getElementById('catModalTitle').textContent = '新建分类';
+  document.getElementById('catName').value = '';
+  document.getElementById('catDesc').value = '';
+  document.getElementById('catOrder').value = '0';
+  if (id) {
+    const cats = await loadCategoriesData();
+    const c = cats.find(x => x.id == id);
+    if (c) {
+      document.getElementById('catEditId').value = c.id;
+      document.getElementById('catModalTitle').textContent = '编辑分类';
+      document.getElementById('catName').value = c.name;
+      document.getElementById('catDesc').value = c.description || '';
+      document.getElementById('catOrder').value = c.sort_order || 0;
+    }
+  }
+  document.getElementById('catModal').classList.add('active');
+}
+
+async function saveCategory() {
+  const id = document.getElementById('catEditId').value;
+  const data = {
+    name: document.getElementById('catName').value.trim(),
+    description: document.getElementById('catDesc').value.trim(),
+    sort_order: parseInt(document.getElementById('catOrder').value) || 0
+  };
+  if (!data.name) return toast('请输入分类名称', 'error');
+
+  const url = id ? API + '/categories/' + id : API + '/categories';
+  const method = id ? 'PUT' : 'POST';
+  const r = await apiFetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).then(x => x.json());
+  if (r.success) { toast(id?'更新成功':'创建成功','success'); closeCatModal(); loadCategories(); loadStats(); allCategories = []; }
+  else toast(r.error || '保存失败', 'error');
+}
+
+function closeCatModal() { document.getElementById('catModal').classList.remove('active'); }
+
+async function deleteCat(id, name) {
+  if (!confirm('确定删除分类「'+name+'」?')) return;
+  const r = await apiFetch(API + '/categories/' + id, { method: 'DELETE' }).then(x => x.json());
+  if (r.success) { toast('删除成功','success'); loadCategories(); loadStats(); allCategories = []; }
+  else toast(r.error || '删除失败', 'error');
+}
+
+// Tags
+async function loadTags() {
+  const tags = await apiFetch(API + '/tags').then(x => x.json());
+  document.getElementById('tagCloud').innerHTML = (tags||[]).map(t =>
+    '<span class="tag-badge" style="font-size:14px;padding:6px 14px">' + esc(t.name||t) + '</span>'
+  ).join('') || '<span class="empty" style="padding:0">暂无标签</span>';
+}
+
+// Init - check auth first, then load data
+checkAuth().then(() => loadStats());
+</script>
+</body>
+</html>

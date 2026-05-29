@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>密封副设计 | 航天阀门研发平台</title>
+<style>
+:root {
+  --bg-primary: #0b0e1a; --bg-secondary: #111827; --bg-card: #1a2236;
+  --bg-input: #0f1525; --border: #2a3550; --text-pri: #e8edf5;
+  --text-sec: #8896b3; --text-mut: #5a6a8a;
+  --cyan: #00d4ff; --blue: #3b82f6; --green: #10b981;
+  --amber: #f59e0b; --red: #ef4444; --purple: #8b5cf6;
+  --radius: 10px; --radius-sm: 6px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg-primary); color:var(--text-pri); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+.topbar { background:var(--bg-secondary); border-bottom:1px solid var(--border); padding:0 20px; height:52px; display:flex; align-items:center; gap:20px; flex-shrink:0; }
+.topbar a { color:var(--text-sec); text-decoration:none; font-size:13px; }
+.topbar a:hover { color:var(--cyan); }
+.topbar .title { font-size:16px; font-weight:700; flex:1; }
+.topbar .title span { color:var(--text-mut); font-weight:400; font-size:13px; margin-left:8px; }
+.tab-bar { display:flex; gap:0; padding:0 20px; background:var(--bg-secondary); border-bottom:1px solid var(--border); flex-shrink:0; }
+.tab-bar button { padding:10px 20px; border:none; background:none; color:var(--text-sec); font-size:13px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+.tab-bar button:hover { color:var(--text-pri); }
+.tab-bar button.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+.main { display:flex; flex:1; overflow:hidden; }
+.sidebar { width:370px; min-width:350px; overflow-y:auto; background:var(--bg-secondary); border-right:1px solid var(--border); padding:12px; display:flex; flex-direction:column; gap:8px; }
+.sidebar::-webkit-scrollbar { width:4px; }
+.sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+.content { flex:1; overflow-y:auto; padding:16px 20px; }
+.panel-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-mut); padding-bottom:6px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; margin-top:4px; }
+.presets { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.preset-btn { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px; cursor:pointer; transition:all .2s; text-align:left; font-size:10px; line-height:1.3; color:var(--text-pri); }
+.preset-btn:hover { border-color:var(--cyan); background:#1f2a42; }
+.preset-btn .pn { font-weight:600; font-size:11px; }
+.preset-btn .pd { color:var(--text-mut); font-size:9px; margin-top:2px; }
+.form-row { margin-bottom:8px; }
+.form-row label { display:block; font-size:11px; color:var(--text-sec); margin-bottom:3px; }
+.form-row input, .form-row select { width:100%; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-pri); font-size:12px; padding:6px 8px; font-family:'Consolas','Courier New',monospace; outline:none; transition:border .2s; }
+.form-row input:focus, .form-row select:focus { border-color:var(--cyan); }
+.form-row select option { background:var(--bg-card); color:var(--text-pri); }
+.form-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.mat-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:8px; }
+.mat-card { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; cursor:pointer; transition:all .2s; }
+.mat-card:hover { border-color:var(--blue); }
+.mat-card.sel { border-color:var(--cyan); background:rgba(0,212,255,.06); }
+.mat-card .mc-name { font-size:11px; font-weight:600; }
+.mat-card .mc-eng { font-size:9px; color:var(--text-mut); font-family:'Consolas',monospace; }
+.mat-card .mc-tag { font-size:8px; padding:1px 5px; border-radius:3px; margin-top:3px; display:inline-block; }
+.mt-metal{background:rgba(59,130,246,.2);color:#60a5fa}
+.mt-polymer{background:rgba(16,185,129,.2);color:#34d399}
+.mt-elastomer{background:rgba(245,158,11,.2);color:#fbbf24}
+.calc-btn { width:100%; padding:11px; background:linear-gradient(135deg,var(--cyan),var(--blue)); border:none; border-radius:var(--radius-sm); color:#fff; font-size:14px; font-weight:700; cursor:pointer; margin-top:4px; transition:all .2s; }
+.calc-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,212,255,.25); }
+.calc-btn:disabled { opacity:.6; pointer-events:none; }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-mut); gap:12px; min-height:300px; }
+.empty-state .e-icon { font-size:48px; opacity:.2; }
+.empty-state .e-msg { font-size:16px; }
+.empty-state .e-sub { font-size:12px; opacity:.7; max-width:400px; text-align:center; }
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px; }
+.card-hd { padding:9px 14px; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.card-bd { padding:14px; }
+.status-row { display:flex; gap:16px; flex-wrap:wrap; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); font-size:12px; margin-bottom:14px; }
+.st-ok { color:var(--green); } .st-ng { color:var(--red); } .st-warn { color:var(--amber); } .st-info { color:var(--cyan); }
+.metrics { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:8px; }
+.metric { background:var(--bg-input); border-radius:var(--radius-sm); padding:10px; }
+.metric .m-lbl { font-size:10px; color:var(--text-mut); margin-bottom:3px; }
+.metric .m-val { font-size:16px; font-weight:700; font-family:'Consolas',monospace; }
+.metric .m-unit { font-size:10px; color:var(--text-mut); font-weight:400; }
+.metric .m-sub { font-size:10px; color:var(--text-sec); margin-top:2px; }
+.gauge-row { display:flex; gap:24px; flex-wrap:wrap; align-items:center; }
+.gauge-item { text-align:center; min-width:85px; }
+.gauge-ring { width:80px; height:80px; margin:0 auto 6px; position:relative; }
+.gauge-ring canvas { width:80px; height:80px; }
+.gauge-ring .gv { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Consolas',monospace; }
+.gauge-ring .gv-n { font-size:14px; font-weight:700; }
+.gauge-ring .gv-u { font-size:9px; color:var(--text-mut); }
+.gauge-lbl { font-size:10px; color:var(--text-sec); margin-top:3px; }
+.leak-display { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.leak-tag { font-size:13px; font-weight:700; padding:6px 16px; border-radius:20px; white-space:nowrap; }
+.lc-AA{background:rgba(16,185,129,.2);color:#10b981}
+.lc-A{background:rgba(59,130,246,.2);color:#60a5fa}
+.lc-B{background:rgba(139,92,246,.2);color:#a78bfa}
+.lc-C{background:rgba(245,158,11,.2);color:#fbbf24}
+.lc-D{background:rgba(249,115,22,.2);color:#fb923c}
+.lc-others{background:rgba(239,68,68,.2);color:#f87171}
+.leak-bar-wrap { flex:1; min-width:180px; }
+.leak-bar { height:8px; background:var(--bg-input); border-radius:4px; overflow:hidden; margin-top:6px; }
+.leak-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--green),var(--amber),var(--red)); transition:width .6s; }
+.alert-list { list-style:none; }
+.alert-list li { padding:7px 10px; border-radius:var(--radius-sm); margin-bottom:5px; font-size:11px; display:flex; gap:6px; align-items:flex-start; }
+.alert-warn { background:rgba(245,158,11,.1); border-left:3px solid var(--amber); color:var(--amber); }
+.alert-rec { background:rgba(59,130,246,.1); border-left:3px solid var(--blue); color:var(--blue); }
+.compare-table { width:100%; border-collapse:collapse; font-size:11px; }
+.compare-table th { background:var(--bg-input); padding:8px 10px; text-align:left; color:var(--text-mut); font-weight:600; border-bottom:2px solid var(--border); }
+.compare-table td { padding:8px 10px; border-bottom:1px solid var(--border); font-family:'Consolas',monospace; }
+.compare-table tr:hover td { background:rgba(255,255,255,.02); }
+.sens-form { display:flex; gap:8px; margin-bottom:12px; align-items:flex-end; flex-wrap:wrap; }
+.sens-form select,.sens-form input { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-pri); font-size:11px; padding:6px 8px; outline:none; }
+.sens-form select:focus,.sens-form input:focus { border-color:var(--cyan); }
+.sens-chart-wrap { position:relative; height:280px; margin-bottom:14px; }
+.sens-chart-wrap canvas { width:100%; height:100%; }
+.cmp-row { display:flex; gap:6px; margin-bottom:6px; align-items:center; flex-wrap:wrap; }
+.cmp-row input,.cmp-row select { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-pri); font-size:11px; padding:5px 7px; outline:none; }
+.cmp-row input:focus,.cmp-row select:focus { border-color:var(--cyan); }
+.btn-sm { padding:5px 14px; border-radius:var(--radius-sm); font-size:11px; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+.btn-cyan { background:var(--cyan); color:#000; }
+.btn-blue { background:var(--blue); color:#fff; }
+.btn-red { background:transparent; border:1px solid var(--red); color:var(--red); }
+.btn-cyan:hover,.btn-blue:hover { opacity:.85; transform:translateY(-1px); }
+.spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+@media (max-width:900px) { .main { flex-direction:column; } .sidebar { width:100%; min-width:0; max-height:50vh; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/">&#x2190; 返回平台首页</a>
+  <div class="title">&#x1F9ED; 密封副设计计算<span>Hertz接触理论 + Roth分子流泄漏模型</span></div>
+</div>
+
+<div class="tab-bar">
+  <button class="active" data-tab="design" id="tab-design">&#x1F4D0; 密封设计</button>
+  <button data-tab="compare" id="tab-compare">&#x1F4CA; 多方案对比</button>
+  <button data-tab="sensitivity" id="tab-sensitivity">&#x1F4C8; 敏感性分析</button>
+</div>
+
+<div class="main">
+  <!-- LEFT: Fixed sidebar with design parameters -->
+  <div class="sidebar">
+    <div class="panel-title">&#x26A1; 预置工况</div>
+    <div class="presets" id="presets"></div>
+
+    <div class="panel-title">&#x1F4D0; 几何参数</div>
+    <div class="form-row"><label>接触类型</label><select id="contact_type"></select></div>
+    <div class="form-grid2">
+      <div class="form-row"><label>密封面直径 mm</label><input type="number" id="seat_diameter_mm" value="10" step="0.1"></div>
+      <div class="form-row"><label>阀座锥角 °</label><input type="number" id="seat_angle_deg" value="60" step="0.5"></div>
+    </div>
+    <div class="form-grid2">
+      <div class="form-row"><label>球头半径 mm</label><input type="number" id="sphere_radius_mm" value="5" step="0.1"></div>
+      <div class="form-row"><label>阀座曲率半径 mm</label><input type="number" id="seat_curvature_radius_mm" value="4.5" step="0.1"></div>
+    </div>
+    <div class="form-grid2">
+      <div class="form-row"><label>表面粗糙度 Ra μm</label><input type="number" id="roughness_Ra_um" value="0.4" step="0.01"></div>
+      <div class="form-row"><label>偏心距 mm</label><input type="number" id="eccentricity_mm" value="0" step="0.01"></div>
+    </div>
+
+    <div class="panel-title">&#x1F9F1; 阀座材料</div>
+    <div class="mat-grid" id="mat-seat"></div>
+    <div class="panel-title">&#x1F9ED; 密封材料</div>
+    <div class="mat-grid" id="mat-seal"></div>
+
+    <div class="panel-title">&#x1F321; 工况条件</div>
+    <div class="form-grid2">
+      <div class="form-row"><label>介质压差 bar</label><input type="number" id="pressure_bar" value="5" step="0.1"></div>
+      <div class="form-row"><label>下游压力 bar</label><input type="number" id="pressure_downstream_bar" value="0" step="0.1"></div>
+    </div>
+    <div class="form-grid2">
+      <div class="form-row"><label>工作温度 °C</label><input type="number" id="temperature_C" value="20" step="0.5"></div>
+      <div class="form-row"><label>工作介质</label><select id="gas"></select></div>
+    </div>
+    <div class="form-grid2">
+      <div class="form-row"><label>密封力 N (空=自动)</label><input type="number" id="seal_force_N" placeholder="自动计算"></div>
+      <div class="form-row"><label>预紧力 N</label><input type="number" id="preload_force_N" value="0"></div>
+    </div>
+    <div class="form-grid2">
+      <div class="form-row"><label>弹簧力 N</label><input type="number" id="spring_force_N" value="0"></div>
+      <div class="form-row"><label>安全系数</label><input type="number" id="min_safety_factor" value="1.5" step="0.1"></div>
+    </div>
+    <div class="form-grid2">
+      <div class="form-row"><label>要求寿命 次</label><input type="number" id="cycle_life_req" value="10000"></div>
+      <div class="form-row"><label>目标泄漏等级</label><select id="target_leak_class"></select></div>
+    </div>
+
+    <button class="calc-btn" id="calcBtn">&#x1F4A5; 开始设计计算</button>
+    <div style="text-align:center;padding:6px;font-size:9px;color:var(--text-mut);">基于 Hertz 接触理论 + Roth 分子流泄漏模型<br>二分法临界密封力搜索 + ISO 5208 泄漏分级</div>
+  </div>
+
+  <!-- RIGHT: Tab content panels -->
+  <div class="content">
+    <!-- Design Results Panel -->
+    <div id="panel-design">
+      <div class="empty-state" id="emptyState">
+        <div class="e-icon">&#x1F9ED;</div>
+        <div class="e-msg">点击左侧「开始设计计算」查看结果</div>
+        <div class="e-sub">系统将进行 Hertz 弹性接触力学分析、Roth 分子流泄漏率计算、Knudsen 数流态判定、密封状态二分法搜索、安全评定和可靠性预估</div>
+      </div>
+      <div id="resultsArea" style="display:none;"></div>
+    </div>
+
+    <!-- Compare Panel -->
+    <div id="panel-compare" style="display:none;">
+      <div class="card"><div class="card-hd">&#x1F4CA; 多方案对比分析</div><div class="card-bd">
+        <p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">使用左侧参数作为基准，添加多个备选方案进行对比。每个方案可覆盖材料、直径、压力等参数。</p>
+        <div id="cmpRows"></div>
+        <div style="display:flex;gap:8px;margin:10px 0;">
+          <button class="btn-sm btn-blue" id="cmpAddBtn">+ 添加方案</button>
+          <button class="btn-sm btn-cyan" id="cmpRunBtn">&#x25B6; 开始对比</button>
+        </div>
+        <div id="cmpResults"></div>
+      </div></div>
+    </div>
+
+    <!-- Sensitivity Panel -->
+    <div id="panel-sensitivity" style="display:none;">
+      <div class="card"><div class="card-hd">&#x1F4C8; 参数敏感性分析</div><div class="card-bd">
+        <p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">基于左侧参数，扫描单个设计参数对密封性能（泄漏率、接触应力）的影响。</p>
+        <div class="sens-form">
+          <select id="sensParam">
+            <option value="roughness_Ra_um">表面粗糙度 Ra</option>
+            <option value="pressure_bar">介质压差</option>
+            <option value="seat_diameter_mm">密封面直径</option>
+            <option value="temperature_C">工作温度</option>
+            <option value="sphere_radius_mm">球头半径</option>
+          </select>
+          <input placeholder="参数值, 用逗号分隔" value="0.1,0.2,0.4,0.8,1.6" style="flex:1;min-width:180px;" id="sensVals">
+          <button class="btn-sm btn-cyan" id="sensRunBtn">&#x25B6; 分析</button>
+        </div>
+        <div class="sens-chart-wrap"><canvas id="sensChart"></canvas></div>
+        <div id="sensTable"></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== State ======
+let catalog = null;
+let seatMat = '316L_SS';
+let sealMat = 'PTFE';
+let currentDesign = null;
+
+// ====== Init ======
+window.addEventListener('DOMContentLoaded', async () => {
+  const r = await fetch('/api/seal/catalog');
+  catalog = await r.json();
+  renderPresets();
+  renderContactType();
+  renderMaterials();
+  renderGases();
+  renderLeakClasses();
+  initCompare();
+  bindEvents();
+});
+
+function renderPresets() {
+  document.getElementById('presets').innerHTML = catalog.presets.map(p =>
+    `<button class="preset-btn" data-preset="${p.id}" title="${p.note.replace(/"/g,'&quot;')}">
+      <div class="pn">${p.label}</div><div class="pd">${p.note}</div></button>`
+  ).join('');
+}
+
+function applyPreset(id) {
+  const p = catalog.presets.find(x => x.id === id);
+  if (!p) return;
+  for (const [k, v] of Object.entries(p.params)) {
+    const el = document.getElementById(k);
+    if (el) { el.value = v; el.dispatchEvent(new Event('change')); }
+  }
+  seatMat = p.params.seat_material || '316L_SS';
+  sealMat = p.params.seal_material || 'PTFE';
+  renderMaterials();
+}
+
+function renderContactType() {
+  const sel = document.getElementById('contact_type');
+  sel.innerHTML = Object.entries(catalog.contact_types).map(([k,v]) =>
+    `<option value="${k}">${v.name}</option>`).join('');
+  sel.value = 'sphere_on_cone';
+}
+
+function renderMaterials() {
+  const metals=[]; const others=[];
+  Object.entries(catalog.materials).forEach(([k,v]) => {
+    (v.category==='metal'?metals:others).push({key:k,...v});
+  });
+  const all=[...metals,...others];
+  const cls = c => (c==='metal'?'mt-metal':c==='polymer'?'mt-polymer':'mt-elastomer');
+
+  document.getElementById('mat-seat').innerHTML = metals.map(m =>
+    `<div class="mat-card ${m.key===seatMat?'sel':''}" data-seat="${m.key}">
+      <div class="mc-name">${m.name_cn}</div><div class="mc-eng">${m.name}</div>
+      <span class="mc-tag ${cls(m.category)}">E=${m.E_GPa.toFixed(0)}GPa</span></div>`
+  ).join('');
+
+  document.getElementById('mat-seal').innerHTML = all.map(m =>
+    `<div class="mat-card ${m.key===sealMat?'sel':''}" data-seal="${m.key}">
+      <div class="mc-name">${m.name_cn}</div><div class="mc-eng">${m.name}</div>
+      <span class="mc-tag ${cls(m.category)}">${m.category==='metal'?'σy='+m.sigma_y_MPa.toFixed(0)+'MPa':m.category==='polymer'?'低温:'+(m.cryo_compatible?'✔':'✘'):'弹性体'}</span></div>`
+  ).join('');
+}
+
+function renderGases() {
+  document.getElementById('gas').innerHTML = Object.entries(catalog.gases).map(([k,v]) =>
+    `<option value="${k}">${v.name}</option>`).join('');
+  document.getElementById('gas').value = 'N2';
+}
+
+function renderLeakClasses() {
+  document.getElementById('target_leak_class').innerHTML = Object.entries(catalog.leak_classes).map(([k,v]) =>
+    `<option value="${k}">${v.name}</option>`).join('');
+  document.getElementById('target_leak_class').value = 'A';
+}
+
+// ====== Event Delegation ======
+function bindEvents() {
+  // Presets
+  document.getElementById('presets').addEventListener('click', e => {
+    const btn = e.target.closest('.preset-btn');
+    if (btn) applyPreset(btn.dataset.preset);
+  });
+
+  // Material cards
+  document.getElementById('mat-seat').addEventListener('click', e => {
+    const card = e.target.closest('[data-seat]');
+    if (card) { seatMat = card.dataset.seat; renderMaterials(); }
+  });
+  document.getElementById('mat-seal').addEventListener('click', e => {
+    const card = e.target.closest('[data-seal]');
+    if (card) { sealMat = card.dataset.seal; renderMaterials(); }
+  });
+
+  // Contact type change
+  document.getElementById('contact_type').addEventListener('change', () => {
+    const ct = document.getElementById('contact_type').value;
+    document.getElementById('seat_curvature_radius_mm').parentElement.style.display = (ct==='concave_on_cone')?'':'none';
+    document.getElementById('eccentricity_mm').parentElement.style.display = (ct==='concave_on_cone')?'':'none';
+  });
+
+  // Tab switching
+  document.querySelectorAll('.tab-bar button').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Calculate button
+  document.getElementById('calcBtn').addEventListener('click', runDesign);
+
+  // Compare
+  document.getElementById('cmpAddBtn').addEventListener('click', addCmpRow);
+  document.getElementById('cmpRunBtn').addEventListener('click', runCompare);
+
+  // Sensitivity
+  document.getElementById('sensRunBtn').addEventListener('click', runSensitivity);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-design').style.display = (tab==='design')?'':'none';
+  document.getElementById('panel-compare').style.display = (tab==='compare')?'':'none';
+  document.getElementById('panel-sensitivity').style.display = (tab==='sensitivity')?'':'none';
+}
+
+// ====== Get params ======
+function getParams() {
+  const el = id => document.getElementById(id);
+  return {
+    seat_material: seatMat,
+    seal_material: sealMat,
+    contact_type: el('contact_type').value,
+    seat_diameter_mm: parseFloat(el('seat_diameter_mm').value) || 10,
+    seat_angle_deg: parseFloat(el('seat_angle_deg').value) || 60,
+    sphere_radius_mm: parseFloat(el('sphere_radius_mm').value) || 5,
+    seat_curvature_radius_mm: parseFloat(el('seat_curvature_radius_mm').value) || 4.5,
+    roughness_Ra_um: parseFloat(el('roughness_Ra_um').value) || 0.4,
+    eccentricity_mm: parseFloat(el('eccentricity_mm').value) || 0,
+    pressure_bar: parseFloat(el('pressure_bar').value) || 5,
+    pressure_downstream_bar: parseFloat(el('pressure_downstream_bar').value) || 0,
+    temperature_C: parseFloat(el('temperature_C').value) || 20,
+    gas: el('gas').value || 'N2',
+    seal_force_N: (el('seal_force_N').value && el('seal_force_N').value.trim()) ? parseFloat(el('seal_force_N').value) : null,
+    preload_force_N: parseFloat(el('preload_force_N').value) || 0,
+    spring_force_N: parseFloat(el('spring_force_N').value) || 0,
+    min_safety_factor: parseFloat(el('min_safety_factor').value) || 1.5,
+    cycle_life_req: parseInt(el('cycle_life_req').value) || 10000,
+    target_leak_class: el('target_leak_class').value || 'A',
+  };
+}
+
+// ====== Run Design ======
+async function runDesign() {
+  const btn = document.getElementById('calcBtn');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> 计算中...';
+  try {
+    const params = getParams();
+    const r = await fetch('/api/seal/design', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(params)
+    });
+    const data = await r.json();
+    currentDesign = data;
+    if (data.success) {
+      renderResults(data);
+    } else {
+      alert('计算失败: ' + (data.error || '未知错误'));
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message + ' | 请检查 Flask 服务是否运行');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+
+// ====== Render Results ======
+function renderResults(d) {
+  const es = document.getElementById('emptyState');
+  if (es) es.style.display = 'none';
+  const area = document.getElementById('resultsArea');
+  area.style.display = '';
+  area.scrollIntoView({behavior:'smooth'});
+
+  const inp=d.input, cn=d.contact, ss=d.seal_state, lk=d.leak, sf=d.safety, rel=d.reliability;
+
+  let h='';
+
+  // Input summary
+  h+=`<div class="card"><div class="card-hd">&#x1F4CB; 输入参数</div><div class="card-bd">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>接触:</b> ${inp.contact_type_cn||inp.contact_type}</span>
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>阀座:</b> ${inp.seat_material}</span>
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>密封:</b> ${inp.seal_material}</span>
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>介质:</b> ${inp.gas}</span>
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>φ</b>${(inp.seat_diameter_mm||10).toFixed(1)}mm</span>
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>ΔP</b>${(inp.pressure_bar||0).toFixed(1)}bar</span>
+      <span style="background:var(--bg-input);padding:4px 8px;border-radius:4px;font-size:10px;"><b>T</b>${(inp.temperature_C||20).toFixed(0)}°C</span>
+    </div></div></div>`;
+
+  // Status bar
+  h+=`<div class="status-row">
+    <span class="status-item ${ss.is_sealing?'st-ok':'st-ng'}">${ss.is_sealing?'&#x2705; 密封状态: 密封':'&#x274C; 密封状态: 可能泄漏'}</span>
+    <span class="status-item ${sf.safety_pass?'st-ok':'st-ng'}">${sf.safety_pass?'&#x2705; 安全评定: 通过':'&#x274C; 安全评定: 未通过'}</span>
+    <span class="status-item ${['AA','A','B'].includes(lk.leak_class)?'st-ok':'st-info'}">&#x1F4A7; 泄漏等级: ISO 5208 <b>${lk.leak_class}</b>级</span>
+    <span class="status-item st-info">&#x1F30A; 流态: ${lk.flow_regime||'N/A'} (Kn=${lk.knudsen_number!=null?lk.knudsen_number.toExponential(2):'N/A'})</span>
+  </div>`;
+
+  // Contact mechanics
+  h+=`<div class="card"><div class="card-hd">&#x1F9F0; Hertz 接触力学</div><div class="card-bd"><div class="metrics">
+    <div class="metric"><div class="m-lbl">最大接触应力</div><div class="m-val" style="color:${sf.safety_pass?'var(--green)':'var(--red)'}">${(cn.p_max_MPa||0).toFixed(1)}<span class="m-unit"> MPa</span></div></div>
+    <div class="metric"><div class="m-lbl">平均接触应力</div><div class="m-val">${(cn.p_avg_MPa||0).toFixed(1)}<span class="m-unit"> MPa</span></div></div>
+    <div class="metric"><div class="m-lbl">接触宽度 (2b)</div><div class="m-val">${(cn.contact_width_um||0).toFixed(2)}<span class="m-unit"> μm</span></div></div>
+    <div class="metric"><div class="m-lbl">接触面积</div><div class="m-val">${(cn.contact_area_mm2||0).toFixed(3)}<span class="m-unit"> mm²</span></div></div>
+    <div class="metric"><div class="m-lbl">趋近量</div><div class="m-val">${(cn.approach_um||0).toFixed(3)}<span class="m-unit"> μm</span></div></div>
+    <div class="metric"><div class="m-lbl">等效模量 E*</div><div class="m-val">${(cn.effective_modulus_GPa||0).toFixed(1)}<span class="m-unit"> GPa</span></div></div>
+  </div></div></div>`;
+
+  // Leak
+  h+=`<div class="card"><div class="card-hd">&#x1F4A7; 泄漏分析 (Roth 分子流模型)</div><div class="card-bd"><div class="metrics">
+    <div class="metric"><div class="m-lbl">泄漏率 Q</div><div class="m-val">${lk.leak_rate_mbar_L_s!=null?lk.leak_rate_mbar_L_s.toExponential(2):'N/A'}<span class="m-unit"> mbar·L/s</span></div></div>
+    <div class="metric"><div class="m-lbl">泄漏率 (sccm)</div><div class="m-val">${lk.leak_rate_sccm!=null?lk.leak_rate_sccm.toExponential(2):'N/A'}<span class="m-unit"> sccm</span></div></div>
+    <div class="metric"><div class="m-lbl">等效泄漏间隙</div><div class="m-val">${lk.effective_gap_um!=null?lk.effective_gap_um.toFixed(4):'N/A'}<span class="m-unit"> μm</span></div></div>
+    <div class="metric"><div class="m-lbl">Knudsen 数</div><div class="m-val">${lk.knudsen_number!=null?lk.knudsen_number.toExponential(2):'N/A'}</div></div>
+  </div>
+  <div class="leak-display" style="margin-top:12px;">
+    <span class="leak-tag ${['AA','A'].includes(lk.leak_class)?'lc-AA':(['B'].includes(lk.leak_class)?'lc-B':(['C','D'].includes(lk.leak_class)?'lc-C':'lc-others'))}">${lk.leak_class} 级</span>
+    <div class="leak-bar-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-mut);">
+        <span>AA(零泄漏)</span><span>A</span><span>B</span><span>C</span><span>D</span><span>E-G</span>
+      </div>
+      <div class="leak-bar"><div class="leak-bar-fill" style="width:${lk.leak_class==='AA'?5:['A','B','C','D','E','EE','F','G'].includes(lk.leak_class)?(['A','B','C','D','E','EE','F','G'].indexOf(lk.leak_class)+1)*11:95}%"></div></div>
+    </div>
+  </div></div></div>`;
+
+  // Safety
+  h+=`<div class="card"><div class="card-hd">&#x1F6E1; 安全评定</div><div class="card-bd">
+    <div class="gauge-row">
+      <div class="gauge-item">
+        <div class="gauge-ring"><canvas id="gaugeYield" width="80" height="80"></canvas>
+          <div class="gv"><div class="gv-n">${sf.safety_factor_yield!=null?sf.safety_factor_yield.toFixed(2):'N/A'}</div><div class="gv-u">屈服 SF</div></div></div>
+        <div class="gauge-lbl">要求 ≥${sf.min_sf_required||1.5}</div></div>
+      <div class="gauge-item">
+        <div class="gauge-ring"><canvas id="gaugeUTS" width="80" height="80"></canvas>
+          <div class="gv"><div class="gv-n">${sf.safety_factor_uts!=null?sf.safety_factor_uts.toFixed(2):'N/A'}</div><div class="gv-u">抗拉 SF</div></div></div>
+        <div class="gauge-lbl">要求 ≥2.5</div></div>
+      <div class="gauge-item">
+        <div class="gauge-ring"><canvas id="gaugeStress" width="80" height="80"></canvas>
+          <div class="gv"><div class="gv-n">${sf.stress_ratio_yield!=null?(sf.stress_ratio_yield*100).toFixed(1):'N/A'}<span style="font-size:9px">%</span></div><div class="gv-u">σ/σy</div></div></div>
+        <div class="gauge-lbl">要求 ≤85%</div></div>
+    </div>
+    <div class="metrics" style="margin-top:10px;">
+      <div class="metric"><div class="m-lbl">屈服安全系数</div><div class="m-val" style="color:${(sf.safety_factor_yield||0)>=1.5?'var(--green)':'var(--red)'}">${(sf.safety_factor_yield||0).toFixed(2)}</div></div>
+      <div class="metric"><div class="m-lbl">抗拉安全系数</div><div class="m-val" style="color:${(sf.safety_factor_uts||0)>=2.5?'var(--green)':'var(--red)'}">${(sf.safety_factor_uts||0).toFixed(2)}</div></div>
+      <div class="metric"><div class="m-lbl">σ/σy</div><div class="m-val" style="color:${(sf.stress_ratio_yield||0)<=0.85?'var(--green)':'var(--red)'}">${sf.stress_ratio_yield!=null?(sf.stress_ratio_yield*100).toFixed(1):'N/A'}<span class="m-unit">%</span></div></div>
+    </div>
+  </div></div>`;
+
+  // Reliability
+  h+=`<div class="card"><div class="card-hd">&#x1F4C8; 可靠性预估</div><div class="card-bd"><div class="metrics">
+    <div class="metric"><div class="m-lbl">预测启闭寿命</div><div class="m-val" style="color:${(rel.predicted_cycle_life||0)>=(rel.required_cycle_life||0)?'var(--green)':'var(--amber)'}">${rel.predicted_cycle_life!=null?rel.predicted_cycle_life.toExponential(1):'N/A'}<span class="m-unit"> 次</span></div><div class="m-sub">要求: ${(rel.required_cycle_life||0).toLocaleString()} 次</div></div>
+    <div class="metric"><div class="m-lbl">预计磨损深度</div><div class="m-val">${rel.wear_depth_um!=null?rel.wear_depth_um.toFixed(4):'N/A'}<span class="m-unit"> μm</span></div></div>
+    <div class="metric"><div class="m-lbl">可靠性指标 β</div><div class="m-val" style="color:${(rel.reliability_index||0)>=3?'var(--green)':((rel.reliability_index||0)>=1.5?'var(--amber)':'var(--red)')}">${(rel.reliability_index||0).toFixed(2)}</div></div>
+    <div class="metric"><div class="m-lbl">密封副质量</div><div class="m-val">${(rel.estimated_mass_g||0).toFixed(1)}<span class="m-unit"> g</span></div></div>
+  </div></div></div>`;
+
+  // Seal state
+  h+=`<div class="card"><div class="card-hd">&#x1F512; 密封状态判定</div><div class="card-bd"><div class="metrics">
+    <div class="metric"><div class="m-lbl">密封比压</div><div class="m-val" style="color:${ss.is_sealing?'var(--green)':'var(--red)'}">${(ss.seal_pressure_MPa||0).toFixed(2)}<span class="m-unit"> MPa</span></div></div>
+    <div class="metric"><div class="m-lbl">密封比压/介质压力</div><div class="m-val" style="color:${ss.is_sealing?'var(--green)':'var(--red)'}">${(ss.seal_pressure_ratio||0).toFixed(2)}</div><div class="m-sub">要求 ≥${(ss.min_ratio_required||1).toFixed(1)}</div></div>
+    <div class="metric"><div class="m-lbl">临界密封力</div><div class="m-val">${(ss.critical_seal_force_N||0).toFixed(1)}<span class="m-unit"> N</span></div></div>
+  </div></div></div>`;
+
+  // Warnings & Recs
+  if (d.warnings&&d.warnings.length) {
+    h+=`<div class="card"><div class="card-hd" style="color:var(--amber)">&#x26A0; 警告</div><div class="card-bd"><ul class="alert-list">${d.warnings.map(w=>`<li class="alert-warn">${w}</li>`).join('')}</ul></div></div>`;
+  }
+  if (d.recommendations&&d.recommendations.length) {
+    h+=`<div class="card"><div class="card-hd" style="color:var(--cyan)">&#x1F4A1; 设计建议</div><div class="card-bd"><ul class="alert-list">${d.recommendations.map(r=>`<li class="alert-rec">${r}</li>`).join('')}</ul></div></div>`;
+  }
+
+  area.innerHTML = h;
+
+  // Draw gauges
+  setTimeout(()=>{
+    drawGauge('gaugeYield',sf.safety_factor_yield||0,3.0,(sf.safety_factor_yield||0)>=1.5?'var(--green)':'var(--red)');
+    drawGauge('gaugeUTS',sf.safety_factor_uts||0,5.0,(sf.safety_factor_uts||0)>=2.5?'var(--green)':'var(--red)');
+    drawGauge('gaugeStress',sf.stress_ratio_yield||0,1.0,(sf.stress_ratio_yield||0)<=0.85?'var(--green)':'var(--red)');
+  },100);
+}
+
+function drawGauge(canvasId, value, max, color) {
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,80,80);
+  const cx=40,cy=40,r=32,sw=6;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
+  ctx.strokeStyle='#1a2236'; ctx.lineWidth=sw; ctx.stroke();
+  if(value>0){
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,-Math.PI/2,Math.min(value/max,1)*2*Math.PI-Math.PI/2);
+    ctx.strokeStyle=color; ctx.lineWidth=sw; ctx.lineCap='round'; ctx.stroke();
+  }
+}
+
+// ====== Compare ======
+function initCompare() {
+  while(document.getElementById('cmpRows').children.length<2) addCmpRow();
+}
+function addCmpRow() {
+  const div=document.createElement('div');
+  div.className='cmp-row';
+  const n=document.getElementById('cmpRows').children.length+1;
+  div.innerHTML=`
+    <input placeholder="方案${n}" style="width:80px;">
+    <select class="cmp-ms">${Object.entries(catalog.materials).filter(([k,v])=>v.category==='metal').map(([k,v])=>`<option value="${k}">座:${v.name_cn}</option>`).join('')}</select>
+    <select class="cmp-ml">${Object.entries(catalog.materials).map(([k,v])=>`<option value="${k}" ${k==='PTFE'?'selected':''}>密:${v.name_cn}</option>`).join('')}</select>
+    <input placeholder="D mm" value="10" style="width:50px;" class="cmp-d">
+    <input placeholder="P bar" value="5" style="width:50px;" class="cmp-p">
+    <input placeholder="T C" value="20" style="width:50px;" class="cmp-t">
+    <input placeholder="Ra" value="0.4" style="width:45px;" class="cmp-ra">
+    <button class="btn-sm btn-red cmp-rm">&#x2716;</button>`;
+  div.querySelector('.cmp-rm').addEventListener('click',()=>div.remove());
+  document.getElementById('cmpRows').appendChild(div);
+}
+
+async function runCompare() {
+  const rows=document.querySelectorAll('#cmpRows .cmp-row');
+  const configs=[];
+  rows.forEach(r=>{
+    configs.push({
+      label:r.querySelector('input').value||('方案'+(configs.length+1)),
+      seat_material:r.querySelector('.cmp-ms').value,
+      seal_material:r.querySelector('.cmp-ml').value,
+      seat_diameter_mm:parseFloat(r.querySelector('.cmp-d').value)||10,
+      pressure_bar:parseFloat(r.querySelector('.cmp-p').value)||5,
+      temperature_C:parseFloat(r.querySelector('.cmp-t').value)||20,
+      roughness_Ra_um:parseFloat(r.querySelector('.cmp-ra').value)||0.4,
+      contact_type:'sphere_on_cone',seat_angle_deg:60,sphere_radius_mm:5,
+      target_leak_class:'A',
+    });
+  });
+  if(configs.length<1)return;
+  const resp=await fetch('/api/seal/compare',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({configs,gas:'N2'})
+  });
+  const data=await resp.json();
+  if(!data.success){alert(data.error);return;}
+  let tbl='<table class="compare-table"><thead><tr><th>方案</th><th>接触应力 MPa</th><th>安全系数</th><th>泄漏率 mbarL/s</th><th>泄漏等级</th><th>安全评定</th><th>密封状态</th></tr></thead><tbody>';
+  data.results.forEach(res=>{
+    if(!res.success)return;
+    tbl+=`<tr><td><b>${res.input.seal_material}</b><br><span style="font-size:9px;color:var(--text-mut)">${res.input.seat_material}</span></td>
+    <td>${(res.contact.p_max_MPa||0).toFixed(1)}</td>
+    <td style="color:${(res.safety.safety_factor_yield||0)>=1.5?'var(--green)':'var(--red)'}">${(res.safety.safety_factor_yield||0).toFixed(2)}</td>
+    <td>${res.leak.leak_rate_mbar_L_s!=null?res.leak.leak_rate_mbar_L_s.toExponential(2):'N/A'}</td>
+    <td>${res.leak.leak_class}</td>
+    <td>${res.safety.safety_pass?'&#x2705;':'&#x274C;'}</td>
+    <td>${res.seal_state.is_sealing?'&#x2705;':'&#x274C;'}</td></tr>`;
+  });
+  tbl+='</tbody></table>';
+  document.getElementById('cmpResults').innerHTML='<h3 style="margin-bottom:10px;font-size:13px;">对比结果</h3>'+tbl;
+}
+
+// ====== Sensitivity ======
+async function runSensitivity() {
+  const paramName=document.getElementById('sensParam').value;
+  const vals=document.getElementById('sensVals').value.split(',').map(v=>parseFloat(v.trim())).filter(v=>!isNaN(v));
+  if(!vals.length)return;
+  const resp=await fetch('/api/seal/sensitivity',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({base_config:getParams(),param_name:paramName,param_values:vals})
+  });
+  const data=await resp.json();
+  if(!data.success){alert(data.error);return;}
+
+  // Chart
+  const canvas=document.getElementById('sensChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=Math.max(canvas.parentElement.clientWidth-4,400),H=260;
+  canvas.width=W*2;canvas.height=H*2;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(2,2);ctx.clearRect(0,0,W,H);
+
+  const pad={l:60,r:130,t:20,b:40},pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+  const leakVals=data.results.map(r=>r.leak_rate_mbar_L_s||1e-30);
+  const stressVals=data.results.map(r=>r.p_max_MPa||0);
+  const lyMin=Math.min(...leakVals.filter(v=>v>0))*0.1,lyMax=Math.max(...leakVals)*10;
+  const syMax=Math.max(...stressVals)*1.2;
+
+  const toX=i=>pad.l+(i/(vals.length-1))*pw;
+  const toY=v=>pad.t+ph-(Math.log10(v)-Math.log10(lyMin))/(Math.log10(lyMax)-Math.log10(lyMin))*ph;
+  const toY2=v=>pad.t+ph-(v/syMax)*ph;
+
+  // Grid
+  ctx.strokeStyle='#2a3550';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){ctx.beginPath();ctx.moveTo(pad.l,pad.t+ph*i/4);ctx.lineTo(W-pad.r,pad.t+ph*i/4);ctx.stroke();}
+
+  // Y1 labels
+  ctx.fillStyle='#8896b3';ctx.font='9px Consolas';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    ctx.fillText((lyMin*Math.pow(lyMax/lyMin,i/4)).toExponential(0),pad.l-6,pad.t+ph*(4-i)/4+3);
+  }
+
+  // Leak line
+  ctx.beginPath();ctx.strokeStyle='#00d4ff';ctx.lineWidth=2.5;
+  data.results.forEach((r,i)=>{const x=toX(i),y=toY(r.leak_rate_mbar_L_s||1e-30);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+  data.results.forEach((r,i)=>{const x=toX(i),y=toY(r.leak_rate_mbar_L_s||1e-30);ctx.beginPath();ctx.arc(x,y,4,0,2*Math.PI);ctx.fillStyle='#00d4ff';ctx.fill();ctx.strokeStyle='#0b0e1a';ctx.lineWidth=2;ctx.stroke();});
+
+  // Stress line
+  ctx.beginPath();ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;
+  data.results.forEach((r,i)=>{const x=toX(i),y=toY2(r.p_max_MPa||0);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+  data.results.forEach((r,i)=>{const x=toX(i),y=toY2(r.p_max_MPa||0);ctx.beginPath();ctx.arc(x,y,3,0,2*Math.PI);ctx.fillStyle='#f59e0b';ctx.fill();ctx.strokeStyle='#0b0e1a';ctx.lineWidth=2;ctx.stroke();});
+
+  // Y2 labels
+  ctx.fillStyle='#f59e0b';ctx.textAlign='left';
+  for(let i=0;i<=4;i++)ctx.fillText((syMax*i/4).toFixed(1),W-pad.r+8,pad.t+ph*(4-i)/4+3);
+
+  // X labels
+  ctx.fillStyle='#8896b3';ctx.textAlign='center';
+  vals.forEach((v,i)=>ctx.fillText(v,toX(i),H-pad.b+16));
+
+  // Legend
+  ctx.fillStyle='#00d4ff';ctx.fillRect(W-140,8,10,10);ctx.fillStyle='#e8edf5';ctx.textAlign='left';ctx.fillText('泄漏率 mbarL/s',W-126,17);
+  ctx.fillStyle='#f59e0b';ctx.fillRect(W-140,24,10,10);ctx.fillText('接触应力 MPa',W-126,33);
+
+  // Table
+  let tbl='<table class="compare-table"><thead><tr><th>参数值</th><th>泄漏率 (mbar·L/s)</th><th>接触应力 (MPa)</th><th>安全系数</th><th>安全评定</th><th>泄漏等级</th></tr></thead><tbody>';
+  data.results.forEach(r=>{
+    tbl+=`<tr><td>${r.param_value}</td>
+    <td>${r.leak_rate_mbar_L_s!=null?r.leak_rate_mbar_L_s.toExponential(2):'N/A'}</td>
+    <td>${(r.p_max_MPa||0).toFixed(1)}</td>
+    <td style="color:${(r.safety_factor_yield||0)>=1.5?'var(--green)':'var(--red)'}">${(r.safety_factor_yield||0).toFixed(2)}</td>
+    <td>${r.safety_pass?'&#x2705;':'&#x274C;'}</td>
+    <td>${r.leak_class}</td></tr>`;
+  });
+  tbl+='</tbody></table>';
+  document.getElementById('sensTable').innerHTML=tbl;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流体仿真分析 - 航空航天电磁阀研发平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        .header h1 { color: #00d4ff; }
+        .back-btn {
+            padding: 8px 16px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .panel h2 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .result-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: #888; }
+        .result-value { color: #00d4ff; font-weight: bold; }
+        .warning { color: #ffc107; }
+        .success { color: #00c853; }
+        .error { color: #ff4d4d; }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌊 流体仿真分析 (CFD)</h1>
+            <a href="/" class="back-btn">← 返回主页</a>
+        </div>
+        
+        <div class="content">
+            <div class="panel">
+                <h2>输入参数</h2>
+                
+                <div class="form-group">
+                    <label>流体类型</label>
+                    <select id="fluid">
+                        <option value="water_20C">水 (20°C)</option>
+                        <option value="water_80C">水 (80°C)</option>
+                        <option value="air_20C">空气 (20°C)</option>
+                        <option value="hydraulic_oil">液压油</option>
+                        <option value="fuel_jet_a">航空煤油 Jet-A</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>入口直径 (mm)</label>
+                    <input type="number" id="inletDiameter" value="10" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>阀口直径 (mm)</label>
+                    <input type="number" id="orificeDiameter" value="5" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>行程 (mm)</label>
+                    <input type="number" id="stroke" value="3" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>入口压力 (MPa)</label>
+                    <input type="number" id="inletPressure" value="0.5" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label>出口压力 (MPa)</label>
+                    <input type="number" id="outletPressure" value="0.1" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label>阀门开度 (%)</label>
+                    <input type="number" id="openingRatio" value="100" min="0" max="100">
+                </div>
+                
+                <button class="btn" onclick="runAnalysis()">开始分析</button>
+            </div>
+            
+            <div class="panel">
+                <h2>分析结果</h2>
+                <div id="results">
+                    <p style="color: #888; text-align: center; padding: 40px;">
+                        请输入参数并点击"开始分析"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function runAnalysis() {
+            const data = {
+                fluid: document.getElementById('fluid').value,
+                geometry: {
+                    inlet_diameter: parseFloat(document.getElementById('inletDiameter').value),
+                    orifice_diameter: parseFloat(document.getElementById('orificeDiameter').value),
+                    stroke: parseFloat(document.getElementById('stroke').value)
+                },
+                inlet_pressure: parseFloat(document.getElementById('inletPressure').value) * 1e6,
+                outlet_pressure: parseFloat(document.getElementById('outletPressure').value) * 1e6,
+                opening_ratio: parseFloat(document.getElementById('openingRatio').value) / 100
+            };
+            
+            document.getElementById('results').innerHTML = '<p style="text-align:center;color:#888;">分析中...</p>';
+            
+            try {
+                const response = await fetch('/api/cfd/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    document.getElementById('results').innerHTML = `<p class="error">错误: ${result.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<p class="error">请求失败: ${error.message}</p>`;
+            }
+        }
+        
+        function displayResults(result) {
+            const p = result.performance;
+            const f = result.flow_field;
+            const c = result.cavitation;
+            
+            document.getElementById('results').innerHTML = `
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">性能参数</h3>
+                    <div class="result-item">
+                        <span class="result-label">压降</span>
+                        <span class="result-value">${p.pressure_drop_MPa.toFixed(3)} MPa</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">体积流量</span>
+                        <span class="result-value">${p.volumetric_flow_Lmin.toFixed(2)} L/min</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">质量流量</span>
+                        <span class="result-value">${p.mass_flow_kgs.toFixed(4)} kg/s</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">功率损耗</span>
+                        <span class="result-value">${p.power_W.toFixed(2)} W</span>
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">流场特性</h3>
+                    <div class="result-item">
+                        <span class="result-label">雷诺数</span>
+                        <span class="result-value">${f.reynolds_number.toFixed(0)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">流动类型</span>
+                        <span class="result-value">${f.flow_type}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">最大流速</span>
+                        <span class="result-value">${f.max_velocity.toFixed(2)} m/s</span>
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">空化分析</h3>
+                    <div class="result-item">
+                        <span class="result-label">空化指数</span>
+                        <span class="result-value">${c.cavitation_index.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">风险评估</span>
+                        <span class="result-value ${c.safe_operation ? 'success' : 'warning'}">${c.cavitation_risk}</span>
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">流量系数</h3>
+                    <div class="result-item">
+                        <span class="result-label">Cv</span>
+                        <span class="result-value">${result.flow_coefficient.Cv.toFixed(3)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Kv</span>
+                        <span class="result-value">${result.flow_coefficient.Kv.toFixed(3)}</span>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

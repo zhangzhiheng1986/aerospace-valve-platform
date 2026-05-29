@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日资讯 - 航空航天阀门研发平台</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17,24,39,0.8);
+            --border: rgba(255,255,255,0.06);
+            --border-active: rgba(0,180,216,0.4);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #00b4d8;
+            --accent2: #48cae4;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+            --font-mono: 'JetBrains Mono','Cascadia Code','Fira Code',monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI',system-ui,-apple-system,sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        /* ===== TOP BAR ===== */
+        .topbar {
+            height: 60px;
+            background: rgba(13,19,33,0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            padding: 0 28px;
+            gap: 16px;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .topbar-breadcrumb {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .topbar-breadcrumb span { color: var(--text-muted); }
+        .topbar-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+        .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .topbar-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 7px 14px; border-radius: var(--radius-xs);
+            background: rgba(0,180,216,0.1);
+            border: 1px solid rgba(0,180,216,0.3);
+            color: var(--accent); font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all var(--transition);
+        }
+        .topbar-btn:hover { background: rgba(0,180,216,0.2); }
+        .topbar-btn.danger { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--accent-red); }
+        .topbar-btn.danger:hover { background: rgba(239,68,68,0.2); }
+        /* ===== LAYOUT ===== */
+        .page-content { padding: 28px 32px 60px; max-width: 1100px; margin: 0 auto; }
+        /* ===== HEADER ===== */
+        .page-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+        }
+        .page-title {
+            font-size: 24px; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        .header-stats {
+            display: flex; gap: 16px;
+        }
+        .stat-chip {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px; border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            font-size: 12px; color: var(--text-secondary);
+        }
+        .stat-chip .num { font-size: 18px; font-weight: 800; color: var(--accent); font-family: var(--font-mono); }
+        /* ===== DATE SELECTOR ===== */
+        .date-selector {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .date-chip {
+            padding: 6px 14px; border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary); font-size: 12px;
+            cursor: pointer; transition: all var(--transition);
+            white-space: nowrap;
+        }
+        .date-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+        .date-chip.active { background: rgba(0,180,216,0.15); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+        .date-scroll { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 4px 0; }
+        .date-scroll::-webkit-scrollbar { height: 3px; }
+        .date-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        /* ===== NEWS CARD ===== */
+        .news-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            transition: all var(--transition);
+        }
+        .news-card:hover { border-color: var(--border-active); }
+        .news-date-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 12px; border-radius: 20px;
+            background: rgba(0,180,216,0.1);
+            border: 1px solid rgba(0,180,216,0.25);
+            font-size: 11px; color: var(--accent); font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .news-item {
+            display: flex; gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            align-items: flex-start;
+        }
+        .news-item:last-child { border-bottom: none; }
+        .news-index {
+            width: 28px; height: 28px; min-width: 28px;
+            border-radius: 50%;
+            background: rgba(0,180,216,0.12);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: var(--accent);
+            font-family: var(--font-mono);
+        }
+        .news-body { flex: 1; }
+        .news-title {
+            font-size: 14px; font-weight: 700; color: var(--text-primary);
+            margin-bottom: 4px; line-height: 1.5;
+        }
+        .news-meta {
+            display: flex; align-items: center; gap: 12px;
+            font-size: 11px; color: var(--text-muted);
+        }
+        .news-source { color: var(--accent2); }
+        .news-summary { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.6; }
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center; padding: 80px 20px;
+        }
+        .empty-icon { font-size: 52px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .empty-desc { font-size: 13px; color: var(--text-muted); }
+        /* ===== LOADING ===== */
+        .loading { text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px; }
+        .spinner { display: inline-block; animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .page-content { padding: 20px 16px; }
+            .page-header { flex-direction: column; }
+            .news-card { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-breadcrumb">
+            <span>首页</span> <span>/</span> <span class="current">每日资讯</span>
+        </div>
+        <div class="topbar-actions">
+            <button class="topbar-btn" onclick="importNews()">&#x2B73; 导入最新</button>
+            <button class="topbar-btn" onclick="loadDates()">&#x21BB; 刷新</button>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="page-header">
+            <div>
+                <div class="page-title">&#x1F4E2; 每日资讯</div>
+                <div class="page-subtitle">航空航天阀门研发行业动态，每日自动更新</div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-chip">
+                    <span>累计期数</span>
+                    <span class="num" id="statTotal">-</span>
+                </div>
+                <div class="stat-chip">
+                    <span>最新日期</span>
+                    <span class="num" id="statLatest" style="font-size:13px;color:var(--accent-green)">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="date-selector" id="dateSelector">
+            <div class="date-scroll" id="dateScroll"></div>
+        </div>
+
+        <div id="newsContainer">
+            <div class="loading"><span class="spinner">&#x23F3;</span> 加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        let allDates = [];
+        let currentDate = null;
+
+        async function init() {
+            await loadDates();
+            await loadStats();
+            if (allDates.length > 0) {
+                selectDate(allDates[0]);
+            } else {
+                showEmpty();
+            }
+        }
+
+        async function loadDates() {
+            try {
+                const res = await fetch('/api/news/dates');
+                const data = await res.json();
+                if (data.success && data.dates) {
+                    allDates = data.dates;
+                    renderDateChips();
+                }
+            } catch (e) {
+                console.error('Failed to load dates:', e);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/news/stats');
+                const data = await res.json();
+                if (data.success && data.stats) {
+                    document.getElementById('statTotal').textContent = data.stats.total_entries || 0;
+                    const dates = data.stats.dates || [];
+                    document.getElementById('statLatest').textContent = dates.length > 0 ? dates[0] : '-';
+                }
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+
+        function renderDateChips() {
+            const scroll = document.getElementById('dateScroll');
+            scroll.innerHTML = '';
+            allDates.forEach(date => {
+                const chip = document.createElement('div');
+                chip.className = 'date-chip' + (date === currentDate ? ' active' : '');
+                chip.textContent = date;
+                chip.onclick = () => selectDate(date);
+                scroll.appendChild(chip);
+            });
+        }
+
+        async function selectDate(date) {
+            currentDate = date;
+            renderDateChips();
+            await loadNews(date);
+        }
+
+        async function loadNews(date) {
+            const container = document.getElementById('newsContainer');
+            container.innerHTML = '<div class="loading"><span class="spinner">&#x23F3;</span> 加载中...</div>';
+            try {
+                const res = await fetch('/api/news/date/' + encodeURIComponent(date));
+                const data = await res.json();
+                if (data.success && data.entry) {
+                    renderNews(data.entry);
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x1F4ED;</div><div class="empty-title">暂无该日期资讯</div></div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x26A0;</div><div class="empty-title">加载失败</div></div>';
+            }
+        }
+
+        function renderNews(entry) {
+            const container = document.getElementById('newsContainer');
+            const items = entry.items || [];
+            let html = '<div class="news-card">';
+            html += '<div class="news-date-badge">&#x1F4C5; ' + escapeHtml(entry.date) + '</div>';
+            if (items.length === 0) {
+                html += '<div class="empty-desc">当日暂无资讯内容</div>';
+            }
+            items.forEach(item => {
+                html += '<div class="news-item">';
+                html += '<div class="news-index">' + (item.index || '') + '</div>';
+                html += '<div class="news-body">';
+                html += '<div class="news-title">' + escapeHtml(item.title || '') + '</div>';
+                html += '<div class="news-meta">';
+                if (item.source) html += '<span class="news-source">&#x1F4F0; ' + escapeHtml(item.source) + '</span>';
+                html += '</div>';
+                if (item.summary) html += '<div class="news-summary">' + escapeHtml(item.summary) + '</div>';
+                html += '</div></div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function importNews() {
+            try {
+                const res = await fetch('/api/news/import', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('导入成功！');
+                    await init();
+                } else {
+                    alert('导入失败: ' + (data.message || data.error || '未知错误'));
+                }
+            } catch (e) {
+                alert('导入失败: ' + e.message);
+            }
+        }
+
+        function showEmpty() {
+            document.getElementById('newsContainer').innerHTML =
+                '<div class="empty-state">' +
+                '<div class="empty-icon">&#x1F4F0;</div>' +
+                '<div class="empty-title">暂无资讯数据</div>' +
+                '<div class="empty-desc">定时任务将每日自动生成，或点击「导入最新」手动导入</div>' +
+                '</div>';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        init();
+    </script>
+</body>
+</html>

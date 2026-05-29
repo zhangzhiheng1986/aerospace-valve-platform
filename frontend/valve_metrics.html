@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>性能指标库 - 航空航天阀门研发平台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:#111827;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff88;--text:#e0e7ff;--dim:#6b7fa3;--danger:#ff4757;--warn:#ffa502;--purple:#a855f7}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.header h1{font-size:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .back{color:var(--dim);text-decoration:none;font-size:14px}
+.header .back:hover{color:var(--accent)}
+.header .stats{margin-left:auto;display:flex;gap:16px;font-size:12px;color:var(--dim)}
+.header .stats span{color:var(--accent);font-weight:700}
+.main{max-width:1400px;margin:0 auto;padding:24px}
+.search-bar{display:flex;gap:12px;margin-bottom:24px}
+.search-bar input{flex:1;background:#0d1525;border:1px solid var(--border);border-radius:8px;padding:10px 16px;color:var(--text);font-size:14px}
+.search-bar input:focus{outline:none;border-color:var(--accent)}
+.tab-nav{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
+.tab-btn{background:transparent;border:1px solid var(--border);color:var(--dim);padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;transition:all .2s;font-weight:500}
+.tab-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tab-btn.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
+.panel{display:none}.panel.show{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-card .label{font-size:11px;color:var(--dim);margin-top:4px}
+.category-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:24px}
+.category-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.category-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.category-card.active{border-color:var(--accent);background:rgba(0,212,255,.08)}
+.category-card .icon{font-size:20px;margin-bottom:6px}
+.category-card .name{font-size:13px;font-weight:600}
+.category-card .count{font-size:11px;color:var(--dim)}
+.metric-list{display:flex;flex-direction:column;gap:8px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;transition:all .2s}
+.metric-card:hover{border-color:var(--accent)}
+.metric-header{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.metric-header .symbol{font-size:18px;font-weight:800;color:var(--accent);min-width:50px}
+.metric-header .names{flex:1}
+.metric-header .names .cn{font-size:14px;font-weight:600}
+.metric-header .names .en{font-size:11px;color:var(--dim)}
+.badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-critical{background:rgba(255,71,87,.15);color:var(--danger);border:1px solid rgba(255,71,87,.3)}
+.badge-major{background:rgba(255,165,2,.15);color:var(--warn);border:1px solid rgba(255,165,2,.3)}
+.badge-secondary{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+.badge-higher{background:rgba(0,255,136,.15);color:var(--accent2)}
+.badge-lower{background:rgba(255,71,87,.15);color:var(--danger)}
+.badge-range{background:rgba(168,85,247,.15);color:var(--purple)}
+.metric-detail{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:12px}
+.metric-detail .item{display:flex;gap:6px;padding:3px 0}
+.metric-detail .item .k{color:var(--dim);min-width:70px}
+.metric-detail .item .v{color:var(--text)}
+.valve-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.valve-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;transition:all .2s}
+.valve-card:hover{border-color:var(--accent2)}
+.valve-card h3{font-size:15px;color:var(--accent2);margin-bottom:4px}
+.valve-card .en{font-size:11px;color:var(--dim);margin-bottom:8px}
+.valve-card .desc{font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:12px}
+.range-table{width:100%;font-size:11px;border-collapse:collapse;margin-bottom:10px}
+.range-table th{text-align:left;color:var(--dim);padding:4px 8px;border-bottom:1px solid var(--border);font-weight:500}
+.range-table td{padding:3px 8px;border-bottom:1px solid rgba(30,58,95,.3)}
+.range-table td:first-child{color:var(--accent);font-weight:500}
+.range-table td:nth-child(2){color:var(--accent2);font-family:monospace}
+.critical-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.critical-tag{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);padding:2px 8px;border-radius:4px;font-size:10px;color:var(--accent2)}
+.domain-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:12px}
+.domain-card h3{font-size:15px;color:var(--purple);margin-bottom:4px}
+.domain-card .en{font-size:11px;color:var(--dim);margin-bottom:8px}
+.domain-card .desc{font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:12px}
+.req-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:12px;margin-bottom:10px}
+.req-item{display:flex;gap:6px;padding:3px 0}
+.req-item .k{color:var(--dim);min-width:80px}
+.req-item .v{color:var(--accent);font-weight:500}
+.leak-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+.leak-table th{background:#1a2540;color:var(--accent);padding:10px 12px;text-align:left;font-size:11px}
+.leak-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.leak-table tr:hover td{background:rgba(0,212,255,.03)}
+.leak-table .class-name{color:var(--accent);font-weight:700;font-size:14px}
+.std-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.std-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
+.std-card .id{font-size:13px;font-weight:700;color:var(--accent)}
+.std-card .title{font-size:11px;color:var(--dim);margin-top:2px}
+.std-card .scope{font-size:11px;color:var(--accent2);margin-top:4px}
+.empty{text-align:center;padding:40px;color:var(--dim);font-size:14px}
+</style>
+</head>
+<body>
+<div class="header">
+<a href="/" class="back">&larr; &#x8FD4;&#x56DE;</a>
+<h1>&#x822A;&#x7A7A;&#x822A;&#x5929;&#x9600;&#x95E8;&#x6027;&#x80FD;&#x6307;&#x6807;&#x5E93;</h1>
+<div class="stats" id="headerStats"></div>
+</div>
+<div class="main">
+<div class="search-bar">
+<input type="text" id="searchInput" placeholder="&#x641C;&#x7D22;&#x6307;&#x6807;&#xFF08;&#x4E2D;/&#x82F1;/&#x7B26;&#x53F7;/&#x6807;&#x51C6;&#x53F7;&#xFF09;" oninput="handleSearch()">
+</div>
+<div class="tab-nav">
+<button class="tab-btn active" onclick="switchMainTab('metrics')">&#x1F4CA; &#x6307;&#x6807;&#x5B9A;&#x4E49; (<span id="metricsCount">0</span>)</button>
+<button class="tab-btn" onclick="switchMainTab('types')">&#x1F527; &#x9600;&#x95E8;&#x7C7B;&#x578B; (<span id="typesCount">0</span>)</button>
+<button class="tab-btn" onclick="switchMainTab('domains')">&#x1F680; &#x5E94;&#x7528;&#x9886;&#x57DF; (<span id="domainsCount">0</span>)</button>
+<button class="tab-btn" onclick="switchMainTab('leakage')">&#x1F4A7; &#x6CC4;&#x6F0F;&#x7B49;&#x7EA7;</button>
+<button class="tab-btn" onclick="switchMainTab('standards')">&#x1F4D6; &#x6807;&#x51C6;&#x89C4;&#x8303; (<span id="standardsCount">0</span>)</button>
+</div>
+<div id="metricsPanel" class="panel show">
+<div class="category-grid" id="categoryGrid"></div>
+<div class="metric-list" id="metricList"></div>
+</div>
+<div id="typesPanel" class="panel">
+<div class="valve-grid" id="valveGrid"></div>
+</div>
+<div id="domainsPanel" class="panel">
+<div id="domainList"></div>
+</div>
+<div id="leakagePanel" class="panel">
+<table class="leak-table" id="leakTable"></table>
+</div>
+<div id="standardsPanel" class="panel">
+<div class="std-grid" id="stdGrid"></div>
+</div>
+</div>
+<script>
+let allMetrics=[],allTypes={},allDomains={},leakageClasses={},allStandards=[];
+let currentCategory='all',searchQuery='';
+const CAT_META={
+pressure:{icon:'\u26A1',name:'\u538B\u529B\u6307\u6807'},
+flow:{icon:'\u2728',name:'\u6D41\u91CF\u6307\u6807'},
+leakage:{icon:'\u1F4A7',name:'\u6CC4\u6F0F\u6307\u6807'},
+dynamic:{icon:'\u23F1',name:'\u52A8\u6001\u54CD\u5E94'},
+thermal:{icon:'\U0001F321',name:'\u70ED\u5DE5\u6307\u6807'},
+mechanical:{icon:'\u2699',name:'\u673A\u68B0/\u632F\u52A8'},
+reliability:{icon:'\U0001F6E1',name:'\u53EF\u9760\u6027'},
+mass:{icon:'\u2696',name:'\u8D28\u91CF/\u5305\u7EDC'}
+};
+async function loadData(){
+try{
+const[ms,ts,ds,lk,st]=await Promise.all([
+fetch('/api/metrics/list').then(r=>r.json()),
+fetch('/api/metrics/valve_types').then(r=>r.json()),
+fetch('/api/metrics/domains').then(r=>r.json()),
+fetch('/api/metrics/leakage_classes').then(r=>r.json()),
+fetch('/api/metrics/standards').then(r=>r.json())
+]);
+allMetrics=ms;allTypes=ts;allDomains=ds;leakageClasses=lk;allStandards=st;
+document.getElementById('metricsCount').textContent=ms.length;
+document.getElementById('typesCount').textContent=Object.keys(ts).length;
+document.getElementById('domainsCount').textContent=Object.keys(ds).length;
+document.getElementById('standardsCount').textContent=st.length;
+document.getElementById('headerStats').innerHTML=
+`<span>${ms.length}</span> \u6307\u6807 \u00B7 <span>${Object.keys(ts).length}</span> \u9600\u95E8\u7C7B\u578B \u00B7 <span>${Object.keys(ds).length}</span> \u5E94\u7528\u9886\u57DF \u00B7 <span>${st.length}</span> \u6807\u51C6`;
+renderCategories();renderMetrics();renderValveTypes();renderDomains();renderLeakage();renderStandards();
+}catch(e){console.error(e)}
+}
+function renderCategories(){
+let html='<div class="category-card '+(currentCategory==='all'?'active':'')+'" onclick="setCategory(\'all\')"><div class="icon">\U0001F4CA</div><div class="name">\u5168\u90E8\u6307\u6807</div><div class="count">'+allMetrics.length+' \u9879</div></div>';
+const cats={};allMetrics.forEach(m=>{if(!cats[m.category])cats[m.category]=0;cats[m.category]++});
+Object.entries(cats).sort((a,b)=>b[1]-a[1]).forEach(([cat,count])=>{
+const meta=CAT_META[cat]||{icon:'\u25CF',name:cat};
+html+=`<div class="category-card ${currentCategory===cat?'active':''}" onclick="setCategory('${cat}')"><div class="icon">${meta.icon}</div><div class="name">${meta.name}</div><div class="count">${count} \u9879</div></div>`;
+});
+document.getElementById('categoryGrid').innerHTML=html;
+}
+function setCategory(c){currentCategory=c;renderCategories();renderMetrics()}
+function renderMetrics(){
+let filtered=allMetrics;
+if(currentCategory!=='all')filtered=filtered.filter(m=>m.category===currentCategory);
+if(searchQuery){const q=searchQuery.toLowerCase();filtered=filtered.filter(m=>`${m.id} ${m.name_cn} ${m.name_en} ${m.symbol} ${m.definition} ${m.standard_ref}`.toLowerCase().includes(q))}
+if(!filtered.length){document.getElementById('metricList').innerHTML='<div class="empty">\u65E0\u5339\u914D\u6307\u6807</div>';return}
+let html='';
+filtered.forEach(m=>{
+const impBadge=m.importance==='critical'?'badge-critical':m.importance==='major'?'badge-major':'badge-secondary';
+const impText=m.importance==='critical'?'\u5173\u952E':m.importance==='major'?'\u91CD\u8981':'\u6B21\u8981';
+const dirBadge=m.direction==='higher_better'?'badge-higher':m.direction==='lower_better'?'badge-lower':'badge-range';
+const dirText=m.direction==='higher_better'?'\u2191 \u8D8A\u9AD8\u8D8A\u597D':m.direction==='lower_better'?'\u2193 \u8D8A\u4F4E\u8D8A\u597D':'\u25CB \u8303\u56F4\u503C';
+html+=`<div class="metric-card"><div class="metric-header"><span class="symbol">${m.symbol}</span><div class="names"><div class="cn">${m.name_cn}</div><div class="en">${m.name_en}</div></div><span class="badge ${impBadge}">${impText}</span><span class="badge ${dirBadge}">${dirText}</span><span style="font-size:11px;color:var(--dim)">${m.unit}</span></div><div class="metric-detail"><div class="item"><span class="k">\u5B9A\u4E49</span><span class="v">${m.definition}</span></div><div class="item"><span class="k">\u6D4B\u8BD5\u65B9\u6CD5</span><span class="v">${m.test_method}</span></div><div class="item"><span class="k">\u6807\u51C6\u4F9D\u636E</span><span class="v">${m.standard_ref}</span></div><div class="item"><span class="k">\u6307\u6807ID</span><span class="v">${m.id}</span></div></div></div>`;
+});
+document.getElementById('metricList').innerHTML=html;
+}
+function renderValveTypes(){
+let html='';
+Object.entries(allTypes).forEach(([id,vt])=>{
+let rangeRows='';
+const ranges=vt.typical_ranges||{};
+const metricMap={};allMetrics.forEach(m=>{metricMap[m.id]=m});
+Object.entries(ranges).forEach(([k,v])=>{
+const meta=metricMap[k];
+const name=meta?meta.name_cn:k;
+let valStr='';
+if(Array.isArray(v)){valStr=v.join(', ')}else if(typeof v==='object'){valStr=JSON.stringify(v)}else{valStr=String(v)}
+const unit=meta?meta.unit:'';
+rangeRows+=`<tr><td>${name}</td><td>${valStr} ${unit}</td></tr>`;
+});
+const stds=(vt.key_standards||[]).map(s=>`<span class="critical-tag">${s}</span>`).join('');
+const crits=(vt.critical_metrics||[]).map(c=>{const m=metricMap[c];return m?`<span class="critical-tag">${m.name_cn}</span>`:''}).join('');
+html+=`<div class="valve-card"><h3>${vt.name_cn}</h3><div class="en">${vt.name_en}</div><div class="desc">${vt.description}<br><b>\u5E94\u7528:</b> ${(vt.applications||[]).join('\u3001')}</div><table class="range-table"><tr><th>\u6307\u6807</th><th>\u5178\u578B\u8303\u56F4</th></tr>${rangeRows}</table><div style="margin-top:8px"><b style="font-size:11px;color:var(--dim)">\u5173\u952E\u6307\u6807:</b> <span class="critical-tags">${crits}</span></div><div style="margin-top:4px"><b style="font-size:11px;color:var(--dim)">\u6807\u51C6:</b> <span class="critical-tags">${stds}</span></div></div>`;
+});
+document.getElementById('valveGrid').innerHTML=html;
+}
+function renderDomains(){
+let html='';
+Object.entries(allDomains).forEach(([id,d])=>{
+const reqItems=Object.entries(d.key_requirements||{}).map(([k,v])=>`<div class="req-item"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+const stds=(d.standards||[]).map(s=>`<span class="critical-tag">${s}</span>`).join('');
+const vtypes=(d.valve_types_used||[]).map(t=>{const vt=allTypes[t];return vt?vt.name_cn:t}).join('\u3001');
+html+=`<div class="domain-card"><h3>${d.name_cn}</h3><div class="en">${d.name_en}</div><div class="desc">${d.description}<br><b>\u5E38\u7528\u9600\u95E8:</b> ${vtypes}</div><div class="req-grid">${reqItems}</div><div><b style="font-size:11px;color:var(--dim)">\u6807\u51C6:</b> <span class="critical-tags">${stds}</span></div><div style="margin-top:6px;font-size:11px;color:var(--warn)"><b>\u6CE8\u610F:</b> ${d.notes||''}</div></div>`;
+});
+document.getElementById('domainList').innerHTML=html;
+}
+function renderLeakage(){
+let html='<thead><tr><th>\u7B49\u7EA7</th><th>\u8BF4\u660E</th><th>\u5141\u8BB8\u6CC4\u6F0F\u91CF</th><th>\u6D4B\u8BD5\u65B9\u6CD5</th><th>\u5178\u578B\u5E94\u7528</th></tr></thead><tbody>';
+Object.entries(leakageClasses).forEach(([k,v])=>{
+html+=`<tr><td class="class-name">${v.name_cn}</td><td>${v.description}</td><td>${v.allowable_leakage||Object.entries(v.allowable_leakage_table||{}).map(([dn,lv])=>`${dn}: ${lv}`).join('<br>')||''}</td><td>${v.test_method}</td><td>${v.typical_valve}</td></tr>`;
+});
+html+='</tbody>';
+document.getElementById('leakTable').innerHTML=html;
+}
+function renderStandards(){
+let html='';
+allStandards.forEach(s=>{
+const statusColor=s.status==='active'?'var(--accent2)':'var(--warn)';
+html+=`<div class="std-card"><div class="id">${s.id}</div><div class="title">${s.title}</div><div class="scope">${s.scope}</div><div style="font-size:10px;color:${statusColor};margin-top:4px">${s.status}</div></div>`;
+});
+document.getElementById('stdGrid').innerHTML=html;
+}
+function switchMainTab(tab){
+document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+event.target.classList.add('active');
+['metrics','types','domains','leakage','standards'].forEach(t=>{
+document.getElementById(t+'Panel').classList.toggle('show',t===tab);
+});
+}
+function handleSearch(){
+searchQuery=document.getElementById('searchInput').value.trim();
+const mt=document.getElementById('metricsPanel');
+if(searchQuery&&!mt.classList.contains('show')){
+document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+document.querySelectorAll('.tab-btn')[0].classList.add('active');
+['metrics','types','domains','leakage','standards'].forEach(t=>{
+document.getElementById(t+'Panel').classList.toggle('show',t==='metrics');
+});
+}
+renderMetrics();
+}
+loadData();
+</script>
+</body>
+</html>

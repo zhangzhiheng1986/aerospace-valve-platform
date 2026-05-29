@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>航空航天电磁阀线圈优化系统 - Web版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            min-height: 800px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            border-right: 2px solid #e0e0e0;
+            overflow-y: auto;
+        }
+        
+        .right-panel {
+            flex: 1.2;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-title {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        .input-group h3 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #fafafa;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .input-row:hover {
+            background: #f0f0f0;
+            transform: translateX(5px);
+        }
+        
+        .input-row label {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .input-row input {
+            width: 150px;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-row input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .result-area {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .log-area {
+            flex: 1;
+            background: #f8f9fa;
+            color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 航空航天电磁阀线圈优化系统</h1>
+            <p>Web版 v3.2 - PSO粒子群优化算法</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 左侧：参数输入 -->
+            <div class="left-panel">
+                <div class="panel-title">⚙️ 输入参数</div>
+                
+                <div class="tab-container">
+                    <button class="tab active" onclick="switchTab('geom')">线圈几何</button>
+                    <button class="tab" onclick="switchTab('mag')">磁路尺寸</button>
+                    <button class="tab" onclick="switchTab('elec')">电气参数</button>
+                    <button class="tab" onclick="switchTab('wind')">绕线工艺</button>
+                </div>
+                
+                <!-- 线圈几何尺寸 -->
+                <div id="tab-geom" class="tab-content active">
+                    <div class="input-group">
+                        <h3>线圈几何尺寸</h3>
+                        <div class="input-row">
+                            <label>内径 (mm)</label>
+                            <input type="number" id="D_inner_mm" value="20.0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>最大外径 (mm)</label>
+                            <input type="number" id="D_outer_max_mm" value="40.0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>轴向长度 (mm)</label>
+                            <input type="number" id="L_axial_max_mm" value="30.0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 磁路关键尺寸 -->
+                <div id="tab-mag" class="tab-content">
+                    <div class="input-group">
+                        <h3>磁路关键尺寸</h3>
+                        <div class="input-row">
+                            <label>主气隙 (mm)</label>
+                            <input type="number" id="air_gap_main_mm" value="0.8" step="0.01">
+                        </div>
+                        <div class="input-row">
+                            <label>次级气隙 (mm)</label>
+                            <input type="number" id="air_gap_secondary_mm" value="0.1" step="0.01">
+                        </div>
+                        <div class="input-row">
+                            <label>衔铁长度 (mm)</label>
+                            <input type="number" id="armature_length_mm" value="55.0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>铁芯后角 (deg)</label>
+                            <input type="number" id="core_rear_angle_deg" value="-40.0" step="1">
+                        </div>
+                        <div class="input-row">
+                            <label>极面面积 (mm²)</label>
+                            <input type="number" id="pole_face_area_mm2" value="120.0" step="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 电气参数 -->
+                <div id="tab-elec" class="tab-content">
+                    <div class="input-group">
+                        <h3>电气参数</h3>
+                        <div class="input-row">
+                            <label>额定电压 (V)</label>
+                            <input type="number" id="V_rated" value="28.0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>最大电流 (A)</label>
+                            <input type="number" id="I_current_limit" value="2.0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <label>占空比</label>
+                            <input type="number" id="duty_cycle" value="0.5" step="0.05">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 绕线工艺 -->
+                <div id="tab-wind" class="tab-content">
+                    <div class="input-group">
+                        <h3>绕线工艺</h3>
+                        <div class="input-row">
+                            <label>填充系数最小值</label>
+                            <input type="number" id="fill_factor_min" value="0.85" step="0.01">
+                        </div>
+                        <div class="input-row">
+                            <label>填充系数最大值</label>
+                            <input type="number" id="fill_factor_max" value="0.96" step="0.01">
+                        </div>
+                        <h3 style="margin-top: 30px;">优化设置</h3>
+                        <div class="input-row">
+                            <label>粒子数量</label>
+                            <input type="number" id="n_particles" value="20" step="1" min="5" max="100">
+                        </div>
+                        <div class="input-row">
+                            <label>迭代次数</label>
+                            <input type="number" id="n_iterations" value="50" step="10" min="10" max="200">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" id="run-btn" onclick="startOptimization()">
+                        🚀 开始优化
+                    </button>
+                    <button class="btn-secondary" onclick="resetParams()">
+                        🔄 重置参数
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧：结果展示 -->
+            <div class="right-panel">
+                <div class="panel-title">📊 优化结果</div>
+                
+                <div class="progress-bar" id="progress-bar" style="display: none;">
+                    <div class="progress-fill" id="progress-fill">0%</div>
+                </div>
+                
+                <div id="result-area" class="result-area">
+                    等待优化...
+                </div>
+                
+                <div class="panel-title" style="margin-top: 20px;">📝 运行日志</div>
+                <div id="log-area" class="log-area">
+                    日志将在此显示...
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-danger" onclick="clearAll()">
+                        🗑️ 清除全部
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let isOptimizing = false;
+        
+        // 切换标签页
+        function switchTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 显示选中的标签
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // 获取输入参数
+        function getInputs() {
+            const inputs = {};
+            const fields = [
+                'D_inner_mm', 'D_outer_max_mm', 'L_axial_max_mm',
+                'air_gap_main_mm', 'air_gap_secondary_mm', 'armature_length_mm',
+                'core_rear_angle_deg', 'pole_face_area_mm2',
+                'V_rated', 'I_current_limit', 'duty_cycle',
+                'fill_factor_min', 'fill_factor_max'
+            ];
+            
+            fields.forEach(field => {
+                const el = document.getElementById(field);
+                if (el) {
+                    inputs[field] = parseFloat(el.value);
+                }
+            });
+            
+            return inputs;
+        }
+        
+        // 开始优化
+        async function startOptimization() {
+            if (isOptimizing) {
+                alert('优化正在进行中，请稍候...');
+                return;
+            }
+            
+            const geomParams = getInputs();
+            const nParticles = parseInt(document.getElementById('n_particles').value);
+            const nIterations = parseInt(document.getElementById('n_iterations').value);
+            
+            // 验证参数
+            if (geomParams['D_outer_max_mm'] <= geomParams['D_inner_mm']) {
+                alert('错误：最大外径必须大于内径');
+                return;
+            }
+            
+            isOptimizing = true;
+            document.getElementById('run-btn').disabled = true;
+            document.getElementById('run-btn').innerHTML = '<span class="spinner"></span>优化中...';
+            document.getElementById('result-area').innerHTML = '⏳ 优化中，请稍候...\n\n';
+            document.getElementById('log-area').innerHTML = '';
+            document.getElementById('progress-bar').style.display = 'block';
+            document.getElementById('progress-fill').style.width = '0%';
+            document.getElementById('progress-fill').textContent = '0%';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/solenoid/optimize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        geom_params: geomParams,
+                        n_particles: nParticles,
+                        n_iterations: nIterations
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // 显示日志
+                if (result.logs && result.logs.length > 0) {
+                    document.getElementById('log-area').innerHTML = result.logs.join('\n');
+                    document.getElementById('log-area').scrollTop = document.getElementById('log-area').scrollHeight;
+                }
+                
+                // 显示结果
+                if (result.success) {
+                    displayResult(result);
+                    document.getElementById('progress-fill').style.width = '100%';
+                    document.getElementById('progress-fill').textContent = '100%';
+                } else {
+                    document.getElementById('result-area').innerHTML = 
+                        `❌ 优化失败\n\n${result.message || result.error || '未知错误'}`;
+                    document.getElementById('progress-fill').style.width = '100%';
+                    document.getElementById('progress-fill').textContent = '失败';
+                }
+                
+            } catch (error) {
+                document.getElementById('result-area').innerHTML = 
+                    `❌ 请求失败\n\n${error.message}`;
+                document.getElementById('progress-fill').style.width = '100%';
+                document.getElementById('progress-fill').textContent = '错误';
+            } finally {
+                isOptimizing = false;
+                document.getElementById('run-btn').disabled = false;
+                document.getElementById('run-btn').innerHTML = '🚀 开始优化';
+            }
+        }
+        
+        // 显示优化结果
+        function displayResult(result) {
+            const info = result.best_info;
+            const geom = getInputs();
+            
+            let output = `╔══════════════════════════════════════════════════════════════════════════════╗\n`;
+            output += `║                              最优设计结果                                    ║\n`;
+            output += `╠══════════════════════════════════════════════════════════════════════════════╣\n`;
+            output += `║  【线规参数】                                                                ║\n`;
+            output += `║    最佳 AWG 线规      : ${String(info.awg).padStart(2)}  AWG\n`;
+            output += `║    裸铜直径           : ${info.d_bare_mm.toFixed(3)} mm\n`;
+            output += `║    绝缘直径           : ${info.d_ins_mm.toFixed(3)} mm\n`;
+            output += `║    总匝数             : ${String(info.N).padStart(5)}  T\n`;
+            output += `║    实际外径           : ${info.D_out_actual_mm.toFixed(2)} mm (≤ ${geom.D_outer_max_mm.toFixed(1)} mm)\n`;
+            
+            const jStatus = info.J < 5 ? '✓ 合格' : '⚠ 超限';
+            output += `║    电流密度           : ${info.J.toFixed(2)} A/mm²   ${jStatus}\n`;
+            
+            output += `║  ---------------------------------------------------------------------------║\n`;
+            output += `║  【电磁性能】                                                                ║\n`;
+            output += `║    稳态电流 (热态)   : ${info.I.toFixed(3)} A\n`;
+            output += `║    热态电阻          : ${info.R_hot.toFixed(3)} Ω\n`;
+            output += `║    磁动势 (NI)       : ${Math.round(info.I * info.N)} At\n`;
+            output += `║    气隙磁感应强度   : ${info.B.toFixed(3)} T\n`;
+            output += `║    漏磁系数          : ${info.f_leak.toFixed(3)}\n`;
+            output += `║    【电磁吸合力】    : ${info.F_final.toFixed(3)} N  ★★★★★\n`;
+            
+            output += `║  ---------------------------------------------------------------------------║\n`;
+            output += `║  【热平衡与可靠性】                                                          ║\n`;
+            
+            const tStatus = info.T_coil < 150 ? '✓ 安全' : '⚠ 偏高';
+            output += `║    稳态工作温度     : ${info.T_coil.toFixed(1)} ℃  (限值180℃) ${tStatus}\n`;
+            output += `║    环境温度         : 40.0 ℃\n`;
+            
+            const satStatus = info.saturated ? '是（深度饱和，建议降额）' : '否（线性区）';
+            output += `║    饱和状态         : ${satStatus}\n`;
+            output += `║    次级气隙(优化后) : ${info.sec_gap.toFixed(3)} mm\n`;
+            output += `║    填充系数(优化后) : ${info.fill_factor.toFixed(3)}\n`;
+            
+            output += `║  ---------------------------------------------------------------------------║\n`;
+            output += `║  【经济性指标】                                                              ║\n`;
+            output += `║    估算铜线质量     : ${result.mass_g.toFixed(1)} g\n`;
+            output += `║    功率消耗(稳态)   : ${result.power_W.toFixed(3)} W\n`;
+            output += `╚══════════════════════════════════════════════════════════════════════════════╝\n`;
+            
+            document.getElementById('result-area').innerHTML = output;
+        }
+        
+        // 重置参数
+        function resetParams() {
+            const defaults = {
+                'D_inner_mm': 20.0,
+                'D_outer_max_mm': 40.0,
+                'L_axial_max_mm': 30.0,
+                'air_gap_main_mm': 0.8,
+                'air_gap_secondary_mm': 0.1,
+                'armature_length_mm': 55.0,
+                'core_rear_angle_deg': -40.0,
+                'pole_face_area_mm2': 120.0,
+                'V_rated': 28.0,
+                'I_current_limit': 2.0,
+                'duty_cycle': 0.5,
+                'fill_factor_min': 0.85,
+                'fill_factor_max': 0.96,
+                'n_particles': 20,
+                'n_iterations': 50
+            };
+            
+            for (const [id, value] of Object.entries(defaults)) {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            }
+            
+            document.getElementById('result-area').innerHTML = '等待优化...';
+            document.getElementById('log-area').innerHTML = '日志将在此显示...';
+            document.getElementById('progress-bar').style.display = 'none';
+        }
+        
+        // 清除全部
+        function clearAll() {
+            if (isOptimizing) {
+                alert('优化正在进行中，无法清除');
+                return;
+            }
+            resetParams();
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('航空航天电磁阀优化系统 Web版已加载');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>热力学分析 - 航空航天电磁阀研发平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        .header h1 { color: #00d4ff; }
+        .back-btn {
+            padding: 8px 16px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .panel h2 { color: #00d4ff; margin-bottom: 15px; font-size: 18px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #ccc; font-size: 14px; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .result-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: #888; }
+        .result-value { color: #00d4ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ 热力学分析</h1>
+            <a href="/" class="back-btn">← 返回主页</a>
+        </div>
+        
+        <div class="content">
+            <div class="panel">
+                <h2>输入参数</h2>
+                
+                <div class="form-group">
+                    <label>材料</label>
+                    <select id="material">
+                        <option value="copper">纯铜 T2</option>
+                        <option value="aluminum">铝合金 2A12</option>
+                        <option value="steel">不锈钢 304</option>
+                        <option value="titanium">钛合金 TC4</option>
+                        <option value="inconel">Inconel 718</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>表面积 (cm²)</label>
+                    <input type="number" id="surfaceArea" value="100" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>质量 (g)</label>
+                    <input type="number" id="mass" value="500" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>壁厚 (mm)</label>
+                    <input type="number" id="thickness" value="5" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>流体温度 (°C)</label>
+                    <input type="number" id="fluidTemp" value="80" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>环境温度 (°C)</label>
+                    <input type="number" id="ambientTemp" value="20" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>对流换热系数 (W/m²·K)</label>
+                    <input type="number" id="convectionCoeff" value="100" step="1">
+                </div>
+                
+                <button class="btn" onclick="runAnalysis()">开始分析</button>
+            </div>
+            
+            <div class="panel">
+                <h2>分析结果</h2>
+                <div id="results">
+                    <p style="color: #888; text-align: center; padding: 40px;">
+                        请输入参数并点击"开始分析"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function runAnalysis() {
+            const data = {
+                material: document.getElementById('material').value,
+                component: {
+                    surface_area: parseFloat(document.getElementById('surfaceArea').value) / 10000,
+                    mass: parseFloat(document.getElementById('mass').value) / 1000,
+                    thickness: parseFloat(document.getElementById('thickness').value) / 1000
+                },
+                conditions: {
+                    fluid_temp: parseFloat(document.getElementById('fluidTemp').value),
+                    ambient_temp: parseFloat(document.getElementById('ambientTemp').value),
+                    initial_temp: parseFloat(document.getElementById('ambientTemp').value),
+                    convection_coeff: parseFloat(document.getElementById('convectionCoeff').value),
+                    emissivity: 0.8
+                }
+            };
+            
+            document.getElementById('results').innerHTML = '<p style="text-align:center;color:#888;">分析中...</p>';
+            
+            try {
+                const response = await fetch('/api/thermal/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    document.getElementById('results').innerHTML = `<p style="color:#ff4d4d;">错误: ${result.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<p style="color:#ff4d4d;">请求失败: ${error.message}</p>`;
+            }
+        }
+        
+        function displayResults(result) {
+            const s = result.summary;
+            const c = result.conduction;
+            const cv = result.convection;
+            const r = result.radiation;
+            
+            document.getElementById('results').innerHTML = `
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">热损失汇总</h3>
+                    <div class="result-item">
+                        <span class="result-label">传导热损失</span>
+                        <span class="result-value">${c.heat_rate_W.toFixed(2)} W</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">对流热损失</span>
+                        <span class="result-value">${cv.heat_rate_W.toFixed(2)} W</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">辐射热损失</span>
+                        <span class="result-value">${r.heat_rate_W.toFixed(2)} W</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">总热损失</span>
+                        <span class="result-value">${s.total_heat_loss_W.toFixed(2)} W</span>
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">瞬态特性</h3>
+                    <div class="result-item">
+                        <span class="result-label">热时间常数</span>
+                        <span class="result-value">${s.thermal_time_constant_s.toFixed(1)} s</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">稳态温度</span>
+                        <span class="result-value">${s.steady_state_temp_C.toFixed(1)} °C</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">最高温度</span>
+                        <span class="result-value">${s.max_temp_C.toFixed(1)} °C</span>
+                    </div>
+                </div>
+                
+                <div class="result-box">
+                    <h3 style="color:#00d4ff;margin-bottom:10px;">材料属性</h3>
+                    <div class="result-item">
+                        <span class="result-label">材料名称</span>
+                        <span class="result-value">${result.material.name}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">热导率</span>
+                        <span class="result-value">${result.material.thermal_conductivity.toFixed(1)} W/m·K</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">比热容</span>
+                        <span class="result-value">${result.material.specific_heat.toFixed(0)} J/kg·K</span>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

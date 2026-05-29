@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专业知识库 - 航空航天电磁阀研发平台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a1929 0%, #132f4c 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { color: #00d4ff; font-size: 22px; }
+        .back-btn {
+            padding: 8px 16px;
+            background: rgba(0,212,255,0.15);
+            border: 1px solid rgba(0,212,255,0.4);
+            color: #00d4ff;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .layout {
+            display: flex;
+            height: calc(100vh - 62px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            min-width: 300px;
+            background: rgba(0,0,0,0.25);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .search-box {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-box input:focus { border-color: #00d4ff; }
+        .search-results {
+            padding: 10px 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        .search-result-item {
+            padding: 8px 10px;
+            margin-bottom: 4px;
+            background: rgba(0,212,255,0.08);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            border-left: 3px solid #00d4ff;
+        }
+        .search-result-item:hover { background: rgba(0,212,255,0.15); }
+        .search-result-item .score { color: #888; font-size: 11px; }
+
+        .nav-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        .nav-chapter {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .nav-chapter:hover { color: #00d4ff; background: rgba(0,212,255,0.05); }
+        .nav-chapter.active { color: #00d4ff; background: rgba(0,212,255,0.1); }
+        .nav-section {
+            padding: 7px 15px 7px 40px;
+            cursor: pointer;
+            color: #999;
+            font-size: 13px;
+        }
+        .nav-section:hover { color: #ccc; background: rgba(255,255,255,0.03); }
+        .nav-section.active { color: #00d4ff; background: rgba(0,212,255,0.08); }
+
+        /* Main content */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 40px;
+        }
+
+        /* Welcome page */
+        .welcome { text-align: center; padding: 60px 20px; }
+        .welcome h2 { color: #00d4ff; font-size: 28px; margin-bottom: 10px; }
+        .welcome p { color: #888; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 700px;
+            margin: 30px auto;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-card .number { color: #00d4ff; font-size: 28px; font-weight: bold; }
+        .stat-card .label { color: #888; font-size: 13px; margin-top: 5px; }
+
+        /* Article content */
+        .article { max-width: 900px; }
+        .article .breadcrumb {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+        .article .breadcrumb a { color: #00d4ff; text-decoration: none; }
+        .article h1 { color: #fff; font-size: 26px; margin-bottom: 8px; }
+        .article .meta {
+            display: flex;
+            gap: 15px;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .article .meta .level-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .level-L1 { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .level-L2 { background: rgba(33,150,243,0.2); color: #2196F3; }
+        .level-L3 { background: rgba(255,152,0,0.2); color: #FF9800; }
+        .level-L4 { background: rgba(244,67,54,0.2); color: #F44336; }
+        .article .tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .article .tags span {
+            padding: 3px 10px;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            color: #00d4ff;
+        }
+
+        /* Markdown-like rendering */
+        .article .content-body h2 {
+            color: #00d4ff;
+            font-size: 20px;
+            margin: 25px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,212,255,0.2);
+        }
+        .article .content-body h3 {
+            color: #ccc;
+            font-size: 17px;
+            margin: 20px 0 10px;
+        }
+        .article .content-body p {
+            line-height: 1.8;
+            margin-bottom: 12px;
+            color: #ddd;
+        }
+        .article .content-body ul, .article .content-body ol {
+            margin: 10px 0 10px 25px;
+            line-height: 1.8;
+            color: #ddd;
+        }
+        .article .content-body li { margin-bottom: 4px; }
+        .article .content-body strong { color: #00d4ff; }
+        .article .content-body code {
+            background: rgba(0,0,0,0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            color: #ff9800;
+        }
+        .article .content-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .article .content-body th {
+            background: rgba(0,212,255,0.1);
+            color: #00d4ff;
+            padding: 10px 12px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .article .content-body td {
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #ddd;
+        }
+        .article .content-body tr:hover td { background: rgba(0,212,255,0.05); }
+
+        /* Glossary */
+        .glossary-section { margin-top: 30px; }
+        .glossary-section h2 { color: #00d4ff; margin-bottom: 15px; }
+        .glossary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .glossary-table th {
+            background: rgba(0,212,255,0.1);
+            color: #00d4ff;
+            padding: 10px 15px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .glossary-table td {
+            padding: 8px 15px;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #ddd;
+            font-size: 14px;
+        }
+        .glossary-table tr:hover td { background: rgba(0,212,255,0.05); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,0.5); }
+
+        .loading { text-align: center; padding: 60px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>&#x1F4DA; 专业知识库</h1>
+        <a href="/" class="back-btn">&larr; 返回主页</a>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="&#x1F50D; 搜索知识..." oninput="doSearch(this.value)">
+            </div>
+            <div class="search-results" id="searchResults"></div>
+            <div class="nav-list" id="navList"></div>
+        </div>
+        <div class="main" id="mainContent">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        let chapters = [];
+        let currentChapter = null;
+        let currentSection = null;
+
+        async function init() {
+            await loadNav();
+            showWelcome();
+        }
+
+        async function loadNav() {
+            try {
+                const res = await fetch('/api/knowledge/chapters');
+                chapters = await res.json();
+                renderNav();
+            } catch(e) {
+                document.getElementById('mainContent').innerHTML = '<p style="color:red;padding:60px;text-align:center;">Failed to load knowledge base</p>';
+            }
+        }
+
+        function renderNav() {
+            const nav = document.getElementById('navList');
+            let html = '';
+            chapters.forEach(ch => {
+                html += `<div class="nav-chapter" data-ch="${ch.id}" onclick="toggleChapter('${ch.id}')">&#x1F4C4; ${ch.title} <span style="color:#888;font-weight:normal;font-size:12px;">(${ch.section_count})</span></div>`;
+                html += `<div id="sec_${ch.id}" style="display:none;">`;
+                html += `<div class="nav-section" onclick="loadChapter('${ch.id}')">&#x1F4C1; &#x5168;&#x90E8;&#x7AE0;&#x8282;</div>`;
+                // Placeholder for sections loaded on expand
+                html += `</div>`;
+            });
+            nav.innerHTML = html;
+        }
+
+        async function toggleChapter(chId) {
+            const secDiv = document.getElementById('sec_' + chId);
+            if (secDiv.style.display === 'none') {
+                // Load sections
+                try {
+                    const res = await fetch(`/api/knowledge/chapter/${chId}`);
+                    const ch = await res.json();
+                    let html = `<div class="nav-section" onclick="loadChapter('${chId}')">&#x1F4C1; &#x5168;&#x90E8;&#x7AE0;&#x8282;</div>`;
+                    ch.sections.forEach(sec => {
+                        html += `<div class="nav-section" data-ch="${chId}" data-sec="${sec.id}" onclick="loadSection('${chId}','${sec.id}')">&#x25B8; ${sec.title}</div>`;
+                    });
+                    secDiv.innerHTML = html;
+                } catch(e) {}
+                secDiv.style.display = 'block';
+                // Highlight
+                document.querySelectorAll('.nav-chapter').forEach(el => el.classList.remove('active'));
+                document.querySelector(`.nav-chapter[data-ch="${chId}"]`).classList.add('active');
+            } else {
+                secDiv.style.display = 'none';
+            }
+        }
+
+        async function showWelcome() {
+            try {
+                const res = await fetch('/api/knowledge/stats');
+                const stats = await res.json();
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="welcome">
+                        <h2>&#x1F680; &#x822A;&#x7A7A;&#x822A;&#x5929;&#x9600;&#x95E8;&#x7814;&#x53D1;&#x77E5;&#x8BC6;&#x4F53;&#x7CFB;</h2>
+                        <p>&#x7CFB;&#x7EDF;&#x6027;&#x6574;&#x7406;&#x4EBA;&#x7C7B;&#x5DF2;&#x77E5;&#x7684;&#x822A;&#x7A7A;&#x822A;&#x5929;&#x9600;&#x95E8;&#x7814;&#x53D1;&#x77E5;&#x8BC6;&#xFF0C;&#x6DB5;&#x76D6;&#x57FA;&#x7840;&#x7406;&#x8BBA;&#x3001;&#x6750;&#x6599;&#x79D1;&#x5B66;&#x3001;&#x8BBE;&#x8BA1;&#x65B9;&#x6CD5;&#x3001;&#x5236;&#x9020;&#x5DE5;&#x827A;&#x3001;&#x6D4B;&#x8BD5;&#x9A8C;&#x8BC1;&#x7B49;&#x5168;&#x94FE;&#x6761;&#x77E5;&#x8BC6;&#x3002;&#x7EA7;&#x522B;&#x4ECE;&#x57FA;&#x7840;&#x77E5;&#x8BC6;L1&#x5230;&#x9662;&#x58EB;&#x7EA7;&#x524D;&#x6CBF;L4&#xFF0C;&#x670D;&#x52A1;&#x4E8E;&#x822A;&#x7A7A;&#x822A;&#x5929;&#x9600;&#x95E8;&#x7814;&#x53D1;&#x5168;&#x5468;&#x671F;&#x3002;</p>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="number">${stats.chapters}</div>
+                                <div class="label">&#x4E13;&#x4E1A;&#x7AE0;&#x8282;</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="number">${stats.sections}</div>
+                                <div class="label">&#x77E5;&#x8BC6;&#x6761;&#x76EE;</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="number">${(stats.total_chars / 1000).toFixed(1)}K</div>
+                                <div class="label">&#x4E13;&#x4E1A;&#x5185;&#x5BB9;&#xFF08;&#x5B57;&#xFF09;</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="number">${stats.glossary_terms}</div>
+                                <div class="label">&#x672F;&#x8BED;&#x8868;&#x6761;&#x76EE;</div>
+                            </div>
+                        </div>
+                        <p style="color:#666;font-size:13px;margin-top:30px;">&#x2460; &#x70B9;&#x51FB;&#x5DE6;&#x4FA7;&#x7AE0;&#x8282;&#x5F00;&#x59CB;&#x9605;&#x8BFB; &nbsp;&nbsp; &#x2461; &#x4F7F;&#x7528;&#x641C;&#x7D22;&#x6846;&#x5FEB;&#x901F;&#x5B9A;&#x4F4D;&#x77E5;&#x8BC6;</p>
+                    </div>
+                `;
+            } catch(e) {}
+        }
+
+        async function loadChapter(chId) {
+            try {
+                const res = await fetch(`/api/knowledge/chapter/${chId}`);
+                const ch = await res.json();
+                currentChapter = chId;
+                currentSection = null;
+                highlightNav(chId, null);
+                renderChapter(ch);
+            } catch(e) {
+                document.getElementById('mainContent').innerHTML = '<p style="color:red;padding:60px;">Load failed</p>';
+            }
+        }
+
+        async function loadSection(chId, secId) {
+            try {
+                const res = await fetch(`/api/knowledge/section/${chId}/${secId}`);
+                const sec = await res.json();
+                currentChapter = chId;
+                currentSection = secId;
+                highlightNav(chId, secId);
+                renderSection(chId, sec);
+            } catch(e) {
+                document.getElementById('mainContent').innerHTML = '<p style="color:red;padding:60px;">Load failed</p>';
+            }
+        }
+
+        function highlightNav(chId, secId) {
+            document.querySelectorAll('.nav-chapter').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-section').forEach(el => el.classList.remove('active'));
+            const chEl = document.querySelector(`.nav-chapter[data-ch="${chId}"]`);
+            if (chEl) chEl.classList.add('active');
+            if (secId) {
+                const secEl = document.querySelector(`.nav-section[data-sec="${secId}"]`);
+                if (secEl) secEl.classList.add('active');
+            }
+        }
+
+        function renderChapter(ch) {
+            let html = `<div class="article">
+                <div class="breadcrumb"><a href="#" onclick="showWelcome();return false;">&#x9996;&#x9875;</a> &gt; ${ch.title}</div>
+                <h1>${ch.title}</h1>
+                <div class="meta"><span>${ch.sections.length} &#x4E2A;&#x5C0F;&#x8282;</span></div>
+            `;
+            ch.sections.forEach(sec => {
+                html += `<div class="content-body" style="margin-bottom:30px;padding:20px;background:rgba(0,0,0,0.15);border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+                    <h2 style="margin-top:0;cursor:pointer;" onclick="loadSection('${ch.id}','${sec.id}')">${sec.title}</h2>
+                    ${sec.level ? `<span class="level-badge level-${sec.level}">${sec.level}</span>` : ''}
+                    ${renderMarkdown(sec.content.substring(0, 800))}...
+                    <p style="margin-top:15px;"><a href="#" onclick="loadSection('${ch.id}','${sec.id}');return false;" style="color:#00d4ff;">&#x9605;&#x8BFB;&#x5B8C;&#x6574;&#x5185;&#x5BB9; &rarr;</a></p>
+                </div>`;
+            });
+            html += '</div>';
+            document.getElementById('mainContent').innerHTML = html;
+        }
+
+        function renderSection(chId, sec) {
+            let html = `<div class="article">
+                <div class="breadcrumb"><a href="#" onclick="showWelcome();return false;">&#x9996;&#x9875;</a> &gt; <a href="#" onclick="loadChapter('${chId}');return false;">&#x7AE0;&#x8282;</a> &gt; ${sec.title}</div>
+                <h1>${sec.title}</h1>
+                <div class="meta">
+                    ${sec.level ? `<span class="level-badge level-${sec.level}">${sec.level}</span>` : ''}
+                </div>
+                ${sec.tags && sec.tags.length ? `<div class="tags">${sec.tags.map(t => `<span>${t}</span>`).join('')}</div>` : ''}
+                <div class="content-body">${renderMarkdown(sec.content)}</div>
+            </div>`;
+            document.getElementById('mainContent').innerHTML = html;
+            document.getElementById('mainContent').scrollTop = 0;
+        }
+
+        function renderMarkdown(text) {
+            // Simple markdown renderer
+            let html = text;
+            // Tables
+            html = html.replace(/(\|.+\|[\r\n]+)+/g, match => {
+                const rows = match.trim().split('\n').filter(r => r.trim());
+                if (rows.length < 2) return match;
+                let table = '<table>';
+                rows.forEach((row, i) => {
+                    if (i === 1 && row.match(/^\|[\s\-:|]+\|$/)) return; // separator
+                    const cells = row.split('|').filter(c => c.trim() !== '');
+                    const tag = i === 0 ? 'th' : 'td';
+                    table += '<tr>' + cells.map(c => `<${tag}>${c.trim()}</${tag}>`).join('') + '</tr>';
+                });
+                table += '</table>';
+                return table;
+            });
+            // Headers
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            // Bold
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            // Inline code
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            // Unordered lists
+            html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+            // Numbered lists
+            html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+            // Paragraphs (lines not already wrapped)
+            html = html.replace(/^(?!<[hulto])((?!<).+)$/gm, '<p>$1</p>');
+            // Clean empty paragraphs
+            html = html.replace(/<p>\s*<\/p>/g, '');
+            return html;
+        }
+
+        let searchTimer;
+        function doSearch(query) {
+            clearTimeout(searchTimer);
+            const box = document.getElementById('searchResults');
+            if (!query || query.length < 2) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+            searchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/knowledge/search?q=${encodeURIComponent(query)}`);
+                    const results = await res.json();
+                    if (results.length === 0) {
+                        box.innerHTML = '<div style="padding:10px;color:#888;font-size:13px;">&#x672A;&#x627E;&#x5230;&#x76F8;&#x5173;&#x5185;&#x5BB9;</div>';
+                    } else {
+                        box.innerHTML = results.map(r =>
+                            `<div class="search-result-item" onclick="loadSection('${r.chapter_id}','${r.section_id}')">
+                                <div>${r.section_title}</div>
+                                <div class="score">${r.chapter_title} | ${r.score}</div>
+                            </div>`
+                        ).join('');
+                    }
+                    box.style.display = 'block';
+                } catch(e) {}
+            }, 300);
+        }
+
+        init();
+    </script>
+</body>
+</html>
