@@ -6,9 +6,11 @@ services:
     runtime: python
     plan: free
     region: singapore
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r backend/requirements.txt
     startCommand: gunicorn --chdir backend wsgi:app --bind 0.0.0.0:$PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
       - key: FLASK_ENV
         value: production
       - key: PYTHONUNBUFFERED
