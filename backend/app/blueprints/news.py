@@ -44,3 +44,16 @@ def add_entry():
     data = request.get_json() or {}
     result = add_news_entry(data)
     return jsonify(prepare_json(result))
+
+
+@news_bp.route('/api/news/import', methods=['POST'])
+def import_news():
+    """Auto-import news from markdown files in workspace."""
+    from news_feed import import_latest_markdown
+    result = import_latest_markdown() or {}
+    ok = bool(result and result.get('items'))
+    return jsonify(prepare_json({
+        'success': ok,
+        'message': 'Imported OK' if ok else 'No new news files found',
+        'data': result
+    }))

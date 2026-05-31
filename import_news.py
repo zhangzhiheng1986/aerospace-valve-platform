@@ -1,21 +1,24 @@
-"""Import existing news markdown files into the news system"""
-import sys
+import sys, os
 sys.path.insert(0, 'backend')
-from news_feed import parse_markdown_news, add_news_entry, get_latest_news, get_all_dates
-import os
+import importlib, news_feed
+importlib.reload(news_feed)
 
-workspace = os.path.dirname(__file__)
+workspace = r'C:\Users\Administrator\.qclaw\workspace'
 
-for fname in sorted(os.listdir(workspace)):
-    if fname.startswith('aerospace-valve-news-') and fname.endswith('.md'):
-        filepath = os.path.join(workspace, fname)
-        print(f'Parsing: {fname}')
-        parsed = parse_markdown_news(filepath)
-        if parsed and parsed.get('items'):
-            add_news_entry(parsed)
-            print(f'  -> Imported {len(parsed["items"])} items for {parsed["date"]}')
+for fn in sorted(os.listdir(workspace)):
+    if fn.startswith('aerospace-valve-news-') and fn.endswith('.md'):
+        fp = os.path.join(workspace, fn)
+        r = news_feed.parse_markdown_news(fp)
+        if r:
+            print(fn, ':', r['date'], 'items:', len(r['items']))
+            for it in r['items'][:2]:
+                print('  [{}] {}'.format(it['index'], it['title'][:50]))
+                print('      src:', it['source'][:30], '| sum:', it['summary'][:30])
+            news_feed.add_news_entry(r)
+            print('  -> saved')
         else:
-            print(f'  -> No items found')
+            print(fn, ': NO RESULT')
 
-print(f'\nAll dates: {get_all_dates()}')
-print(f'Latest: {get_latest_news(1)}')
+print()
+print('All dates:', news_feed.get_all_dates())
+print('Stats:', news_feed.get_news_stats())

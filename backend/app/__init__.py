@@ -73,10 +73,33 @@ def create_app(config_name=None):
     from app.blueprints.news import news_bp
     app.register_blueprint(news_bp)
 
+    from app.blueprints.fluid_mechanics import fm_bp
+    app.register_blueprint(fm_bp)
+
+    # Auto-import any new news markdown files on startup
+    _auto_import_news(app)
+
     # Routes for pages that need direct @app.route (legacy compatibility)
     _register_page_routes(app)
 
     return app
+
+
+def _auto_import_news(app):
+    """Auto-import any news markdown files from workspace on startup."""
+    try:
+        import os
+        backend_dir = os.path.dirname(os.path.dirname(__file__))
+        sys.path.insert(0, backend_dir)
+        from news_feed import import_latest_markdown
+        result = import_latest_markdown()
+        if result and result.get('items'):
+            app.logger.info(
+                'Auto-imported news: %s (%d items)',
+                result.get('date'), len(result.get('items', []))
+            )
+    except Exception as e:
+        app.logger.warning('News auto-import skipped: %s', e)
 
 
 def _register_page_routes(app):

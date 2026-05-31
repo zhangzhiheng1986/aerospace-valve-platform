@@ -19,8 +19,12 @@ def clean(obj):
 
 
 def numpy_safe(obj):
-    """Convert numpy types to native Python types (for JSON serialization)."""
-    import numpy as np
+    """Convert numpy types to native Python types (for JSON serialization).
+    Gracefully falls back to passthrough if numpy is not installed."""
+    try:
+        import numpy as np
+    except ImportError:
+        return obj
     if isinstance(obj, dict):
         return {k: numpy_safe(v) for k, v in obj.items()}
     if isinstance(obj, list):

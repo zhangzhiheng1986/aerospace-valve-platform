@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluid Mechanics Super Calculator</title>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root {
+  --bg-primary: #0f1923; --bg-secondary: #1a2736; --bg-card: #1e2d3d;
+  --accent: #00b4d8; --accent-glow: rgba(0,180,216,0.15); --accent2: #48cae4;
+  --text-primary: #e0e6ed; --text-secondary: #8899aa; --text-muted: #5a6a7a;
+  --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
+  --radius: 8px; --radius-sm: 5px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+  background: var(--bg-primary); color: var(--text-primary);
+  display:flex; height:100vh; overflow:hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:270px; min-width:270px; background: var(--bg-secondary);
+  border-right:1px solid var(--border); overflow-y:auto;
+  display:flex; flex-direction:column;
+}
+.sidebar-header { padding:18px 16px; border-bottom:1px solid var(--border); }
+.sidebar-header h2 { font-size:15px; color:var(--accent); display:flex; align-items:center; gap:8px; }
+.sidebar-header .sub { font-size:11px; color:var(--text-secondary); margin-top:6px; }
+.lang-switch {
+  margin-top:10px; display:flex; gap:4px; background:var(--bg-primary);
+  border-radius:20px; padding:3px; border:1px solid var(--border);
+}
+.lang-btn {
+  flex:1; padding:5px 0; border:none; border-radius:16px;
+  font-size:11px; cursor:pointer; background:none; color:var(--text-secondary);
+  transition:all 0.2s;
+}
+.lang-btn.active { background:var(--accent); color:var(--bg-primary); font-weight:600; }
+.sidebar-nav { flex:1; overflow-y:auto; padding:8px 0; }
+.cat-item {
+  padding:11px 16px; cursor:pointer; display:flex; align-items:center; gap:10px;
+  font-size:13px; color:var(--text-secondary); transition:all 0.15s;
+  border-left:3px solid transparent;
+}
+.cat-item:hover { background:var(--bg-card); color:var(--text-primary); }
+.cat-item.active { background:var(--accent-glow); color:var(--accent); border-left-color:var(--accent); }
+.cat-item .icon { font-size:16px; width:22px; text-align:center; }
+.cat-item .count { margin-left:auto; font-size:10px; background:var(--bg-primary); padding:2px 7px; border-radius:10px; }
+.sidebar-footer { padding:12px 16px; border-top:1px solid var(--border); }
+
+/* MAIN */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.toolbar {
+  padding:14px 24px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:14px; background:rgba(15,25,35,0.95);
+}
+.toolbar h1 { font-size:18px; font-weight:600; }
+.toolbar .breadcrumb { font-size:12px; color:var(--text-muted); }
+.back-link { font-size:12px; color:var(--text-secondary); margin-left:auto; text-decoration:none; }
+.back-link:hover { color:var(--accent); }
+.content { flex:1; display:flex; overflow:hidden; }
+
+/* FORMULA LIST */
+.formula-list {
+  width:290px; min-width:290px; border-right:1px solid var(--border);
+  overflow-y:auto; background:var(--bg-secondary);
+}
+.formula-item {
+  padding:11px 14px; cursor:pointer; border-bottom:1px solid rgba(42,58,74,0.5);
+  font-size:12px; color:var(--text-secondary); transition:all 0.15s;
+}
+.formula-item:hover { background:var(--bg-card); }
+.formula-item.selected { background:var(--accent-glow); color:var(--accent); border-left:3px solid var(--accent); }
+.formula-item .f-name { font-weight:500; }
+.formula-item .f-preview { font-size:10px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* CALCULATOR */
+.calculator { flex:1; overflow-y:auto; padding:24px; }
+.empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+.empty-state .icon { font-size:48px; margin-bottom:16px; }
+.empty-state h3 { font-size:16px; margin-bottom:8px; color:var(--text-secondary); }
+.empty-state p { font-size:13px; line-height:1.6; }
+
+/* FORMULA HEADER */
+.formula-header { margin-bottom:20px; }
+.formula-header h2 { font-size:22px; color:var(--accent); margin-bottom:6px; }
+.formula-header .formula-display {
+  background:var(--bg-primary); border:1px solid var(--border);
+  border-radius:var(--radius); padding:18px 24px; margin:12px 0;
+  overflow-x:auto; min-height:50px; display:flex; align-items:center; justify-content:center;
+}
+.formula-header .formula-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+.formula-header .application { font-size:12px; color:var(--accent); margin-top:8px; padding:8px 12px; background:var(--accent-glow); border-radius:var(--radius-sm); border-left:2px solid var(--accent); }
+
+/* CALC BODY */
+.calc-body { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media (max-width:1000px) { .calc-body { grid-template-columns:1fr; } }
+
+/* INPUT PANEL */
+.input-panel {
+  background:var(--bg-card); border-radius:var(--radius);
+  padding:18px; border:1px solid var(--border);
+}
+.input-panel h3 { font-size:14px; margin-bottom:14px; color:var(--accent); display:flex; align-items:center; gap:6px; }
+.input-group { margin-bottom:12px; }
+.input-group label {
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-size:11px; color:var(--text-secondary); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.3px;
+}
+.input-group label .unit { font-size:10px; color:var(--text-muted); text-transform:none; font-weight:normal; }
+.input-group input {
+  width:100%; padding:9px 12px; background:var(--bg-primary);
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  color:var(--text-primary); font-size:13px; font-family:'Consolas','Menlo',monospace;
+  transition:border-color 0.15s;
+}
+.input-group input:focus { border-color:var(--accent); outline:none; box-shadow:0 0 0 3px rgba(0,180,216,0.1); }
+.input-group input.invalid { border-color:var(--danger); }
+.input-hint { font-size:10px; color:var(--text-muted); margin-top:2px; }
+.btn-row { display:flex; gap:10px; margin-top:16px; }
+.btn {
+  padding:9px 22px; border:none; border-radius:var(--radius-sm);
+  font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500;
+}
+.btn-primary { background:var(--accent); color:var(--bg-primary); }
+.btn-primary:hover { background:var(--accent2); box-shadow:0 0 16px var(--accent-glow); }
+.btn-secondary { background:var(--border); color:var(--text-secondary); }
+.btn-secondary:hover { background:#3a4a5a; color:var(--text-primary); }
+.btn-outline { background:none; border:1px solid var(--border); color:var(--text-secondary); }
+.btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+
+/* RESULTS */
+.results-panel {
+  background:var(--bg-card); border-radius:var(--radius);
+  padding:18px; border:1px solid var(--border); min-height:200px;
+}
+.results-panel h3 { font-size:14px; margin-bottom:14px; color:var(--accent); }
+.result-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 0; border-bottom:1px solid rgba(42,58,74,0.4);
+}
+.result-item:last-child { border-bottom:none; }
+.result-label { font-size:13px; color:var(--text-secondary); }
+.result-value-group { text-align:right; }
+.result-value { font-size:22px; font-weight:700; color:var(--accent); font-family:'Consolas',monospace; }
+.result-unit { font-size:12px; color:var(--text-muted); margin-left:4px; }
+.result-derived { margin-top:12px; padding-top:12px; border-top:1px dashed var(--border); }
+.result-derived .title { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.error-box { color:var(--danger); font-size:13px; padding:12px; background:rgba(255,107,107,0.08); border-radius:var(--radius-sm); border:1px solid rgba(255,107,107,0.2); }
+
+/* VARIABLE GLOSSARY */
+.glossary {
+  margin-top:20px; background:var(--bg-card); border-radius:var(--radius);
+  padding:18px; border:1px solid var(--border);
+}
+.glossary h3 { font-size:14px; color:var(--accent); margin-bottom:12px; cursor:pointer; display:flex; align-items:center; gap:6px; user-select:none; }
+.glossary h3 .arrow { transition:transform 0.2s; font-size:10px; }
+.glossary h3.collapsed .arrow { transform:rotate(-90deg); }
+.glossary-body { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; }
+.glossary-body.collapsed { display:none; }
+.glossary-item { padding:8px 10px; background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid rgba(42,58,74,0.3); }
+.glossary-item .symbol { font-family:'Times New Roman',serif; font-style:italic; color:var(--accent); font-size:15px; display:inline-block; min-width:30px; }
+.glossary-item .meaning { font-size:11px; color:var(--text-secondary); display:inline; }
+.glossary-item .unit-i { font-size:10px; color:var(--text-muted); margin-left:4px; }
+
+/* HOME */
+.home-view { display:flex; flex-wrap:wrap; gap:14px; padding:20px; overflow-y:auto; }
+.home-card {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px; width:210px; cursor:pointer; transition:all 0.2s;
+}
+.home-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+.home-card h3 { font-size:14px; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+.home-card .desc { font-size:11px; color:var(--text-secondary); line-height:1.5; }
+.home-card .count-badge { display:inline-block; margin-top:10px; font-size:10px; background:var(--accent-glow); color:var(--accent); padding:3px 10px; border-radius:12px; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#3a4a5a; }
+
+/* MathJax override */
+.MathJax { font-size:1.15em !important; color:var(--text-primary) !important; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2><span>&#x1F4A7;</span> <span id="sidebar-title">Fluid Mechanics</span></h2>
+    <div class="sub" id="sidebar-sub">Super Calculator &mdash; 122 Formulas</div>
+    <div class="lang-switch">
+      <button class="lang-btn active" id="btn-zh" onclick="setLang('zh')">&#x4E2D;&#x6587;</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="/" class="back-link">&larr; <span data-i18n="back">Back to Platform</span></a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="toolbar">
+    <h1 id="page-title">Fluid Mechanics Super Calculator</h1>
+    <span class="breadcrumb" id="breadcrumb"></span>
+    <a href="/" class="back-link">&larr; Dashboard</a>
+  </div>
+
+  <!-- Home -->
+  <div class="content" id="home-view">
+    <div class="home-view" id="home-cards"></div>
+  </div>
+
+  <!-- Category -->
+  <div class="content" id="cat-view" style="display:none;">
+    <div class="formula-list" id="formula-list"></div>
+    <div class="calculator" id="calculator">
+      <div class="empty-state">
+        <div class="icon">&#x1F4D0;</div>
+        <h3 data-i18n="select_formula">Select a Formula</h3>
+        <p data-i18n="select_formula_hint">Choose a formula from the left panel to begin calculation. Each formula comes with scientific LaTeX rendering and variable explanations.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let catalog = {};
+let i18n = { formulas:{}, categories:{}, fluids:{}, pipe_roughness:{} };
+let lang = 'zh';
+let currentCat = null;
+let currentFormulaId = null;
+let cachedMathJax = {}; // avoid re-rendering same formula
+
+// ===== LANG =====
+function setLang(l) {
+  lang = l;
+  document.getElementById('btn-zh').classList.toggle('active', l==='zh');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+  document.getElementById('sidebar-title').textContent = l==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8BA1\u7B97\u5668' : 'Fluid Mechanics';
+  document.getElementById('sidebar-sub').innerHTML = l==='zh' ? '\u8D85\u7EA7\u8BA1\u7B97\u5668 &mdash; 122 \u4E2A\u516C\u5F0F' : 'Super Calculator &mdash; 122 Formulas';
+  document.getElementById('page-title').textContent = l==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8D85\u7EA7\u8BA1\u7B97\u5668' : 'Fluid Mechanics Super Calculator';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = getI18n(el.dataset.i18n);
+  });
+  renderSidebar();
+  if (currentCat) {
+    selectCategory(currentCat, true);
+  } else {
+    renderHomeCards();
+  }
+}
+
+function getI18n(key) {
+  const map = {
+    'back': {zh:'\u8FD4\u56DE\u5E73\u53F0', en:'Back to Platform'},
+    'select_formula': {zh:'\u8BF7\u9009\u62E9\u516C\u5F0F', en:'Select a Formula'},
+    'select_formula_hint': {zh:'\u4ECE\u5DE6\u4FA7\u9762\u677F\u9009\u62E9\u516C\u5F0F\u5F00\u59CB\u8BA1\u7B97\u3002\u6BCF\u4E2A\u516C\u5F0F\u90FD\u6709 LaTeX \u79D1\u5B66\u6E32\u67D3\u548C\u53D8\u91CF\u89E3\u91CA\u3002', en:'Choose a formula from the left panel to begin calculation. Each formula comes with scientific LaTeX rendering and variable explanations.'},
+    'calculate': {zh:'\u8BA1\u7B97', en:'Calculate'},
+    'reset': {zh:'\u91CD\u7F6E', en:'Reset'},
+    'input_params': {zh:'\u8F93\u5165\u53C2\u6570', en:'Input Parameters'},
+    'results': {zh:'\u8BA1\u7B97\u7ED3\u679C', en:'Results'},
+    'computing': {zh:'\u8BA1\u7B97\u4E2D...', en:'Computing...'},
+    'no_results': {zh:'\u8F93\u5165\u53C2\u6570\u5E76\u70B9\u51FB\u8BA1\u7B97', en:'Enter values and click Calculate'},
+    'variable_glossary': {zh:'\u53D8\u91CF\u8BF4\u660E', en:'Variable Glossary'},
+    'application': {zh:'\u5DE5\u7A0B\u5E94\u7528', en:'Engineering Application'},
+    'derived': {zh:'\u884D\u751F\u8BA1\u7B97', en:'Derived Values'},
+    'default_values': {zh:'\u9ED8\u8BA4\u503C', en:'Default Values'},
+    'formula_info': {zh:'\u516C\u5F0F\u4FE1\u606F', en:'Formula Information'},
+  };
+  const entry = map[key];
+  if (!entry) return key;
+  return entry[lang] || entry['en'];
+}
+
+function getFormulaName(fid) {
+  const fi = i18n.formulas[fid];
+  if (!fi) return fid;
+  return lang==='zh' ? (fi.name_zh || fid) : fid;
+}
+
+function getCatName(catKey) {
+  const cat = catalog[catKey];
+  const ci = i18n.categories[catKey];
+  if (lang==='zh' && ci) return ci.name_zh || cat.name;
+  return cat ? cat.name : catKey;
+}
+
+function getCatDesc(catKey) {
+  const cat = catalog[catKey];
+  const ci = i18n.categories[catKey];
+  if (lang==='zh' && ci) return ci.desc_zh || cat.desc;
+  return cat ? cat.desc : '';
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const [fc, fi] = await Promise.all([
+      fetch('/api/fluid_mechanics/formulas').then(r=>r.json()),
+      fetch('/api/fluid_mechanics/i18n').then(r=>r.json())
+    ]);
+    catalog = fc;
+    i18n = fi;
+  } catch(e) { console.error('Init error:', e); }
+  renderSidebar();
+  renderHomeCards();
+});
+
+// ===== SIDEBAR =====
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  const icons = {
+    'flask':'\ud83e\uddea','water':'\ud83d\udca7','chart-line':'\ud83d\udcc8','pipe':'\ud83d\udd27',
+    'river':'\ud83c\udf0a','rocket':'\ud83d\ude80','valve':'\u2699\ufe0f','wave':'\ud83c\udf0a',
+    'gear':'\u2699\ufe0f','bolt':'\u26a1','scale':'\u2696\ufe0f','sync':'\ud83d\udd04'
+  };
+  nav.innerHTML = Object.entries(catalog).map(([key, cat]) => {
+    const name = getCatName(key);
+    const icon = icons[cat.icon] || '\ud83d\udcd0';
+    return `<div class="cat-item" data-cat="${key}" onclick="selectCategory('${key}')">
+      <span class="icon">${icon}</span><span>${name}</span>
+      <span class="count">${cat.count}</span>
+    </div>`;
+  }).join('');
+}
+
+// ===== HOME =====
+function renderHomeCards() {
+  const icons = {
+    'flask':'\ud83e\uddea','water':'\ud83d\udca7','chart-line':'\ud83d\udcc8','pipe':'\ud83d\udd27',
+    'river':'\ud83c\udf0a','rocket':'\ud83d\ude80','valve':'\u2699\ufe0f','wave':'\ud83c\udf0a',
+    'gear':'\u2699\ufe0f','bolt':'\u26a1','scale':'\u2696\ufe0f','sync':'\ud83d\udd04'
+  };
+  document.getElementById('home-cards').innerHTML = Object.entries(catalog).map(([key, cat]) => {
+    const name = getCatName(key);
+    const desc = getCatDesc(key);
+    const icon = icons[cat.icon] || '\ud83d\udcd0';
+    return `<div class="home-card" onclick="selectCategory('${key}')">
+      <h3>${icon} ${name}</h3><div class="desc">${desc}</div>
+      <div class="count-badge">${cat.count} ${lang==='zh'?'\u4E2A\u516C\u5F0F':'formulas'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== CATEGORY =====
+function selectCategory(catKey, silent) {
+  currentCat = catKey;
+  currentFormulaId = null;
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('cat-view').style.display = 'flex';
+  document.getElementById('breadcrumb').textContent = getCatName(catKey);
+  document.getElementById('calculator').innerHTML = `<div class="empty-state">
+    <div class="icon">\ud83d\udcd0</div>
+    <h3>${getI18n('select_formula')}</h3>
+    <p>${getI18n('select_formula_hint')}</p></div>`;
+
+  document.querySelectorAll('.cat-item').forEach(el=>el.classList.remove('active'));
+  const sel = document.querySelector('.cat-item[data-cat="'+catKey+'"]');
+  if (sel) sel.classList.add('active');
+
+  const cat = catalog[catKey];
+  const formulas = cat.formulas;
+  document.getElementById('formula-list').innerHTML = formulas.map(f => {
+    const fi = i18n.formulas[f.id];
+    const fName = lang==='zh' && fi ? fi.name_zh : f.name;
+    const fEqShort = f.eq.length > 40 ? f.eq.substring(0,40)+'...' : f.eq;
+    return `<div class="formula-item" data-fid="${f.id}" onclick="selectFormula('${f.id}')">
+      <div class="f-name">${fName}</div>
+      <div class="f-preview">${fEqShort}</div>
+    </div>`;
+  }).join('');
+
+  if (!silent) { cachedMathJax = {}; }
+}
+
+// ===== FORMULA SELECTION =====
+async function selectFormula(fid) {
+  currentFormulaId = fid;
+  document.querySelectorAll('.formula-item').forEach(el=>el.classList.remove('selected'));
+  const sel = document.querySelector('.formula-item[data-fid="'+fid+'"]');
+  if (sel) sel.classList.add('selected');
+
+  const cat = catalog[currentCat];
+  const formula = cat.formulas.find(f=>f.id===fid);
+  if (!formula) return;
+
+  let defaults = {};
+  try {
+    const res = await fetch('/api/fluid_mechanics/defaults');
+    const allDef = await res.json();
+    defaults = allDef[fid] || {};
+  } catch(e) {}
+
+  renderCalculator(formula, defaults);
+}
+
+// ===== RENDER CALCULATOR =====
+function renderCalculator(formula, defaults) {
+  const fid = formula.id;
+  const fi = i18n.formulas[fid];
+
+  // Determine names
+  const fName = lang==='zh' && fi ? fi.name_zh : formula.name;
+  const fDesc = lang==='zh' && fi ? fi.desc_zh : '';
+  const fLatex = fi ? fi.latex : formula.eq;
+  const fApp = lang==='zh' && fi ? fi.application_zh : '';
+
+  // Build input fields with units
+  const inputFields = formula.inputs.map(key => {
+    const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
+    const label = lang==='zh' && pinfo ? pinfo.label_zh : key.replace(/_/g, ' ');
+    const unit = pinfo ? pinfo.unit : '';
+    const hint = lang==='zh' && pinfo ? pinfo.desc_zh : '';
+    const val = defaults[key] !== undefined ? defaults[key] : '';
+    return `<div class="input-group">
+      <label>${label}${unit ? ' <span class="unit">['+unit+']</span>' : ''}</label>
+      <input type="number" step="any" id="inp_${key}" value="${val}" placeholder="${label}">
+      ${hint ? '<div class="input-hint">'+hint+'</div>' : ''}
+    </div>`;
+  }).join('');
+
+  // Build variable glossary
+  const glossaryItems = formula.inputs.map(key => {
+    const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
+    const symbol = key;
+    const meaning = lang==='zh' && pinfo ? pinfo.label_zh : key;
+    const unit = pinfo ? pinfo.unit : '';
+    return `<div class="glossary-item">
+      <span class="symbol">${symbol}</span>
+      <span class="meaning">${meaning}</span>
+      ${unit ? '<span class="unit-i">['+unit+']</span>' : ''}
+    </div>`;
+  }).join('');
+
+  // Output variable
+  const outKey = formula.output;
+  const oinfo = fi && fi.output ? fi.output[outKey] : null;
+  const outLabel = lang==='zh' && oinfo ? oinfo.label_zh : outKey;
+  const outUnit = oinfo ? oinfo.unit : '';
+  if (oinfo && outUnit) {
+    const outItem = `<div class="glossary-item">
+      <span class="symbol">${outKey}</span>
+      <span class="meaning">${outLabel}</span>
+      <span class="unit-i">[${outUnit}]</span>
+    </div>`;
+    // Add to glossary
+  }
+
+  // Actually build full glossary
+  const allGlossary = formula.inputs.map(key => {
+    const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
+    return `<div class="glossary-item">
+      <span class="symbol">${key.replace(/_/g,' ')}</span>
+      <span class="meaning">${lang==='zh' && pinfo ? pinfo.label_zh : key.replace(/_/g,' ')}</span>
+      ${pinfo && pinfo.unit ? '<span class="unit-i">['+pinfo.unit+']</span>' : ''}
+    </div>`;
+  }).concat([`<div class="glossary-item" style="border-color:rgba(0,180,216,0.3);">
+    <span class="symbol" style="color:var(--success);">${outKey}</span>
+    <span class="meaning" style="color:var(--success);">${outLabel}</span>
+    ${outUnit ? '<span class="unit-i">['+outUnit+']</span>' : ''}
+  </div>`]).join('');
+
+  // Formula display uses MathJax
+  const formulaDisplayId = 'mjx-formula-' + fid;
+  const formulaHTML = fLatex.startsWith('\\') || fLatex.includes('\\frac') || fLatex.includes('\\sqrt')
+    ? `\\[${fLatex}\\]`
+    : `\\[${formula.eq.replace(/\*/g,'\\cdot ').replace(/sqrt/g,'\\sqrt').replace(/\^/g,'^{').replace(/(\w+)\)/g,'$1}')}\\]`;
+
+  document.getElementById('calculator').innerHTML = `
+    <div class="formula-header">
+      <h2>${fName}</h2>
+      ${fDesc ? '<div class="formula-desc">'+fDesc+'</div>' : ''}
+      <div class="formula-display" id="${formulaDisplayId}">\\[${fLatex}\\]</div>
+      ${fApp ? '<div class="application"><strong>'+getI18n('application')+':</strong> '+fApp+'</div>' : ''}
+    </div>
+    <div class="calc-body">
+      <div class="input-panel">
+        <h3>\ud83d\udcd0 ${getI18n('input_params')}</h3>
+        ${inputFields}
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="compute()">\u2699 ${getI18n('calculate')}</button>
+          <button class="btn btn-outline" onclick="loadDefaults()">${getI18n('default_values')}</button>
+          <button class="btn btn-secondary" onclick="resetInputs()">${getI18n('reset')}</button>
+        </div>
+      </div>
+      <div class="results-panel" id="results-panel">
+        <h3>\ud83d\udcca ${getI18n('results')}</h3>
+        <div id="results-content" class="empty-state" style="padding:30px 0;">
+          <p>${getI18n('no_results')}</p>
+        </div>
+      </div>
+    </div>
+    <div class="glossary">
+      <h3 onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed')">
+        <span class="arrow">\u25BC</span> \ud83d\udcd6 ${getI18n('variable_glossary')}
+      </h3>
+      <div class="glossary-body">${allGlossary}</div>
+    </div>`;
+
+  // Render MathJax
+  if (window.MathJax && !cachedMathJax[fid]) {
+    setTimeout(()=>{
+      MathJax.typesetPromise([document.getElementById(formulaDisplayId)]).then(()=>{
+        cachedMathJax[fid] = true;
+      }).catch(()=>{});
+    }, 50);
+  }
+}
+
+// ===== COMPUTE =====
+async function compute() {
+  if (!currentFormulaId) return;
+  const cat = catalog[currentCat];
+  const formula = cat.formulas.find(f=>f.id===currentFormulaId);
+  if (!formula) return;
+
+  const inputs = {};
+  let hasError = false;
+  formula.inputs.forEach(key => {
+    const el = document.getElementById('inp_'+key);
+    if (el && el.value !== '') {
+      const v = parseFloat(el.value);
+      if (isNaN(v)) { el.classList.add('invalid'); hasError = true; }
+      else { el.classList.remove('invalid'); inputs[key] = v; }
+    } else {
+      el && el.classList.add('invalid');
+      hasError = true;
+    }
+  });
+  if (hasError) return;
+
+  const panel = document.getElementById('results-content');
+  panel.innerHTML = '<div class="empty-state" style="padding:30px 0;"><p>'+getI18n('computing')+'</p></div>';
+
+  try {
+    const res = await fetch('/api/fluid_mechanics/compute', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({formula_id:currentFormulaId, inputs})
+    });
+    const data = await res.json();
+
+    const fi = i18n.formulas[currentFormulaId];
+    const outKey = formula.output;
+    const oinfo = fi && fi.output ? fi.output[outKey] : null;
+    const outLabel = lang==='zh' && oinfo ? oinfo.label_zh : outKey;
+    const outUnit = oinfo ? oinfo.unit : '';
+
+    if (data.error) {
+      panel.innerHTML = '<div class="error-box">Error: '+data.error+'</div>';
+    } else if (data.results && Object.keys(data.results).length > 0) {
+      panel.innerHTML = Object.entries(data.results).map(([key, val]) => {
+        const isPrimary = key === outKey;
+        const displayVal = val === null ? 'N/A' : (typeof val==='number' ? (Math.abs(val)>=1e6||Math.abs(val)<1e-4 ? val.toExponential(4) : val.toPrecision(6)) : val);
+        const displayUnit = isPrimary ? outUnit : '';
+        return `<div class="result-item"${isPrimary?'':' class="result-derived"'}>
+          <span class="result-label">${isPrimary ? outLabel : key}</span>
+          <div class="result-value-group">
+            <span class="result-value">${displayVal}</span>
+            ${displayUnit ? '<span class="result-unit">'+displayUnit+'</span>' : ''}
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      panel.innerHTML = '<div class="empty-state" style="padding:30px 0;"><p>'+getI18n('no_results')+'</p></div>';
+    }
+  } catch(e) {
+    panel.innerHTML = '<div class="error-box">Network error: '+e.message+'</div>';
+  }
+}
+
+function loadDefaults() {
+  if (!currentFormulaId) return;
+  fetch('/api/fluid_mechanics/defaults').then(r=>r.json()).then(all => {
+    const cat = catalog[currentCat];
+    const formula = cat.formulas.find(f=>f.id===currentFormulaId);
+    if (!formula) return;
+    const defs = all[currentFormulaId] || {};
+    formula.inputs.forEach(key => {
+      const el = document.getElementById('inp_'+key);
+      if (el && defs[key] !== undefined) { el.value = defs[key]; el.classList.remove('invalid'); }
+    });
+  });
+}
+
+function resetInputs() {
+  if (!currentFormulaId) return;
+  const cat = catalog[currentCat];
+  const formula = cat.formulas.find(f=>f.id===currentFormulaId);
+  if (!formula) return;
+  formula.inputs.forEach(key => {
+    const el = document.getElementById('inp_'+key);
+    if (el) { el.value = ''; el.classList.remove('invalid'); }
+  });
+}
+
+// Enter key to compute
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.activeElement?.tagName==='INPUT') compute();
+});
+</script>
+</body>
+</html>

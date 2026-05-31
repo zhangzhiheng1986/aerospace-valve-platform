@@ -143,6 +143,20 @@
             font-size: 14px; font-weight: 700; color: var(--text-primary);
             margin-bottom: 4px; line-height: 1.5;
         }
+        .news-link {
+            color: var(--accent2); text-decoration: none;
+            transition: color var(--transition);
+        }
+        .news-link:hover {
+            color: var(--accent); text-decoration: underline;
+        }
+        .news-link:visited { color: #8b5cf6; }
+        .news-search-link {
+            color: var(--text-muted); text-decoration: none;
+            font-size: 12px; margin-left: 4px;
+            transition: color var(--transition);
+        }
+        .news-search-link:hover { color: var(--accent); }
         .news-meta {
             display: flex; align-items: center; gap: 12px;
             font-size: 11px; color: var(--text-muted);
@@ -224,8 +238,8 @@
             try {
                 const res = await fetch('/api/news/dates');
                 const data = await res.json();
-                if (data.success && data.dates) {
-                    allDates = data.dates;
+                if (Array.isArray(data)) {
+                    allDates = data;
                     renderDateChips();
                 }
             } catch (e) {
@@ -237,9 +251,9 @@
             try {
                 const res = await fetch('/api/news/stats');
                 const data = await res.json();
-                if (data.success && data.stats) {
-                    document.getElementById('statTotal').textContent = data.stats.total_entries || 0;
-                    const dates = data.stats.dates || [];
+                if (data && typeof data.total_entries === 'number') {
+                    document.getElementById('statTotal').textContent = data.total_entries;
+                    const dates = data.dates || [];
                     document.getElementById('statLatest').textContent = dates.length > 0 ? dates[0] : '-';
                 }
             } catch (e) {
@@ -271,8 +285,8 @@
             try {
                 const res = await fetch('/api/news/date/' + encodeURIComponent(date));
                 const data = await res.json();
-                if (data.success && data.entry) {
-                    renderNews(data.entry);
+                if (data && data.items && data.items.length > 0) {
+                    renderNews(data);
                 } else {
                     container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x1F4ED;</div><div class="empty-title">暂无该日期资讯</div></div>';
                 }
@@ -293,7 +307,14 @@
                 html += '<div class="news-item">';
                 html += '<div class="news-index">' + (item.index || '') + '</div>';
                 html += '<div class="news-body">';
-                html += '<div class="news-title">' + escapeHtml(item.title || '') + '</div>';
+                var titleHtml = escapeHtml(item.title || '');
+                if (item.url) {
+                    titleHtml = '<a href="' + escapeAttr(item.url) + '" target="_blank" rel="noopener noreferrer" class="news-link">' + titleHtml + '</a>';
+                } else {
+                    var q = encodeURIComponent(item.title || '');
+                    titleHtml = titleHtml + ' <a href="https://www.google.com/search?q=' + q + '" target="_blank" rel="noopener noreferrer" class="news-search-link" title="搜索原文">&#x1F50D;</a>';
+                }
+                html += '<div class="news-title">' + titleHtml + '</div>';
                 html += '<div class="news-meta">';
                 if (item.source) html += '<span class="news-source">&#x1F4F0; ' + escapeHtml(item.source) + '</span>';
                 html += '</div>';
@@ -308,11 +329,11 @@
             try {
                 const res = await fetch('/api/news/import', { method: 'POST' });
                 const data = await res.json();
-                if (data.success) {
-                    alert('导入成功！');
+                if (data && data.success) {
+                    alert(data.message || '导入成功！');
                     await init();
                 } else {
-                    alert('导入失败: ' + (data.message || data.error || '未知错误'));
+                    alert('导入失败: ' + (data && data.message ? data.message : '未知错误'));
                 }
             } catch (e) {
                 alert('导入失败: ' + e.message);
@@ -332,6 +353,10 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function escapeAttr(text) {
+            return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         init();
