@@ -238,7 +238,7 @@ let i18n = { formulas:{}, categories:{}, fluids:{}, pipe_roughness:{} };
 let lang = 'zh';
 let currentCat = null;
 let currentFormulaId = null;
-let cachedMathJax = {}; // avoid re-rendering same formula
+
 
 // ===== LANG =====
 function setLang(l) {
@@ -379,7 +379,7 @@ function selectCategory(catKey, silent) {
     </div>`;
   }).join('');
 
-  if (!silent) { cachedMathJax = {}; }
+
 }
 
 // ===== FORMULA SELECTION =====
@@ -417,7 +417,11 @@ function renderCalculator(formula, defaults) {
   // Build input fields with units
   const inputFields = formula.inputs.map(key => {
     const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
-    const label = lang==='zh' && pinfo ? pinfo.label_zh : key.replace(/_/g, ' ');
+    const labelZh = pinfo ? pinfo.label_zh : '';
+    const paramName = key.replace(/_/g, ' ');
+    const label = lang==='zh' && labelZh
+      ? `${labelZh} <code style="font-size:10px;color:var(--text-muted);background:var(--bg-secondary);padding:1px 5px;border-radius:3px;margin-left:4px;font-family:'Consolas','Menlo',monospace;">${paramName}</code>`
+      : paramName;
     const unit = pinfo ? pinfo.unit : '';
     const hint = lang==='zh' && pinfo ? pinfo.desc_zh : '';
     const val = defaults[key] !== undefined ? defaults[key] : '';
@@ -506,14 +510,14 @@ function renderCalculator(formula, defaults) {
       <div class="glossary-body">${allGlossary}</div>
     </div>`;
 
-  // Render MathJax
-  if (window.MathJax && !cachedMathJax[fid]) {
-    setTimeout(()=>{
-      MathJax.typesetPromise([document.getElementById(formulaDisplayId)]).then(()=>{
-        cachedMathJax[fid] = true;
-      }).catch(()=>{});
-    }, 50);
-  }
+  // Render MathJax (always re-render since innerHTML recreates DOM)
+  setTimeout(() => {
+    const mjxEl = document.getElementById(formulaDisplayId);
+    if (window.MathJax && mjxEl) {
+      MathJax.typesetClear([mjxEl]);
+      MathJax.typesetPromise([mjxEl]).catch(() => {});
+    }
+  }, 80);
 }
 
 // ===== COMPUTE =====
