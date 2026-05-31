@@ -418,16 +418,19 @@ function renderCalculator(formula, defaults) {
   const inputFields = formula.inputs.map(key => {
     const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
     const labelZh = pinfo ? pinfo.label_zh : '';
-    const paramName = key.replace(/_/g, ' ');
+    const paramName = key;
     const label = lang==='zh' && labelZh
       ? `${labelZh} <code style="font-size:10px;color:var(--text-muted);background:var(--bg-secondary);padding:1px 5px;border-radius:3px;margin-left:4px;font-family:'Consolas','Menlo',monospace;">${paramName}</code>`
       : paramName;
     const unit = pinfo ? pinfo.unit : '';
     const hint = lang==='zh' && pinfo ? pinfo.desc_zh : '';
     const val = defaults[key] !== undefined ? defaults[key] : '';
+    const placeholderText = lang==='zh' && labelZh
+      ? `${labelZh} (${key})`
+      : key;
     return `<div class="input-group">
       <label>${label}${unit ? ' <span class="unit">['+unit+']</span>' : ''}</label>
-      <input type="number" step="any" id="inp_${key}" value="${val}" placeholder="${label}">
+      <input type="number" step="any" id="inp_${key}" value="${val}" placeholder="${placeholderText}">
       ${hint ? '<div class="input-hint">'+hint+'</div>' : ''}
     </div>`;
   }).join('');
@@ -439,7 +442,7 @@ function renderCalculator(formula, defaults) {
     const meaning = lang==='zh' && pinfo ? pinfo.label_zh : key;
     const unit = pinfo ? pinfo.unit : '';
     return `<div class="glossary-item">
-      <span class="symbol">${symbol}</span>
+      <span class="symbol">${key}</span>
       <span class="meaning">${meaning}</span>
       ${unit ? '<span class="unit-i">['+unit+']</span>' : ''}
     </div>`;
@@ -463,8 +466,8 @@ function renderCalculator(formula, defaults) {
   const allGlossary = formula.inputs.map(key => {
     const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
     return `<div class="glossary-item">
-      <span class="symbol">${key.replace(/_/g,' ')}</span>
-      <span class="meaning">${lang==='zh' && pinfo ? pinfo.label_zh : key.replace(/_/g,' ')}</span>
+      <span class="symbol">${key}</span>
+      <span class="meaning">${lang==='zh' && pinfo ? pinfo.label_zh : key}</span>
       ${pinfo && pinfo.unit ? '<span class="unit-i">['+pinfo.unit+']</span>' : ''}
     </div>`;
   }).concat([`<div class="glossary-item" style="border-color:rgba(0,180,216,0.3);">
