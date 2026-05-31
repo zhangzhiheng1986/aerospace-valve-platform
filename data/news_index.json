@@ -6,146 +6,78 @@
       "items": [
         {
           "index": 1,
-          "title": "1.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "SpaceX星舰V3首次搭载高压电动低温再循环阀门系统首飞",
+          "url": "https://www.basenor.com/blogs/news/starship-v3s-5-key-tech-upgrades-for-extended-orbital-missions",
+          "source": "Basenor / SpaceX, 2026-05-19",
+          "summary": "V3全新电控阀门系统实现48小时在轨推进剂温控管理。"
         },
         {
           "index": 2,
-          "title": "2.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "Mott与deltaVision联手推出航天推进阀门集成方案",
+          "url": "https://www.prnewswire.com/news-releases/mott-corp-to-offer-deltavision-valve-solutions-for-advanced-spacecraft-propulsion-flow-control-systems-302746121.html",
+          "source": "PRNewswire, 2026-04-17",
+          "summary": "美欧供应链整合，大幅缩短航天级阀门交付周期。"
         },
         {
           "index": 3,
-          "title": "3.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "航空阀门市场2026-2033年趋势：AI与轻量化材料驱动变革",
+          "url": "https://www.linkedin.com/pulse/aviation-valves-market-size-trends-2026-2033-forecast-wgjvf",
+          "source": "LinkedIn / MarketSize&Trends, 2026-05-29",
+          "summary": "AI预测维护+钛合金/陶瓷复材推动阀门设计换代。"
         },
         {
           "index": 4,
-          "title": "4.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "全球航空航天阀门市场报告2026：规模达143.1亿美元",
+          "url": "https://www.thebusinessresearchcompany.com/report/aerospace-valves-global-market-report",
+          "source": "TBRC, 2026-01-28",
+          "summary": "年增长6.2%，军民用飞机增产为主要驱动力。"
         },
         {
           "index": 5,
-          "title": "5.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "AIAA论文：轻量化高流量浮动密封低温推进剂阀门",
+          "url": "https://arc.aiaa.org/doi/10.2514/6.2026-1998",
+          "source": "AIAA SciTech, 2026-01-08",
+          "summary": "新型浮动密封设计实现低温在轨加注高流量控制。"
         },
         {
           "index": 6,
-          "title": "6.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "美天军Tetra-5任务将验证RAFTI在轨加注阀门技术",
+          "url": "https://spacenews.com/space-force-to-test-satellite-refueling-technologies-in-orbit/",
+          "source": "SpaceNews, 2025-03-31/2026发射",
+          "summary": "Orbit Fab特种阀门将首次在轨对接推进剂补加验证。"
         },
         {
           "index": 7,
-          "title": "7.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "MagDrive磁驱动零泄漏阀门：消除航天阀门密封泄漏路径",
+          "url": "https://magdrive.tech/zero-emission-valves-in-space-returning-to-earth/",
+          "source": "MagDrive Technologies, 2026",
+          "summary": "磁耦合驱动实现全封闭密封，突破液氦低温阀泄漏难题。"
         },
         {
           "index": 8,
-          "title": "8.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "智能阀门与增材制造重塑航空航天阀门市场格局",
+          "url": "https://smartscopeinsights.blogspot.com/2026/04/the-future-of-aerospace-valves-market.html",
+          "source": "Polaris Market Research, 2026-04-16",
+          "summary": "传感器集成+3D打印推动阀门预测维护与轻量化。"
         },
         {
           "index": 9,
-          "title": "9.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "360iResearch：数字孪生与AI赋能航空航天阀门工程",
+          "url": "https://www.360iresearch.com/library/intelligence/aerospace-valves",
+          "source": "360iResearch, 2026",
+          "summary": "数字孪生仿真+机器学习预测加速阀门设计验证。"
         },
         {
           "index": 10,
-          "title": "10.",
-          "url": "",
-          "source": "",
-          "summary": ""
+          "title": "江南阀门高性能气动蝶阀成功应用于长征十二号火箭",
+          "url": "https://www.prcvalve.com/newsDetail/1543338294-news",
+          "source": "PRCValve, 2025-06-23",
+          "summary": "国产航天级气动蝶阀经受严苛发射环境实战考验。"
         }
       ],
       "source": "auto",
-      "created_at": "2026-05-31T11:15:54.869369"
-    },
-    {
-      "date": "2026-05-26",
-      "title": "2026-05-26",
-      "items": [
-        {
-          "index": 1,
-          "title": "全球航天阀门市场规模达943亿元，年复合增长率6.36%",
-          "source": "搜狐/贝哲斯咨询，2026",
-          "summary": "2025年全球航天阀门市场规模达943.37亿元，预计2032年将达1452.49亿元。"
-        },
-        {
-          "index": 2,
-          "title": "100家国际航空航天泵阀研发企业全景盘点",
-          "source": "腾讯网/微信公众号，2026-05-23",
-          "summary": "梳理Parker、Eaton、Safran、Woodward等全球百强航空航天泵阀企业格局。"
-        },
-        {
-          "index": 3,
-          "title": "2026年航空航天阀门行业研究分析报告发布",
-          "source": "报告网，2026-05-10",
-          "summary": "涵盖行业机构报告、企业报告、产经新闻及政策法规等综合分析。"
-        },
-        {
-          "index": 4,
-          "title": "\"十五五\"战略观：航空航天阀门研发的使命与进阶之路",
-          "source": "微信公众号-系统科学研究，2026",
-          "summary": "探讨十五五规划下阀门从\"来图加工\"到正向自主研发的战略转型路径。"
-        },
-        {
-          "index": 5,
-          "title": "西安航天动力研究所举办阀门与调节器专业组第二届交流论坛",
-          "source": "天下阀商，2026",
-          "summary": "论坛主题聚焦\"数字化研制模式下的航天阀门技术发展\"。"
-        },
-        {
-          "index": 6,
-          "title": "2026阀门行业三大技术新趋势：智能化、极端工况与标准升级",
-          "source": "微信公众号-泵阀中心，2026",
-          "summary": "指出智能化控制、超低温/高压极端工况、国际标准接轨是今年三大方向。"
-        },
-        {
-          "index": 7,
-          "title": "上海航天获航天专用高压电磁阀门装配测试方法专利",
-          "source": "网易，2025-04-25",
-          "summary": "授权公告号CN119024157B，申请于2024年10月，提升电磁阀装配可靠性。"
-        },
-        {
-          "index": 8,
-          "title": "中国首创快速响应低温电磁阀，SSPI突破液氧甲烷阀门技术",
-          "source": "网界网，2024-05-30",
-          "summary": "上海航天推进研究所开发轻质低温电磁阀，在-60°C环境稳定工作。"
-        },
-        {
-          "index": 9,
-          "title": "火箭院航天造PCV阀门成功跨界进入火电领域",
-          "source": "中国运载火箭技术研究院，2026",
-          "summary": "航天阀门技术向火电超（超）临界发电项目转化应用。"
-        },
-        {
-          "index": 10,
-          "title": "航空航天阀门制造引入机器人技术，实现精密自动化装配",
-          "source": "微信公众号-测控自动化，2026",
-          "summary": "柔性夹爪适应多尺寸阀门零件，推动阀门制造智能化升级。"
-        }
-      ],
-      "source": "auto",
-      "created_at": "2026-05-29T23:48:32.644944"
+      "created_at": "2026-05-31T12:21:26.019665"
     }
   ],
-  "last_updated": "2026-05-31T11:15:54.869369"
+  "last_updated": "2026-05-31T12:21:26.019665"
 }

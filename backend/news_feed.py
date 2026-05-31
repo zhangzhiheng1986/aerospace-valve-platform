@@ -7,8 +7,10 @@ from flask import jsonify
 NEWS_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 NEWS_INDEX_FILE = os.path.join(NEWS_DIR, "news_index.json")
 
-# Pattern 1: N. **[Title](URL)**（Source, Date）—Summary
+# Pattern 1a: N. **[Title](URL)**（Source, Date）—Summary
 _PAT_WITH_URL = re.compile(r'(\d+)\.\s+\*\*\[(.+?)\]\((.+?)\)\*\*\s*[（(](.+?)[）)]\s*[—–-]\s*(.+)')
+# Pattern 1b: **N.** [Title](URL)**（Source, Date）**—Summary (new format with bold number)
+_PAT_BOLD_NUM_URL = re.compile(r'\*\*(\d+)\.\*\*\s*\[(.+?)\]\((.+?)\)\s*\*\*[（(](.+?)[）)]\*\*\s*[—–-]\s*(.+)')
 # Pattern 2: N. **Title**（Source, Date）—Summary (legacy, no URL)
 _PAT_NO_URL = re.compile(r'(\d+)\.\s+\*\*(.+?)\*\*\s*[（(](.+?)[）)]\s*[—–-]\s*(.+)')
 
@@ -79,9 +81,23 @@ def parse_markdown_news(filepath):
     items = []
     for line in text.split(NL):
         line = line.strip()
-        if not line or line[0] in "#*-=":
+        if not line or line[0] in "#-=":
             continue
-        # Try URL pattern first
+        # Try bold-number URL pattern first (new format)
+        m = _PAT_BOLD_NUM_URL.match(line)
+        if m:
+            src = m.group(4).strip()
+            if src.endswith(",") or src.endswith(";"):
+                src = src[:-1]
+            items.append({
+                "index": int(m.group(1)),
+                "title": m.group(2).strip(),
+                "url": m.group(3).strip(),
+                "source": src,
+                "summary": m.group(5).strip()
+            })
+            continue
+        # Try classic URL pattern
         m = _PAT_WITH_URL.match(line)
         if m:
             src = m.group(4).strip()
