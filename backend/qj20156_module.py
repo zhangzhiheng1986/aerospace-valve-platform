@@ -303,6 +303,8 @@ def verify_leak_rate(measured_leak: float, leak_type: str = "internal") -> Dict:
 
 def verify_rated_output_pressure(rated: float, measured: float) -> Dict:
     """Verify rated output pressure deviation (Section 3.8.4)"""
+    if rated == 0:
+        return {"error": "ratio_pressure_cannot_be_zero"}
     deviation_pct = abs(measured - rated) / rated * 100.0
     return _clean({
         "rated_MPa": rated,
@@ -315,6 +317,8 @@ def verify_rated_output_pressure(rated: float, measured: float) -> Dict:
 
 def verify_lockup_pressure(rated_pressure: float, lockup_pressure: float) -> Dict:
     """Verify lock-up pressure deviation (Section 3.8.5.3)"""
+    if rated_pressure == 0:
+        return {"error": "rated_pressure_cannot_be_zero"}
     deviation_pct = abs(lockup_pressure - rated_pressure) / rated_pressure * 100.0
     pass_result = (THRESHOLDS["lockup_pressure_deviation_min"]
                    <= deviation_pct
