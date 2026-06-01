@@ -53,7 +53,7 @@ CATEGORY_I18N = {
     },
     "11_dimensional": {
         "name_zh": "\u91cf\u7eb2\u5206\u6790",
-        "desc_zh": "\u96f7\u8bfa\u6570\u3001\u4f5b\u6c9b\u5fb7\u6570\u3001\u9a6c\u8d6b\u6570\u3001\u97e6\u4f2f\u6570\u3001\u6b27\u62c9\u6570\u3001\u65af\u7279\u52b3\u54c8\u5c14\u6570\u4e0e\u03c0\u5b9a\u7406"
+        "desc_zh": "\u96f7\u8bfa\u6570\u3001\u4f5b\u6c9b\u5fb7\u6570\u3001\u9a6c\u8d6b\u6570\u3001\u97e6\u4f2f\u6570\u3001\u6b27\u62c9\u6570\u3001\u65af\u7279\u52b3\u54c8\u5c14\u6570\u4e0e\pi\u5b9a\u7406"
     },
     "12_fsi": {
         "name_zh": "\u6d41\u56fa\u8026\u5408",
@@ -109,7 +109,7 @@ FORMULA_I18N = {
     "density": {
         "name_zh": "\u5bc6\u5ea6",
         "desc_zh": "\u8ba1\u7b97\u7269\u8d28\u5355\u4f4d\u4f53\u79ef\u7684\u8d28\u91cf",
-        "latex": r"\u03c1 = \frac{m}{V}",
+        "latex": r"\rho = \frac{m}{V}",
         "inputs": {
             "mass":   {"label_zh": "\u8d28\u91cf",   "unit": "kg",  "desc_zh": "\u7269\u8d28\u7684\u603b\u8d28\u91cf"},
             "volume": {"label_zh": "\u4f53\u79ef",   "unit": "m\u00b3", "desc_zh": "\u7269\u8d28\u5360\u636e\u7684\u7a7a\u95f4\u4f53\u79ef"}
@@ -121,7 +121,7 @@ FORMULA_I18N = {
     "specific_weight": {
         "name_zh": "\u91cd\u5ea6",
         "desc_zh": "\u8ba1\u7b97\u5355\u4f4d\u4f53\u79ef\u6d41\u4f53\u7684\u91cd\u91cf",
-        "latex": r"\u03b3 = \u03c1 g",
+        "latex": r"\gamma = \rho g",
         "inputs": {
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "g":   {"label_zh": "\u91cd\u529b\u52a0\u901f\u5ea6", "unit": "m/s\u00b2", "desc_zh": "\u91cd\u529b\u52a0\u901f\u5ea6\uff0c\u9ed8\u8ba4\u5730\u7403\u8868\u9762\u503c9.81"}
@@ -133,7 +133,7 @@ FORMULA_I18N = {
     "specific_gravity": {
         "name_zh": "\u76f8\u5bf9\u5bc6\u5ea6\uff08\u6bd4\u91cd\uff09",
         "desc_zh": "\u8ba1\u7b97\u6d41\u4f53\u5bc6\u5ea6\u4e0e\u53c2\u8003\u5bc6\u5ea6\u7684\u6bd4\u503c",
-        "latex": r"\text{SG} = \frac{\u03c1}{\u03c1_{\text{ref}}}",
+        "latex": r"\text{SG} = \frac{\rho}{\rho_{\text{ref}}}",
         "inputs": {
             "rho":     {"label_zh": "\u6d41\u4f53\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u5f85\u6d4b\u6d41\u4f53\u7684\u5bc6\u5ea6"},
             "rho_ref": {"label_zh": "\u53c2\u8003\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u53c2\u8003\u6d41\u4f53\u5bc6\u5ea6\uff0c\u901a\u5e384\u2103\u6c34=1000 kg/m\u00b3"}
@@ -145,7 +145,7 @@ FORMULA_I18N = {
     "dynamic_viscosity": {
         "name_zh": "\u52a8\u529b\u7c98\u5ea6",
         "desc_zh": "\u7531\u8fd0\u52a8\u7c98\u5ea6\u548c\u5bc6\u5ea6\u8ba1\u7b97\u52a8\u529b\u7c98\u5ea6",
-        "latex": r"\u03bc = \u03bd\u03c1",
+        "latex": r"\mu = \nu\rho",
         "inputs": {
             "nu":  {"label_zh": "\u8fd0\u52a8\u7c98\u5ea6", "unit": "m\u00b2/s", "desc_zh": "\u6d41\u4f53\u7684\u8fd0\u52a8\u7c98\u5ea6"},
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"}
@@ -157,7 +157,7 @@ FORMULA_I18N = {
     "kinematic_viscosity": {
         "name_zh": "\u8fd0\u52a8\u7c98\u5ea6",
         "desc_zh": "\u7531\u52a8\u529b\u7c98\u5ea6\u548c\u5bc6\u5ea6\u8ba1\u7b97\u8fd0\u52a8\u7c98\u5ea6",
-        "latex": r"\u03bd = \frac{\u03bc}{\u03c1}",
+        "latex": r"\nu = \frac{\mu}{\rho}",
         "inputs": {
             "mu":  {"label_zh": "\u52a8\u529b\u7c98\u5ea6", "unit": "Pa\u00b7s", "desc_zh": "\u6d41\u4f53\u7684\u52a8\u529b\u7c98\u5ea6"},
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"}
@@ -182,7 +182,7 @@ FORMULA_I18N = {
     "surface_tension": {
         "name_zh": "\u8868\u9762\u5f20\u529b",
         "desc_zh": "\u8ba1\u7b97\u6db2\u4f53\u8868\u9762\u5f20\u529b\u4ea7\u751f\u7684\u529b",
-        "latex": r"F_{\u03c3} = \u03c3 L",
+        "latex": r"F_{\sigma} = \sigma L",
         "inputs": {
             "sigma": {"label_zh": "\u8868\u9762\u5f20\u529b\u7cfb\u6570", "unit": "N/m", "desc_zh": "\u6d41\u4f53\u7684\u8868\u9762\u5f20\u529b\u7cfb\u6570"},
             "L":     {"label_zh": "\u63a5\u89e6\u957f\u5ea6", "unit": "m", "desc_zh": "\u6db2\u4f53\u8868\u9762\u7684\u63a5\u89e6\u7ebf\u957f\u5ea6"}
@@ -210,7 +210,7 @@ FORMULA_I18N = {
     "hydrostatic_pressure": {
         "name_zh": "\u9759\u538b\u5206\u5e03",
         "desc_zh": "\u8ba1\u7b97\u9759\u6b62\u6d41\u4f53\u5728\u6307\u5b9a\u6df1\u5ea6\u5904\u7684\u603b\u538b\u529b",
-        "latex": r"P = P_0 + \u03c1 g h",
+        "latex": r"P = P_0 + \rho g h",
         "inputs": {
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "g":   {"label_zh": "\u91cd\u529b\u52a0\u901f\u5ea6", "unit": "m/s\u00b2", "desc_zh": "\u91cd\u529b\u52a0\u901f\u5ea6"},
@@ -224,7 +224,7 @@ FORMULA_I18N = {
     "manometer": {
         "name_zh": "\u6db2\u67f1\u538b\u5dee\u8ba1",
         "desc_zh": "\u901a\u8fc7U\u5f62\u7ba1\u6db2\u67f1\u9ad8\u5ea6\u5dee\u8ba1\u7b97\u538b\u529b\u5dee",
-        "latex": r"\u0394P = \u03c1_{\text{fluid}} g \u0394h",
+        "latex": r"\Delta P = \rho_{\text{fluid}} g \Delta h",
         "inputs": {
             "rho_fluid": {"label_zh": "\u6d4b\u538b\u6d41\u4f53\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d4b\u538b\u7ba1\u5185\u6db2\u4f53\u7684\u5bc6\u5ea6"},
             "g":         {"label_zh": "\u91cd\u529b\u52a0\u901f\u5ea6", "unit": "m/s\u00b2", "desc_zh": "\u91cd\u529b\u52a0\u901f\u5ea6"},
@@ -237,7 +237,7 @@ FORMULA_I18N = {
     "hydrostatic_force_plane": {
         "name_zh": "\u5e73\u9762\u9759\u6c34\u603b\u538b\u529b",
         "desc_zh": "\u8ba1\u7b97\u4f5c\u7528\u5728\u5e73\u9762\u4e0a\u7684\u9759\u6c34\u603b\u538b\u529b",
-        "latex": r"F = \u03c1 g h_c A",
+        "latex": r"F = \rho g h_c A",
         "inputs": {
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "g":   {"label_zh": "\u91cd\u529b\u52a0\u901f\u5ea6", "unit": "m/s\u00b2", "desc_zh": "\u91cd\u529b\u52a0\u901f\u5ea6"},
@@ -264,7 +264,7 @@ FORMULA_I18N = {
     "buoyancy": {
         "name_zh": "\u6d6e\u529b\uff08\u963f\u57fa\u7c73\u5fb7\u539f\u7406\uff09",
         "desc_zh": "\u8ba1\u7b97\u7269\u4f53\u5728\u6d41\u4f53\u4e2d\u6240\u53d7\u7684\u6d6e\u529b",
-        "latex": r"F_b = \u03c1_f g V_{\text{disp}}",
+        "latex": r"F_b = \rho_f g V_{\text{disp}}",
         "inputs": {
             "rho_fluid":   {"label_zh": "\u6d41\u4f53\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "g":           {"label_zh": "\u91cd\u529b\u52a0\u901f\u5ea6", "unit": "m/s\u00b2", "desc_zh": "\u91cd\u529b\u52a0\u901f\u5ea6"},
@@ -290,7 +290,7 @@ FORMULA_I18N = {
     "tank_height": {
         "name_zh": "\u50a8\u7f50\u6db2\u4f4d\u9ad8\u5ea6",
         "desc_zh": "\u6839\u636e\u6db2\u4f53\u8d28\u91cf\u548c\u50a8\u7f50\u622a\u9762\u79ef\u8ba1\u7b97\u6db2\u4f4d\u9ad8\u5ea6",
-        "latex": r"h = \frac{m}{\u03c1 A}",
+        "latex": r"h = \frac{m}{\rho A}",
         "inputs": {
             "mass": {"label_zh": "\u6db2\u4f53\u8d28\u91cf", "unit": "kg", "desc_zh": "\u50a8\u7f50\u5185\u6db2\u4f53\u7684\u603b\u8d28\u91cf"},
             "rho":  {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6db2\u4f53\u5bc6\u5ea6"},
@@ -303,7 +303,7 @@ FORMULA_I18N = {
     "capillary_rise": {
         "name_zh": "\u6bdb\u7ec6\u4e0a\u5347\u9ad8\u5ea6",
         "desc_zh": "\u8ba1\u7b97\u6db2\u4f53\u5728\u7ec6\u7ba1\u4e2d\u7684\u6bdb\u7ec6\u4e0a\u5347\u9ad8\u5ea6",
-        "latex": r"h = \frac{2\u03c3 \cos\theta}{\u03c1 g R}",
+        "latex": r"h = \frac{2\sigma \cos\theta}{\rho g R}",
         "inputs": {
             "sigma": {"label_zh": "\u8868\u9762\u5f20\u529b\u7cfb\u6570", "unit": "N/m", "desc_zh": "\u6db2\u4f53\u8868\u9762\u5f20\u529b\u7cfb\u6570"},
             "theta": {"label_zh": "\u63a5\u89e6\u89d2", "unit": "\u00b0", "desc_zh": "\u6db2\u4f53\u4e0e\u7ba1\u58c1\u7684\u63a5\u89e6\u89d2"},
@@ -333,7 +333,7 @@ FORMULA_I18N = {
     "bernoulli_total_pressure": {
         "name_zh": "\u4f2f\u52aa\u5229\u603b\u538b",
         "desc_zh": "\u8ba1\u7b97\u6d41\u7ebf\u4e0a\u4efb\u610f\u70b9\u7684\u603b\u538b\uff08\u9759\u538b+\u52a8\u538b+\u4f4d\u538b\uff09",
-        "latex": r"P_{\text{total}} = P + \frac{1}{2}\u03c1 V^2 + \u03c1 g z",
+        "latex": r"P_{\text{total}} = P + \frac{1}{2}\rho V^2 + \rho g z",
         "inputs": {
             "P":   {"label_zh": "\u9759\u538b", "unit": "Pa", "desc_zh": "\u6d41\u4f53\u9759\u538b"},
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
@@ -348,7 +348,7 @@ FORMULA_I18N = {
     "bernoulli_velocity": {
         "name_zh": "\u4f2f\u52aa\u5229\u6d41\u901f",
         "desc_zh": "\u7531\u4e24\u70b9\u538b\u5dee\u548c\u9ad8\u5ea6\u5dee\u8ba1\u7b97\u6d41\u4f53\u901f\u5ea6",
-        "latex": r"V_2 = \sqrt{\frac{2(P_1-P_2)}{\u03c1} + 2g(z_1-z_2) + V_1^2}",
+        "latex": r"V_2 = \sqrt{\frac{2(P_1-P_2)}{\rho} + 2g(z_1-z_2) + V_1^2}",
         "inputs": {
             "P1": {"label_zh": "\u70b9\u00b9\u538b\u529b", "unit": "Pa", "desc_zh": "\u4e0a\u6e38\u6d4b\u70b9\u538b\u529b"},
             "P2": {"label_zh": "\u70b9\u00b2\u538b\u529b", "unit": "Pa", "desc_zh": "\u4e0b\u6e38\u6d4b\u70b9\u538b\u529b"},
@@ -365,7 +365,7 @@ FORMULA_I18N = {
     "bernoulli_dp": {
         "name_zh": "\u4f2f\u52aa\u5229\u538b\u964d",
         "desc_zh": "\u8ba1\u7b97\u7406\u60f3\u6d41\u52a8\u4e2d\u901f\u5ea6\u53d8\u5316\u5f15\u8d77\u7684\u538b\u529b\u53d8\u5316",
-        "latex": r"\u0394P_{\text{ideal}} = \frac{1}{2}\u03c1(V_2^2 - V_1^2) + \u03c1 g(z_2 - z_1)",
+        "latex": r"\Delta P_{\text{ideal}} = \frac{1}{2}\rho(V_2^2 - V_1^2) + \rho g(z_2 - z_1)",
         "inputs": {
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "V1":  {"label_zh": "\u5165\u53e3\u901f\u5ea6", "unit": "m/s", "desc_zh": "\u5165\u53e3\u622a\u9762\u901f\u5ea6"},
@@ -381,7 +381,7 @@ FORMULA_I18N = {
     "energy_eq": {
         "name_zh": "\u80fd\u91cf\u65b9\u7a0b\uff08\u5de5\u7a0b\u4f2f\u52aa\u5229\uff09",
         "desc_zh": "\u5305\u542b\u6cf5\u3001\u6c34\u8f6e\u673a\u548c\u635f\u5931\u7684\u5b9e\u9645\u80fd\u91cf\u65b9\u7a0b",
-        "latex": r"h_p - h_t - h_L = \u0394z + \frac{\u0394 V^2}{2g} + \frac{\u0394 P}{\u03c1 g}",
+        "latex": r"h_p - h_t - h_L = \Delta z + \frac{\Delta V^2}{2g} + \frac{\Delta P}{\rho g}",
         "inputs": {
             "h_pump":   {"label_zh": "\u6cf5\u626c\u7a0b", "unit": "m", "desc_zh": "\u6cf5\u63d0\u4f9b\u7684\u626c\u7a0b"},
             "h_turbine":{"label_zh": "\u6c34\u8f6e\u673a\u63d0\u53d6\u626c\u7a0b", "unit": "m", "desc_zh": "\u6c34\u8f6e\u673a\u63d0\u53d6\u7684\u626c\u7a0b"},
@@ -402,7 +402,7 @@ FORMULA_I18N = {
     "momentum_force": {
         "name_zh": "\u52a8\u91cf\u529b",
         "desc_zh": "\u8ba1\u7b97\u6d41\u4f53\u52a8\u91cf\u53d8\u5316\u4ea7\u751f\u7684\u4f5c\u7528\u529b",
-        "latex": r"F = \u03c1 Q (\u03b2 V_{\text{out}} - \u03b2 V_{\text{in}})",
+        "latex": r"F = \rho Q (\beta V_{\text{out}} - \beta V_{\text{in}})",
         "inputs": {
             "rho":   {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "Q":     {"label_zh": "\u4f53\u79ef\u6d41\u91cf", "unit": "m\u00b3/s", "desc_zh": "\u4f53\u79ef\u6d41\u91cf"},
@@ -417,7 +417,7 @@ FORMULA_I18N = {
     "cavitation_number": {
         "name_zh": "\u7a7a\u5316\u6570",
         "desc_zh": "\u8bc4\u4f30\u6d41\u4f53\u53d1\u751f\u7a7a\u5316\u7684\u98ce\u9669\u7a0b\u5ea6",
-        "latex": r"\sigma = \frac{P - P_v}{\frac{1}{2}\u03c1 V^2}",
+        "latex": r"\sigma = \frac{P - P_v}{\frac{1}{2}\rho V^2}",
         "inputs": {
             "P":   {"label_zh": "\u5f53\u5730\u9759\u538b", "unit": "Pa", "desc_zh": "\u6d41\u4f53\u5f53\u5730\u9759\u538b"},
             "P_v": {"label_zh": "\u84b8\u6c7d\u538b", "unit": "Pa", "desc_zh": "\u5de5\u4f5c\u6e29\u5ea6\u4e0b\u6d41\u4f53\u7684\u84b8\u6c7d\u538b"},
@@ -425,13 +425,13 @@ FORMULA_I18N = {
             "V":   {"label_zh": "\u6d41\u901f", "unit": "m/s", "desc_zh": "\u7279\u5f81\u901f\u5ea6"}
         },
         "output": {"sigma": {"label_zh": "\u7a7a\u5316\u6570", "unit": "\u65e0\u91cf\u7eb2"}},
-        "application_zh": "\u03c3<1\u65f6\u7a7a\u5316\u53ef\u80fd\u53d1\u751f\uff0c\u662f\u6cf5\u7ad9\u3001\u87ba\u65cb\u6868\u548c\u9600\u95e8\u7a7a\u5316\u9884\u9632\u7684\u5173\u952e\u65e0\u91cf\u7eb2\u5224\u636e\uff0c\u76f4\u63a5\u5f71\u54cd\u8bbe\u5907\u5bff\u547d"
+        "application_zh": "\sigma<1\u65f6\u7a7a\u5316\u53ef\u80fd\u53d1\u751f\uff0c\u662f\u6cf5\u7ad9\u3001\u87ba\u65cb\u6868\u548c\u9600\u95e8\u7a7a\u5316\u9884\u9632\u7684\u5173\u952e\u65e0\u91cf\u7eb2\u5224\u636e\uff0c\u76f4\u63a5\u5f71\u54cd\u8bbe\u5907\u5bff\u547d"
     },
 
     "stagnation": {
         "name_zh": "\u6ede\u6b62\u538b\u529b",
         "desc_zh": "\u8ba1\u7b97\u6d41\u4f53\u6ede\u6b62\u70b9\u5904\u7684\u603b\u538b\u529b",
-        "latex": r"P_0 = P_{\infty} + \frac{1}{2}\u03c1 V_{\infty}^2",
+        "latex": r"P_0 = P_{\infty} + \frac{1}{2}\rho V_{\infty}^2",
         "inputs": {
             "P_static": {"label_zh": "\u6765\u6d41\u9759\u538b", "unit": "Pa", "desc_zh": "\u81ea\u7531\u6d41\u7684\u9759\u538b"},
             "rho":      {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
@@ -456,7 +456,7 @@ FORMULA_I18N = {
     "mass_flow": {
         "name_zh": "\u8d28\u91cf\u6d41\u91cf",
         "desc_zh": "\u8ba1\u7b97\u5355\u4f4d\u65f6\u95f4\u901a\u8fc7\u622a\u9762\u7684\u6d41\u4f53\u8d28\u91cf",
-        "latex": r"\dot{m} = \u03c1 Q",
+        "latex": r"\dot{m} = \rho Q",
         "inputs": {
             "rho": {"label_zh": "\u5bc6\u5ea6", "unit": "kg/m\u00b3", "desc_zh": "\u6d41\u4f53\u5bc6\u5ea6"},
             "Q":   {"label_zh": "\u4f53\u79ef\u6d41\u91cf", "unit": "m\u00b3/s", "desc_zh": "\u4f53\u79ef\u6d41\u91cf"}
