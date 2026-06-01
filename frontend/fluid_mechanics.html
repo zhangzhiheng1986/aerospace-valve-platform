@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Fluid Mechanics Super Calculator</title>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
@@ -12,19 +12,29 @@
   --text-primary: #e0e6ed; --text-secondary: #8899aa; --text-muted: #5a6a7a;
   --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
   --radius: 8px; --radius-sm: 5px;
+  --sidebar-w: 270px; --formula-list-w: 290px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+  font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   background: var(--bg-primary); color: var(--text-primary);
-  display:flex; height:100vh; overflow:hidden;
+  display:flex; height:100vh; height:100dvh; overflow:hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* SIDEBAR */
+/* ===== SIDEBAR OVERLAY (mobile) ===== */
+.sidebar-backdrop {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+  z-index:90; opacity:0; transition:opacity 0.25s;
+}
+.sidebar-backdrop.open { opacity:1; }
+
+/* ===== SIDEBAR ===== */
 .sidebar {
-  width:270px; min-width:270px; background: var(--bg-secondary);
-  border-right:1px solid var(--border); overflow-y:auto;
-  display:flex; flex-direction:column;
+  width:var(--sidebar-w); min-width:var(--sidebar-w);
+  background:var(--bg-secondary); border-right:1px solid var(--border);
+  overflow-y:auto; display:flex; flex-direction:column; z-index:100;
 }
 .sidebar-header { padding:18px 16px; border-bottom:1px solid var(--border); }
 .sidebar-header h2 { font-size:15px; color:var(--accent); display:flex; align-items:center; gap:8px; }
@@ -34,97 +44,110 @@ body {
   border-radius:20px; padding:3px; border:1px solid var(--border);
 }
 .lang-btn {
-  flex:1; padding:5px 0; border:none; border-radius:16px;
-  font-size:11px; cursor:pointer; background:none; color:var(--text-secondary);
-  transition:all 0.2s;
+  flex:1; padding:6px 0; border:none; border-radius:16px;
+  font-size:12px; cursor:pointer; background:none; color:var(--text-secondary);
+  transition:all 0.2s; -webkit-tap-highlight-color:transparent;
 }
 .lang-btn.active { background:var(--accent); color:var(--bg-primary); font-weight:600; }
 .sidebar-nav { flex:1; overflow-y:auto; padding:8px 0; }
 .cat-item {
-  padding:11px 16px; cursor:pointer; display:flex; align-items:center; gap:10px;
-  font-size:13px; color:var(--text-secondary); transition:all 0.15s;
-  border-left:3px solid transparent;
+  padding:13px 16px; cursor:pointer; display:flex; align-items:center; gap:10px;
+  font-size:14px; color:var(--text-secondary); transition:all 0.15s;
+  border-left:3px solid transparent; -webkit-tap-highlight-color:transparent;
 }
 .cat-item:hover { background:var(--bg-card); color:var(--text-primary); }
 .cat-item.active { background:var(--accent-glow); color:var(--accent); border-left-color:var(--accent); }
-.cat-item .icon { font-size:16px; width:22px; text-align:center; }
-.cat-item .count { margin-left:auto; font-size:10px; background:var(--bg-primary); padding:2px 7px; border-radius:10px; }
-.sidebar-footer { padding:12px 16px; border-top:1px solid var(--border); }
+.cat-item .icon { font-size:18px; width:24px; text-align:center; flex-shrink:0; }
+.cat-item .count { margin-left:auto; font-size:11px; background:var(--bg-primary); padding:2px 8px; border-radius:10px; }
+.sidebar-footer { padding:14px 16px; border-top:1px solid var(--border); }
 
-/* MAIN */
-.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+/* ===== MAIN LAYOUT ===== */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
 .toolbar {
-  padding:14px 24px; border-bottom:1px solid var(--border);
-  display:flex; align-items:center; gap:14px; background:rgba(15,25,35,0.95);
+  padding:12px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px; background:rgba(15,25,35,0.95);
+  flex-shrink:0; flex-wrap:wrap;
 }
-.toolbar h1 { font-size:18px; font-weight:600; }
-.toolbar .breadcrumb { font-size:12px; color:var(--text-muted); }
-.back-link { font-size:12px; color:var(--text-secondary); margin-left:auto; text-decoration:none; }
+.toolbar h1 { font-size:18px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.toolbar .breadcrumb { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+.back-link { font-size:12px; color:var(--text-secondary); margin-left:auto; text-decoration:none; white-space:nowrap; }
 .back-link:hover { color:var(--accent); }
-.content { flex:1; display:flex; overflow:hidden; }
 
-/* FORMULA LIST */
+/* Hamburger */
+.hamburger { display:none; background:none; border:none; color:var(--accent); font-size:22px; cursor:pointer; padding:4px 6px; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+.formula-back-btn { display:none; background:var(--accent-glow); border:1px solid rgba(0,180,216,0.3); color:var(--accent); padding:8px 14px; border-radius:20px; font-size:12px; cursor:pointer; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+.formula-back-btn:active { background:var(--accent); color:var(--bg-primary); }
+
+.content { flex:1; display:flex; overflow:hidden; min-height:0; }
+
+/* ===== FORMULA LIST ===== */
 .formula-list {
-  width:290px; min-width:290px; border-right:1px solid var(--border);
-  overflow-y:auto; background:var(--bg-secondary);
+  width:var(--formula-list-w); min-width:var(--formula-list-w);
+  border-right:1px solid var(--border); overflow-y:auto;
+  background:var(--bg-secondary); -webkit-overflow-scrolling:touch;
 }
 .formula-item {
-  padding:11px 14px; cursor:pointer; border-bottom:1px solid rgba(42,58,74,0.5);
-  font-size:12px; color:var(--text-secondary); transition:all 0.15s;
+  padding:12px 14px; cursor:pointer; border-bottom:1px solid rgba(42,58,74,0.5);
+  font-size:13px; color:var(--text-secondary); transition:all 0.15s;
+  -webkit-tap-highlight-color:transparent;
 }
 .formula-item:hover { background:var(--bg-card); }
 .formula-item.selected { background:var(--accent-glow); color:var(--accent); border-left:3px solid var(--accent); }
+.formula-item:active { background:var(--bg-card); }
 .formula-item .f-name { font-weight:500; }
-.formula-item .f-preview { font-size:10px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.formula-item .f-preview { font-size:11px; color:var(--text-muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* CALCULATOR */
-.calculator { flex:1; overflow-y:auto; padding:24px; }
+/* ===== CALCULATOR ===== */
+.calculator { flex:1; overflow-y:auto; padding:24px; -webkit-overflow-scrolling:touch; }
 .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
-.empty-state .icon { font-size:48px; margin-bottom:16px; }
-.empty-state h3 { font-size:16px; margin-bottom:8px; color:var(--text-secondary); }
-.empty-state p { font-size:13px; line-height:1.6; }
+.empty-state .icon { font-size:52px; margin-bottom:16px; }
+.empty-state h3 { font-size:17px; margin-bottom:10px; color:var(--text-secondary); }
+.empty-state p { font-size:14px; line-height:1.7; }
 
 /* FORMULA HEADER */
 .formula-header { margin-bottom:20px; }
-.formula-header h2 { font-size:22px; color:var(--accent); margin-bottom:6px; }
+.formula-header h2 { font-size:22px; color:var(--accent); margin-bottom:8px; }
 .formula-header .formula-display {
   background:var(--bg-primary); border:1px solid var(--border);
   border-radius:var(--radius); padding:18px 24px; margin:12px 0;
-  overflow-x:auto; min-height:50px; display:flex; align-items:center; justify-content:center;
+  overflow-x:auto; min-height:55px; display:flex; align-items:center;
+  justify-content:center; -webkit-overflow-scrolling:touch;
 }
-.formula-header .formula-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
-.formula-header .application { font-size:12px; color:var(--accent); margin-top:8px; padding:8px 12px; background:var(--accent-glow); border-radius:var(--radius-sm); border-left:2px solid var(--accent); }
+.formula-header .formula-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+.formula-header .application { font-size:13px; color:var(--accent); margin-top:8px; padding:10px 14px; background:var(--accent-glow); border-radius:var(--radius-sm); border-left:3px solid var(--accent); line-height:1.5; }
 
-/* CALC BODY */
+/* CALC BODY - 2 columns on desktop, stacks on mobile */
 .calc-body { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-@media (max-width:1000px) { .calc-body { grid-template-columns:1fr; } }
 
 /* INPUT PANEL */
 .input-panel {
   background:var(--bg-card); border-radius:var(--radius);
-  padding:18px; border:1px solid var(--border);
+  padding:20px; border:1px solid var(--border);
 }
-.input-panel h3 { font-size:14px; margin-bottom:14px; color:var(--accent); display:flex; align-items:center; gap:6px; }
-.input-group { margin-bottom:12px; }
+.input-panel h3 { font-size:15px; margin-bottom:16px; color:var(--accent); display:flex; align-items:center; gap:8px; }
+.input-group { margin-bottom:14px; }
 .input-group label {
   display:flex; justify-content:space-between; align-items:baseline;
-  font-size:11px; color:var(--text-secondary); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.3px;
+  font-size:12px; color:var(--text-secondary); margin-bottom:5px;
+  text-transform:uppercase; letter-spacing:0.3px; flex-wrap:wrap; gap:4px;
 }
-.input-group label .unit { font-size:10px; color:var(--text-muted); text-transform:none; font-weight:normal; }
+.input-group label .unit { font-size:11px; color:var(--text-muted); text-transform:none; font-weight:normal; }
 .input-group input {
-  width:100%; padding:9px 12px; background:var(--bg-primary);
+  width:100%; padding:11px 14px; background:var(--bg-primary);
   border:1px solid var(--border); border-radius:var(--radius-sm);
-  color:var(--text-primary); font-size:13px; font-family:'Consolas','Menlo',monospace;
-  transition:border-color 0.15s;
+  color:var(--text-primary); font-size:14px; font-family:'Consolas','Menlo','SF Mono',monospace;
+  transition:border-color 0.15s; -webkit-appearance:none;
 }
-.input-group input:focus { border-color:var(--accent); outline:none; box-shadow:0 0 0 3px rgba(0,180,216,0.1); }
+.input-group input:focus { border-color:var(--accent); outline:none; box-shadow:0 0 0 3px rgba(0,180,216,0.15); }
 .input-group input.invalid { border-color:var(--danger); }
-.input-hint { font-size:10px; color:var(--text-muted); margin-top:2px; }
-.btn-row { display:flex; gap:10px; margin-top:16px; }
+.input-hint { font-size:11px; color:var(--text-muted); margin-top:3px; line-height:1.4; }
+.btn-row { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
 .btn {
-  padding:9px 22px; border:none; border-radius:var(--radius-sm);
-  font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500;
+  padding:11px 22px; border:none; border-radius:var(--radius-sm);
+  font-size:14px; cursor:pointer; transition:all 0.2s; font-weight:500;
+  -webkit-tap-highlight-color:transparent; white-space:nowrap;
 }
+.btn:active { transform:scale(0.97); }
 .btn-primary { background:var(--accent); color:var(--bg-primary); }
 .btn-primary:hover { background:var(--accent2); box-shadow:0 0 16px var(--accent-glow); }
 .btn-secondary { background:var(--border); color:var(--text-secondary); }
@@ -135,65 +158,186 @@ body {
 /* RESULTS */
 .results-panel {
   background:var(--bg-card); border-radius:var(--radius);
-  padding:18px; border:1px solid var(--border); min-height:200px;
+  padding:20px; border:1px solid var(--border); min-height:200px;
 }
-.results-panel h3 { font-size:14px; margin-bottom:14px; color:var(--accent); }
+.results-panel h3 { font-size:15px; margin-bottom:16px; color:var(--accent); }
 .result-item {
   display:flex; justify-content:space-between; align-items:center;
-  padding:12px 0; border-bottom:1px solid rgba(42,58,74,0.4);
+  padding:14px 0; border-bottom:1px solid rgba(42,58,74,0.4);
 }
 .result-item:last-child { border-bottom:none; }
-.result-label { font-size:13px; color:var(--text-secondary); }
+.result-label { font-size:14px; color:var(--text-secondary); }
 .result-value-group { text-align:right; }
-.result-value { font-size:22px; font-weight:700; color:var(--accent); font-family:'Consolas',monospace; }
+.result-value { font-size:24px; font-weight:700; color:var(--accent); font-family:'Consolas','SF Mono',monospace; }
 .result-unit { font-size:12px; color:var(--text-muted); margin-left:4px; }
-.result-derived { margin-top:12px; padding-top:12px; border-top:1px dashed var(--border); }
-.result-derived .title { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
-.error-box { color:var(--danger); font-size:13px; padding:12px; background:rgba(255,107,107,0.08); border-radius:var(--radius-sm); border:1px solid rgba(255,107,107,0.2); }
+.result-derived { margin-top:14px; padding-top:14px; border-top:1px dashed var(--border); }
+.result-derived .title { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+.error-box { color:var(--danger); font-size:14px; padding:14px; background:rgba(255,107,107,0.08); border-radius:var(--radius-sm); border:1px solid rgba(255,107,107,0.2); line-height:1.5; }
 
 /* VARIABLE GLOSSARY */
 .glossary {
   margin-top:20px; background:var(--bg-card); border-radius:var(--radius);
-  padding:18px; border:1px solid var(--border);
+  padding:20px; border:1px solid var(--border);
 }
-.glossary h3 { font-size:14px; color:var(--accent); margin-bottom:12px; cursor:pointer; display:flex; align-items:center; gap:6px; user-select:none; }
-.glossary h3 .arrow { transition:transform 0.2s; font-size:10px; }
+.glossary h3 { font-size:15px; color:var(--accent); margin-bottom:14px; cursor:pointer; display:flex; align-items:center; gap:8px; user-select:none; }
+.glossary h3 .arrow { transition:transform 0.2s; font-size:11px; }
 .glossary h3.collapsed .arrow { transform:rotate(-90deg); }
-.glossary-body { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; }
+.glossary-body { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
 .glossary-body.collapsed { display:none; }
-.glossary-item { padding:8px 10px; background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid rgba(42,58,74,0.3); }
-.glossary-item .symbol { font-family:'Times New Roman',serif; font-style:italic; color:var(--accent); font-size:15px; display:inline-block; min-width:30px; }
-.glossary-item .meaning { font-size:11px; color:var(--text-secondary); display:inline; }
-.glossary-item .unit-i { font-size:10px; color:var(--text-muted); margin-left:4px; }
+.glossary-item { padding:10px 12px; background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid rgba(42,58,74,0.3); }
+.glossary-item .symbol { font-family:'Times New Roman',serif; font-style:italic; color:var(--accent); font-size:16px; display:inline-block; min-width:32px; }
+.glossary-item .meaning { font-size:12px; color:var(--text-secondary); display:inline; }
+.glossary-item .unit-i { font-size:11px; color:var(--text-muted); margin-left:4px; }
 
 /* HOME */
-.home-view { display:flex; flex-wrap:wrap; gap:14px; padding:20px; overflow-y:auto; }
+.home-view { display:flex; flex-wrap:wrap; gap:14px; padding:20px; overflow-y:auto; align-content:flex-start; }
 .home-card {
   background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
-  padding:18px; width:210px; cursor:pointer; transition:all 0.2s;
+  padding:20px; width:220px; cursor:pointer; transition:all 0.2s;
+  -webkit-tap-highlight-color:transparent; flex-shrink:0;
 }
 .home-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
-.home-card h3 { font-size:14px; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
-.home-card .desc { font-size:11px; color:var(--text-secondary); line-height:1.5; }
-.home-card .count-badge { display:inline-block; margin-top:10px; font-size:10px; background:var(--accent-glow); color:var(--accent); padding:3px 10px; border-radius:12px; }
+.home-card:active { transform:scale(0.97); background:var(--accent-glow); }
+.home-card h3 { font-size:15px; color:var(--accent); margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.home-card .desc { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+.home-card .count-badge { display:inline-block; margin-top:12px; font-size:11px; background:var(--accent-glow); color:var(--accent); padding:4px 12px; border-radius:12px; }
 
-/* SCROLLBAR */
+/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width:6px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 ::-webkit-scrollbar-thumb:hover { background:#3a4a5a; }
 
-/* MathJax override */
+/* MathJax */
 .MathJax { font-size:1.15em !important; color:var(--text-primary) !important; }
+
+/* ====================================================================== */
+/*                        RESPONSIVE  -  TABLET                           */
+/* ====================================================================== */
+@media (max-width:1200px) {
+  .calc-body { grid-template-columns:1fr; }
+  .formula-list { width:250px; min-width:250px; }
+  .glossary-body { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
+}
+
+/* ====================================================================== */
+/*                        RESPONSIVE  -  MOBILE                           */
+/* ====================================================================== */
+@media (max-width:768px) {
+
+  /* -- Root adjustments -- */
+  :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+
+  /* -- Hide desktop elements -- */
+  .toolbar .back-link { display:none; }
+  .sidebar-footer { display:none; }
+
+  /* -- Show hamburger + back -- */
+  .hamburger { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:8px; }
+  .hamburger:active { background:var(--accent-glow); }
+  .formula-back-btn { display:none; }
+  .formula-back-btn.visible { display:inline-flex; align-items:center; }
+
+  /* -- Toolbar compact -- */
+  .toolbar { padding:10px 14px; gap:8px; }
+  .toolbar h1 { font-size:15px; }
+  .toolbar .breadcrumb { font-size:11px; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+
+  /* -- Sidebar → slide overlay -- */
+  .sidebar {
+    position:fixed; top:0; left:0; bottom:0; width:calc(var(--sidebar-w) + 10px);
+    transform:translateX(-100%); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    box-shadow:0 0 40px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { transform:translateX(0); }
+
+  /* -- Backdrop -- */
+  .sidebar-backdrop { display:block; pointer-events:none; }
+  .sidebar-backdrop.open { pointer-events:auto; }
+
+  /* -- Formula list → full width sheet -- */
+  .formula-list {
+    position:absolute; top:0; left:0; right:0; bottom:0; width:100%; min-width:100%;
+    border-right:none; z-index:5; background:var(--bg-secondary);
+    transform:none; opacity:1; transition:transform 0.25s ease;
+  }
+  .formula-list.hidden { transform:translateX(-100%); pointer-events:none; opacity:0; }
+
+  /* -- Cat view → relative (sheet + calc) -- */
+  #cat-view { position:relative; flex-direction:column; }
+  #cat-view .calculator {
+    position:absolute; inset:0; width:100%; z-index:10;
+    background:var(--bg-primary); transition:transform 0.25s ease;
+    padding:16px 12px 40px;
+  }
+  #cat-view .calculator.shifted { transform:translateX(100%); }
+
+  /* -- Calc-body always single column -- */
+  .calc-body { grid-template-columns:1fr; gap:14px; }
+
+  /* -- Larger touch targets -- */
+  .cat-item { padding:16px 16px; font-size:15px; }
+  .formula-item { padding:14px 16px; font-size:14px; }
+  .formula-item .f-name { font-size:14px; }
+  .formula-item .f-preview { font-size:12px; }
+  .btn { padding:14px 24px; font-size:15px; min-height:48px; }
+  .btn-row { gap:8px; }
+  .btn-row .btn { flex:1; text-align:center; justify-content:center; display:flex; align-items:center; }
+
+  /* -- Input fields bigger -- */
+  .input-group input { padding:14px 16px; font-size:16px; }
+  .input-group label { font-size:13px; }
+  .input-panel { padding:16px 14px; }
+  .results-panel { padding:16px 14px; }
+
+  /* -- Formula header compact -- */
+  .formula-header h2 { font-size:19px; }
+  .formula-header .formula-display { padding:14px 14px; overflow-x:auto; }
+  .formula-desc { font-size:14px; }
+
+  /* -- Results -- */
+  .result-value { font-size:22px; }
+
+  /* -- Glossary 1-col -- */
+  .glossary { padding:14px 12px; }
+  .glossary-body { grid-template-columns:1fr; gap:8px; }
+  .glossary-item .symbol { min-width:40px; font-size:15px; }
+  .glossary-item .meaning { font-size:13px; }
+  .glossary h3 { font-size:15px; padding:6px 0; }
+
+  /* -- Home cards 1-col -- */
+  .home-view { padding:12px; gap:10px; }
+  .home-card { width:100%; padding:18px; }
+  .home-card h3 { font-size:15px; }
+
+  /* -- Empty state padding -- */
+  .empty-state { padding:40px 16px; }
+  .empty-state .icon { font-size:44px; }
+
+  /* -- Safe area bottom padding -- */
+  .calculator { padding-bottom:calc(24px + var(--safe-bottom)); }
+  .glossary { margin-bottom:var(--safe-bottom); }
+
+  /* -- Sidebar header bigger -- */
+  .sidebar-header { padding:20px 16px; }
+  .sidebar-header h2 { font-size:16px; }
+  .lang-btn { padding:7px 0; font-size:13px; }
+}
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
+<!-- HAMBURGER (mobile only) -->
+<button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">&#x2630;</button>
+
+<!-- SIDEBAR BACKDROP -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h2><span>&#x1F4A7;</span> <span id="sidebar-title">Fluid Mechanics</span></h2>
-    <div class="sub" id="sidebar-sub">Super Calculator &mdash; 122 Formulas</div>
+    <div class="sub" id="sidebar-sub">Super Calculator &mdash; 121 Formulas</div>
     <div class="lang-switch">
       <button class="lang-btn active" id="btn-zh" onclick="setLang('zh')">&#x4E2D;&#x6587;</button>
       <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
@@ -203,11 +347,14 @@ body {
   <div class="sidebar-footer">
     <a href="/" class="back-link">&larr; <span data-i18n="back">Back to Platform</span></a>
   </div>
-</div>
+</aside>
 
-<!-- MAIN -->
+<!-- ===== MAIN ===== -->
 <div class="main">
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
+    <button class="formula-back-btn" id="formula-back-btn" onclick="goBackToFormulaList()">
+      &larr; <span data-i18n="back_formulas">Back</span>
+    </button>
     <h1 id="page-title">Fluid Mechanics Super Calculator</h1>
     <span class="breadcrumb" id="breadcrumb"></span>
     <a href="/" class="back-link">&larr; Dashboard</a>
@@ -225,7 +372,7 @@ body {
       <div class="empty-state">
         <div class="icon">&#x1F4D0;</div>
         <h3 data-i18n="select_formula">Select a Formula</h3>
-        <p data-i18n="select_formula_hint">Choose a formula from the left panel to begin calculation. Each formula comes with scientific LaTeX rendering and variable explanations.</p>
+        <p data-i18n="select_formula_hint">Choose a formula from the left panel to begin calculation.</p>
       </div>
     </div>
   </div>
@@ -238,7 +385,46 @@ let i18n = { formulas:{}, categories:{}, fluids:{}, pipe_roughness:{} };
 let lang = 'zh';
 let currentCat = null;
 let currentFormulaId = null;
+let sidebarOpen = false;
+let lastCatBeforeSelect = null;
 
+
+// ===== SIDEBAR TOGGLE (mobile) =====
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  updateSidebarState();
+}
+function closeSidebar() {
+  sidebarOpen = false;
+  updateSidebarState();
+}
+function updateSidebarState() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebar-backdrop');
+  if (sidebarOpen) { sb.classList.add('open'); bd.classList.add('open'); }
+  else { sb.classList.remove('open'); bd.classList.remove('open'); }
+}
+// Close sidebar when category selected (mobile only)
+function onMobileCatClick(catKey) {
+  closeSidebar();
+  selectCategory(catKey);
+}
+
+// ===== MOBILE FORMULA LIST NAVIGATION =====
+function goBackToFormulaList() {
+  currentFormulaId = null;
+  document.getElementById('formula-back-btn').classList.remove('visible');
+  document.getElementById('calculator').classList.add('shifted');
+  document.getElementById('formula-list').classList.remove('hidden');
+  document.getElementById('breadcrumb').textContent = getCatName(currentCat||'');
+  document.getElementById('page-title').textContent = lang==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8BA1\u7B97\u5668' : 'Fluid Mechanics';
+}
+
+function showCalculatorPanel() {
+  document.getElementById('formula-list').classList.add('hidden');
+  document.getElementById('calculator').classList.remove('shifted');
+  document.getElementById('formula-back-btn').classList.add('visible');
+}
 
 // ===== LANG =====
 function setLang(l) {
@@ -246,7 +432,7 @@ function setLang(l) {
   document.getElementById('btn-zh').classList.toggle('active', l==='zh');
   document.getElementById('btn-en').classList.toggle('active', l==='en');
   document.getElementById('sidebar-title').textContent = l==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8BA1\u7B97\u5668' : 'Fluid Mechanics';
-  document.getElementById('sidebar-sub').innerHTML = l==='zh' ? '\u8D85\u7EA7\u8BA1\u7B97\u5668 &mdash; 122 \u4E2A\u516C\u5F0F' : 'Super Calculator &mdash; 122 Formulas';
+  document.getElementById('sidebar-sub').innerHTML = l==='zh' ? '\u8D85\u7EA7\u8BA1\u7B97\u5668 &mdash; 121 \u4E2A\u516C\u5F0F' : 'Super Calculator &mdash; 121 Formulas';
   document.getElementById('page-title').textContent = l==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8D85\u7EA7\u8BA1\u7B97\u5668' : 'Fluid Mechanics Super Calculator';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = getI18n(el.dataset.i18n);
@@ -254,6 +440,7 @@ function setLang(l) {
   renderSidebar();
   if (currentCat) {
     selectCategory(currentCat, true);
+    if (currentFormulaId) selectFormula(currentFormulaId);
   } else {
     renderHomeCards();
   }
@@ -263,7 +450,7 @@ function getI18n(key) {
   const map = {
     'back': {zh:'\u8FD4\u56DE\u5E73\u53F0', en:'Back to Platform'},
     'select_formula': {zh:'\u8BF7\u9009\u62E9\u516C\u5F0F', en:'Select a Formula'},
-    'select_formula_hint': {zh:'\u4ECE\u5DE6\u4FA7\u9762\u677F\u9009\u62E9\u516C\u5F0F\u5F00\u59CB\u8BA1\u7B97\u3002\u6BCF\u4E2A\u516C\u5F0F\u90FD\u6709 LaTeX \u79D1\u5B66\u6E32\u67D3\u548C\u53D8\u91CF\u89E3\u91CA\u3002', en:'Choose a formula from the left panel to begin calculation. Each formula comes with scientific LaTeX rendering and variable explanations.'},
+    'select_formula_hint': {zh:'\u4ECE\u5DE6\u4FA7\u9762\u677F\u9009\u62E9\u516C\u5F0F\u5F00\u59CB\u8BA1\u7B97', en:'Choose a formula from the left panel to begin calculation.'},
     'calculate': {zh:'\u8BA1\u7B97', en:'Calculate'},
     'reset': {zh:'\u91CD\u7F6E', en:'Reset'},
     'input_params': {zh:'\u8F93\u5165\u53C2\u6570', en:'Input Parameters'},
@@ -275,6 +462,8 @@ function getI18n(key) {
     'derived': {zh:'\u884D\u751F\u8BA1\u7B97', en:'Derived Values'},
     'default_values': {zh:'\u9ED8\u8BA4\u503C', en:'Default Values'},
     'formula_info': {zh:'\u516C\u5F0F\u4FE1\u606F', en:'Formula Information'},
+    'back_formulas': {zh:'\u8FD4\u56DE\u5217\u8868', en:'Back'},
+    'categories': {zh:'\u5206\u7C7B', en:'Categories'},
   };
   const entry = map[key];
   if (!entry) return key;
@@ -290,14 +479,14 @@ function getFormulaName(fid) {
 function getCatName(catKey) {
   const cat = catalog[catKey];
   const ci = i18n.categories[catKey];
-  if (lang==='zh' && ci) return ci.name_zh || cat.name;
+  if (lang==='zh' && ci) return ci.name_zh || (cat ? cat.name : catKey);
   return cat ? cat.name : catKey;
 }
 
 function getCatDesc(catKey) {
   const cat = catalog[catKey];
   const ci = i18n.categories[catKey];
-  if (lang==='zh' && ci) return ci.desc_zh || cat.desc;
+  if (lang==='zh' && ci) return ci.desc_zh || (cat ? cat.desc : '');
   return cat ? cat.desc : '';
 }
 
@@ -315,7 +504,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderHomeCards();
 });
 
-// ===== SIDEBAR =====
+// ===== SIDEBAR RENDER =====
 function renderSidebar() {
   const nav = document.getElementById('sidebar-nav');
   const icons = {
@@ -326,14 +515,16 @@ function renderSidebar() {
   nav.innerHTML = Object.entries(catalog).map(([key, cat]) => {
     const name = getCatName(key);
     const icon = icons[cat.icon] || '\ud83d\udcd0';
-    return `<div class="cat-item" data-cat="${key}" onclick="selectCategory('${key}')">
+    // Mobile: toggle sidebar then select. Desktop: direct select.
+    const handler = window.innerWidth <= 768 ? 'onMobileCatClick' : 'selectCategory';
+    return `<div class="cat-item" data-cat="${key}" onclick="${handler}('${key}')">
       <span class="icon">${icon}</span><span>${name}</span>
       <span class="count">${cat.count}</span>
     </div>`;
   }).join('');
 }
 
-// ===== HOME =====
+// ===== HOME CARDS =====
 function renderHomeCards() {
   const icons = {
     'flask':'\ud83e\uddea','water':'\ud83d\udca7','chart-line':'\ud83d\udcc8','pipe':'\ud83d\udd27',
@@ -351,24 +542,32 @@ function renderHomeCards() {
   }).join('');
 }
 
-// ===== CATEGORY =====
+// ===== CATEGORY SELECTION =====
 function selectCategory(catKey, silent) {
   currentCat = catKey;
   currentFormulaId = null;
   document.getElementById('home-view').style.display = 'none';
   document.getElementById('cat-view').style.display = 'flex';
   document.getElementById('breadcrumb').textContent = getCatName(catKey);
+  document.getElementById('page-title').textContent = getCatName(catKey);
+  document.getElementById('formula-back-btn').classList.remove('visible');
+
+  // Reset mobile states: formula list visible, calculator pushed off-screen
+  document.getElementById('formula-list').classList.remove('hidden');
+  document.getElementById('calculator').classList.add('shifted');
   document.getElementById('calculator').innerHTML = `<div class="empty-state">
     <div class="icon">\ud83d\udcd0</div>
     <h3>${getI18n('select_formula')}</h3>
     <p>${getI18n('select_formula_hint')}</p></div>`;
 
+  // Highlight sidebar
   document.querySelectorAll('.cat-item').forEach(el=>el.classList.remove('active'));
   const sel = document.querySelector('.cat-item[data-cat="'+catKey+'"]');
   if (sel) sel.classList.add('active');
 
+  // Render formula list
   const cat = catalog[catKey];
-  const formulas = cat.formulas;
+  const formulas = cat ? cat.formulas : [];
   document.getElementById('formula-list').innerHTML = formulas.map(f => {
     const fi = i18n.formulas[f.id];
     const fName = lang==='zh' && fi ? fi.name_zh : f.name;
@@ -378,8 +577,6 @@ function selectCategory(catKey, silent) {
       <div class="f-preview">${fEqShort}</div>
     </div>`;
   }).join('');
-
-
 }
 
 // ===== FORMULA SELECTION =====
@@ -390,7 +587,7 @@ async function selectFormula(fid) {
   if (sel) sel.classList.add('selected');
 
   const cat = catalog[currentCat];
-  const formula = cat.formulas.find(f=>f.id===fid);
+  const formula = cat && cat.formulas ? cat.formulas.find(f=>f.id===fid) : null;
   if (!formula) return;
 
   let defaults = {};
@@ -400,6 +597,10 @@ async function selectFormula(fid) {
     defaults = allDef[fid] || {};
   } catch(e) {}
 
+  // Mobile: slide to calculator view
+  if (window.innerWidth <= 768) showCalculatorPanel();
+  document.getElementById('breadcrumb').textContent = getCatName(currentCat) + ' / ' + getFormulaName(fid);
+
   renderCalculator(formula, defaults);
 }
 
@@ -408,19 +609,17 @@ function renderCalculator(formula, defaults) {
   const fid = formula.id;
   const fi = i18n.formulas[fid];
 
-  // Determine names
   const fName = lang==='zh' && fi ? fi.name_zh : formula.name;
   const fDesc = lang==='zh' && fi ? fi.desc_zh : '';
   const fLatex = fi ? fi.latex : formula.eq;
   const fApp = lang==='zh' && fi ? fi.application_zh : '';
 
-  // Build input fields with units
   const inputFields = formula.inputs.map(key => {
     const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
     const labelZh = pinfo ? pinfo.label_zh : '';
     const paramName = key;
     const label = lang==='zh' && labelZh
-      ? `${labelZh} <code style="font-size:10px;color:var(--text-muted);background:var(--bg-secondary);padding:1px 5px;border-radius:3px;margin-left:4px;font-family:'Consolas','Menlo',monospace;">${paramName}</code>`
+      ? `${labelZh} <code style="font-size:${window.innerWidth<=768?'11px':'10px'};color:var(--text-muted);background:var(--bg-secondary);padding:1px 6px;border-radius:3px;margin-left:4px;font-family:'Consolas','Menlo',monospace;">${paramName}</code>`
       : paramName;
     const unit = pinfo ? pinfo.unit : '';
     const hint = lang==='zh' && pinfo ? pinfo.desc_zh : '';
@@ -435,34 +634,11 @@ function renderCalculator(formula, defaults) {
     </div>`;
   }).join('');
 
-  // Build variable glossary
-  const glossaryItems = formula.inputs.map(key => {
-    const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
-    const symbol = key;
-    const meaning = lang==='zh' && pinfo ? pinfo.label_zh : key;
-    const unit = pinfo ? pinfo.unit : '';
-    return `<div class="glossary-item">
-      <span class="symbol">${key}</span>
-      <span class="meaning">${meaning}</span>
-      ${unit ? '<span class="unit-i">['+unit+']</span>' : ''}
-    </div>`;
-  }).join('');
-
-  // Output variable
   const outKey = formula.output;
   const oinfo = fi && fi.output ? fi.output[outKey] : null;
   const outLabel = lang==='zh' && oinfo ? oinfo.label_zh : outKey;
   const outUnit = oinfo ? oinfo.unit : '';
-  if (oinfo && outUnit) {
-    const outItem = `<div class="glossary-item">
-      <span class="symbol">${outKey}</span>
-      <span class="meaning">${outLabel}</span>
-      <span class="unit-i">[${outUnit}]</span>
-    </div>`;
-    // Add to glossary
-  }
 
-  // Actually build full glossary
   const allGlossary = formula.inputs.map(key => {
     const pinfo = fi && fi.inputs ? fi.inputs[key] : null;
     return `<div class="glossary-item">
@@ -470,23 +646,20 @@ function renderCalculator(formula, defaults) {
       <span class="meaning">${lang==='zh' && pinfo ? pinfo.label_zh : key}</span>
       ${pinfo && pinfo.unit ? '<span class="unit-i">['+pinfo.unit+']</span>' : ''}
     </div>`;
-  }).concat([`<div class="glossary-item" style="border-color:rgba(0,180,216,0.3);">
+  }).concat([`<div class="glossary-item" style="border-color:rgba(0,180,216,0.35);">
     <span class="symbol" style="color:var(--success);">${outKey}</span>
     <span class="meaning" style="color:var(--success);">${outLabel}</span>
     ${outUnit ? '<span class="unit-i">['+outUnit+']</span>' : ''}
   </div>`]).join('');
 
-  // Formula display uses MathJax
-  const formulaDisplayId = 'mjx-formula-' + fid;
-  const formulaHTML = fLatex.startsWith('\\') || fLatex.includes('\\frac') || fLatex.includes('\\sqrt')
-    ? `\\[${fLatex}\\]`
-    : `\\[${formula.eq.replace(/\*/g,'\\cdot ').replace(/sqrt/g,'\\sqrt').replace(/\^/g,'^{').replace(/(\w+)\)/g,'$1}')}\\]`;
+  // MathJax formula element ID
+  const mjxElId = 'mjx-formula-' + fid.replace(/[^a-zA-Z0-9]/g,'_');
 
   document.getElementById('calculator').innerHTML = `
     <div class="formula-header">
       <h2>${fName}</h2>
       ${fDesc ? '<div class="formula-desc">'+fDesc+'</div>' : ''}
-      <div class="formula-display" id="${formulaDisplayId}">\\[${fLatex}\\]</div>
+      <div class="formula-display" id="${mjxElId}">\\[${fLatex}\\]</div>
       ${fApp ? '<div class="application"><strong>'+getI18n('application')+':</strong> '+fApp+'</div>' : ''}
     </div>
     <div class="calc-body">
@@ -513,12 +686,12 @@ function renderCalculator(formula, defaults) {
       <div class="glossary-body">${allGlossary}</div>
     </div>`;
 
-  // Render MathJax (always re-render since innerHTML recreates DOM)
+  // Render MathJax
   setTimeout(() => {
-    const mjxEl = document.getElementById(formulaDisplayId);
+    const mjxEl = document.getElementById(mjxElId);
     if (window.MathJax && mjxEl) {
       MathJax.typesetClear([mjxEl]);
-      MathJax.typesetPromise([mjxEl]).catch(() => {});
+      MathJax.typesetPromise([mjxEl]).catch(()=>{});
     }
   }, 80);
 }
@@ -527,7 +700,7 @@ function renderCalculator(formula, defaults) {
 async function compute() {
   if (!currentFormulaId) return;
   const cat = catalog[currentCat];
-  const formula = cat.formulas.find(f=>f.id===currentFormulaId);
+  const formula = cat && cat.formulas ? cat.formulas.find(f=>f.id===currentFormulaId) : null;
   if (!formula) return;
 
   const inputs = {};
@@ -539,7 +712,7 @@ async function compute() {
       if (isNaN(v)) { el.classList.add('invalid'); hasError = true; }
       else { el.classList.remove('invalid'); inputs[key] = v; }
     } else {
-      el && el.classList.add('invalid');
+      if (el) el.classList.add('invalid');
       hasError = true;
     }
   });
@@ -568,7 +741,7 @@ async function compute() {
         const isPrimary = key === outKey;
         const displayVal = val === null ? 'N/A' : (typeof val==='number' ? (Math.abs(val)>=1e6||Math.abs(val)<1e-4 ? val.toExponential(4) : val.toPrecision(6)) : val);
         const displayUnit = isPrimary ? outUnit : '';
-        return `<div class="result-item"${isPrimary?'':' class="result-derived"'}>
+        return `<div class="result-item">
           <span class="result-label">${isPrimary ? outLabel : key}</span>
           <div class="result-value-group">
             <span class="result-value">${displayVal}</span>
@@ -588,7 +761,7 @@ function loadDefaults() {
   if (!currentFormulaId) return;
   fetch('/api/fluid_mechanics/defaults').then(r=>r.json()).then(all => {
     const cat = catalog[currentCat];
-    const formula = cat.formulas.find(f=>f.id===currentFormulaId);
+    const formula = cat && cat.formulas ? cat.formulas.find(f=>f.id===currentFormulaId) : null;
     if (!formula) return;
     const defs = all[currentFormulaId] || {};
     formula.inputs.forEach(key => {
@@ -601,7 +774,7 @@ function loadDefaults() {
 function resetInputs() {
   if (!currentFormulaId) return;
   const cat = catalog[currentCat];
-  const formula = cat.formulas.find(f=>f.id===currentFormulaId);
+  const formula = cat && cat.formulas ? cat.formulas.find(f=>f.id===currentFormulaId) : null;
   if (!formula) return;
   formula.inputs.forEach(key => {
     const el = document.getElementById('inp_'+key);
