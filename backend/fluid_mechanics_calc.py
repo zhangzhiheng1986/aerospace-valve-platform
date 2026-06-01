@@ -514,6 +514,142 @@ def fluid_elastic_instability(f_n, D, m, rho, zeta=0.01):
 
 
 # =============================================================================
+# Category 13: Gas Flow Calculations
+# =============================================================================
+
+def gas_density_ideal(P, T, R=287.0):
+    """Ideal gas density: rho = P/(R*T)"""
+    return safe_div(P, R * T)
+
+def gas_density_real(P, T, Z, R=287.0):
+    """Real gas density with compressibility factor"""
+    return safe_div(P, Z * R * T)
+
+def compressibility_factor_Papay(P_pr, T_pr):
+    """Z-factor using Papay correlation (valid 0.2<P_pr<15, 1.0<T_pr<3.0)"""
+    if P_pr <= 0 or T_pr <= 0: return None
+    return 1.0 - 3.52 * P_pr / (10.0 ** (0.9813 * T_pr)) + 0.274 * P_pr**2 / (10.0 ** (0.8157 * T_pr))
+
+def gas_viscosity_LGE(rho_g, T, Mw, T_pc=None):
+    """Gas viscosity via Lee-Gonzalez-Eakin correlation (micropoise -> Pa-s)"""
+    if T <= 0 or Mw <= 0: return None
+    rho_g_m = rho_g * 1e-3  # kg/m3 -> g/cm3 approx
+    K = (9.4 + 0.02 * Mw) * T**1.5 / (209.0 + 19.0 * Mw + T)
+    X = 3.5 + 986.0 / T + 0.01 * Mw
+    Y = 2.4 - 0.2 * X
+    mu_g_cp = K * math.exp(X * rho_g_m**Y) * 1e-4  # micropoise -> cP -> Pa-s
+    return mu_g_cp * 0.001  # cP -> Pa-s
+
+def gas_mass_flow_isothermal(P1, P2, T, L, D, f, R=287.0):
+    """Isothermal compressible pipe mass flow rate"""
+    if P1 <= 0 or P2 <= 0 or T <= 0 or L <= 0 or D <= 0 or f <= 0: return None
+    A = math.pi * D**2 / 4.0
+    P_m = (P1 + P2) / 2.0  # mean pressure
+    rho_m = safe_div(P_m, R * T)
+    dP = P1 - P2
+    if dP <= 0: return None
+    V_m = math.sqrt(safe_div(2.0 * dP * D, f * L * rho_m))
+    if V_m is None: return None
+    return rho_m * A * V_m
+
+def gas_weymouth_flow(P1_psi, P2_psi, T_R, L_mi, D_in, SG, Z=1.0, E=1.0):
+    """Weymouth equation for gas pipeline flow (USCS -> SCF/day)
+    P1,P2: psia; T: deg Rankine; L: miles; D: inches; SG: specific gravity
+    Returns: Q in SCF/day"""
+    if P1_psi <= P2_psi or T_R <= 0 or L_mi <= 0 or D_in <= 0: return None
+    Ts = 520.0  # standard temp R
+    Ps = 14.7   # standard pressure psia
+    const = 433.49 * E * (Ts / Ps)
+    numer = (P1_psi**2 - P2_psi**2) * D_in**(16.0/3.0)
+    denom = SG * T_R * L_mi * Z
+    return const * math.sqrt(safe_div(numer, denom))
+
+def gas_panhandle_a_flow(P1_psi, P2_psi, T_R, L_mi, D_in, SG, Z=1.0, E=1.0):
+    """Panhandle A equation (high Re, large diameter pipelines)
+    Returns: Q in SCF/day"""
+    if P1_psi <= P2_psi or T_R <= 0 or L_mi <= 0 or D_in <= 0: return None
+    Ts = 520.0; Ps = 14.7
+    K = 435.87 * E * (Ts / Ps)**1.0788
+    numer = (P1_psi**2 - P2_psi**2)**0.5394 * D_in**2.6182
+    denom = (SG**0.8539 * T_R * L_mi * Z)**0.5394
+    return safe_div(K * numer, denom)
+
+def gas_panhandle_b_flow(P1_psi, P2_psi, T_R, L_mi, D_in, SG, Z=1.0, E=1.0):
+    """Panhandle B equation (lower Re, medium pipelines)
+    Returns: Q in SCF/day"""
+    if P1_psi <= P2_psi or T_R <= 0 or L_mi <= 0 or D_in <= 0: return None
+    Ts = 520.0; Ps = 14.7
+    K = 737.0 * E * (Ts / Ps)**1.02
+    numer = (P1_psi**2 - P2_psi**2)**0.51 * D_in**2.53
+    denom = (SG**0.961 * T_R * L_mi * Z)**0.51
+    return safe_div(K * numer, denom)
+
+def gas_critical_pressure_ratio(k=1.4):
+    """Critical pressure ratio for choked flow: r_c = (2/(k+1))^(k/(k-1))"""
+    if k <= 1.0: return None
+    return (2.0 / (k + 1.0)) ** (k / (k - 1.0))
+
+def gas_orifice_mass_flow(C_d, A_o, P1, T1, P2, k=1.4, R=287.0, Y=None):
+    """Compressible gas flow through orifice (non-choked or with expansion factor Y)
+    Uses expansion factor Y for non-choked flow"""
+    if P1 <= 0 or T1 <= 0 or A_o <= 0: return None
+    rho1 = safe_div(P1, R * T1)
+    if rho1 is None: return None
+    dP = P1 - P2
+    if dP <= 0: return None
+    # Calculate expansion factor if not provided
+    r_c = gas_critical_pressure_ratio(k)
+    ratio = safe_div(P2, P1)
+    if Y is None:
+        if ratio is not None and ratio > (r_c or 0.528):
+            Y = 1.0 - 0.333 * safe_div(P1 - P2, k * P1)
+        else:
+            Y = 0.85  # choked approximate
+    return C_d * A_o * Y * math.sqrt(2.0 * rho1 * dP)
+
+def gas_choked_mass_flow(C_d, A_t, P0, T0, k=1.4, R=287.0):
+    """Choked (sonic) gas mass flow through nozzle/orifice
+    m_dot = C_d * A_t * P0 / sqrt(T0) * sqrt(k/R * (2/(k+1))^((k+1)/(k-1)))"""
+    if P0 <= 0 or T0 <= 0 or A_t <= 0: return None
+    r_c = (2.0 / (k + 1.0)) ** ((k + 1.0) / (k - 1.0))
+    return C_d * A_t * P0 * math.sqrt(safe_div(k, R * T0) * r_c)
+
+def gas_nozzle_flow_efficiency(C_d, A_t, P0, T0, P_b, k=1.4, R=287.0, eta_n=0.95):
+    """Real nozzle flow with efficiency factor
+    Checks if choked or non-choked based on back pressure"""
+    if P0 <= 0 or T0 <= 0 or A_t <= 0: return None
+    r_c = gas_critical_pressure_ratio(k)
+    ratio = safe_div(P_b, P0)
+    if ratio is None: return None
+    if ratio <= (r_c or 0.528):
+        # Choked
+        return eta_n * gas_choked_mass_flow(C_d, A_t, P0, T0, k, R)
+    else:
+        # Non-choked
+        T2 = T0 * ratio ** ((k - 1.0) / k)
+        V_exit = math.sqrt(2.0 * k * R * T0 / (k - 1.0) * (1.0 - ratio ** ((k - 1.0) / k)))
+        rho_exit = safe_div(P_b, R * T2)
+        if rho_exit is None or V_exit is None: return None
+        return eta_n * rho_exit * A_t * V_exit
+
+def gas_erosional_velocity(rho, C=100.0):
+    """API RP 14E erosional velocity limit: V_e = C / sqrt(rho)
+    C=100 for continuous, 125-150 for intermittent, 150-200 for non-corrosive"""
+    if rho <= 0: return None
+    return safe_div(C, math.sqrt(rho))
+
+def gas_pipeline_linepack(V_pipe, P_avg, T_avg, Z=1.0, R=287.0):
+    """Pipeline storage (line pack) capacity in standard m3
+    Gas stored = V_pipe * P_avg / (Z * R * T_avg) * (T_s / T_avg)"""
+    if T_avg <= 0: return None
+    T_s = 288.7  # standard temp K (15C)
+    P_s = 101325.0  # standard pressure Pa
+    n_gas = safe_div(P_avg * V_pipe, Z * R * T_avg)
+    if n_gas is None: return None
+    return n_gas * R * T_s / P_s  # standard m3
+
+
+# =============================================================================
 # Formula Registry - All 130+ formulas organized by category
 # =============================================================================
 
@@ -713,6 +849,47 @@ def get_all_formulas():
                 {'id': 'fluid_elastic', 'name': 'Fluid-Elastic Instability', 'eq': 'U_c=K_c*f_n*D', 'inputs': ['f_n', 'D', 'm', 'rho', 'zeta'], 'output': 'U_crit'},
             ]
         },
+        '13_gas_flow': {
+            'name': 'Gas Flow Calculations', 'icon': 'rocket', 'count': 14,
+            'desc': 'Compressible pipe flow, Weymouth/Panhandle, choked orifice, line pack',
+            'formulas': [
+                {'id': 'gas_density_ideal', 'name': 'Ideal Gas Density', 'eq': 'rho=P/(R*T)', 'inputs': ['P', 'T', 'R'], 'output': 'rho'},
+                {'id': 'gas_density_real', 'name': 'Real Gas Density (Z)', 'eq': 'rho=P/(Z*R*T)', 'inputs': ['P', 'T', 'Z', 'R'], 'output': 'rho'},
+                {'id': 'z_factor_papay', 'name': 'Z-Factor (Papay)', 'eq': 'Z=1-3.52*P_pr/10^(0.98T_pr)+0.274*P_pr^2/10^(0.82T_pr)', 'inputs': ['P_pr', 'T_pr'], 'output': 'Z'},
+                {'id': 'gas_viscosity', 'name': 'Gas Viscosity (LGE)', 'eq': 'mu=K*exp(X*rho_g^Y)', 'inputs': ['rho_g', 'T', 'Mw'], 'output': 'mu'},
+                {'id': 'isothermal_flow', 'name': 'Isothermal Pipe Gas Flow', 'eq': 'm_dot=rho_m*A*V_m', 'inputs': ['P1', 'P2', 'T', 'L', 'D', 'f', 'R'], 'output': 'm_dot'},
+                {'id': 'weymouth', 'name': 'Weymouth Equation', 'eq': 'Q=433.49*E*(Ts/Ps)*sqrt((P1^2-P2^2)*D^(16/3)/(SG*T*L*Z))', 'inputs': ['P1_psi', 'P2_psi', 'T_R', 'L_mi', 'D_in', 'SG', 'Z', 'E'], 'output': 'Q_scfd'},
+                {'id': 'panhandle_a', 'name': 'Panhandle A', 'eq': 'Q=435.87*E*(Ts/Ps)^1.0788*(dP^2^0.5394*D^2.6182/(SG^0.8539*T*L*Z)^0.5394)', 'inputs': ['P1_psi', 'P2_psi', 'T_R', 'L_mi', 'D_in', 'SG', 'Z', 'E'], 'output': 'Q_scfd'},
+                {'id': 'panhandle_b', 'name': 'Panhandle B', 'eq': 'Q=737*E*(Ts/Ps)^1.02*(dP^2^0.51*D^2.53/(SG^0.961*T*L*Z)^0.51)', 'inputs': ['P1_psi', 'P2_psi', 'T_R', 'L_mi', 'D_in', 'SG', 'Z', 'E'], 'output': 'Q_scfd'},
+                {'id': 'gas_critical_ratio', 'name': 'Critical Pressure Ratio', 'eq': 'r_c=(2/(k+1))^(k/(k-1))', 'inputs': ['k'], 'output': 'r_c'},
+                {'id': 'gas_orifice_flow', 'name': 'Gas Orifice Flow', 'eq': 'm_dot=C_d*A*Y*sqrt(2*rho*dP)', 'inputs': ['C_d', 'A_o', 'P1', 'T1', 'P2', 'k', 'R'], 'output': 'm_dot'},
+                {'id': 'gas_choked_flow', 'name': 'Choked Gas Flow', 'eq': 'm_dot=C_d*A_t*P0/sqrt(T0)*sqrt(k/R*(2/(k+1))^((k+1)/(k-1)))', 'inputs': ['C_d', 'A_t', 'P0', 'T0', 'k', 'R'], 'output': 'm_dot_choked'},
+                {'id': 'gas_nozzle_eff', 'name': 'Nozzle Flow w/ Efficiency', 'eq': 'm_dot=C_d*A*eta*check_choked(P_b/P0)', 'inputs': ['C_d', 'A_t', 'P0', 'T0', 'P_b', 'k', 'R', 'eta_n'], 'output': 'm_dot'},
+                {'id': 'erosional_velocity', 'name': 'Erosional Velocity (API RP 14E)', 'eq': 'V_e=C/sqrt(rho)', 'inputs': ['rho', 'C'], 'output': 'V_e'},
+                {'id': 'line_pack', 'name': 'Pipeline Line Pack', 'eq': 'V_std=V_pipe*P_avg/(Z*R*T_avg)*Ts/T_avg_to_std', 'inputs': ['V_pipe', 'P_avg', 'T_avg', 'Z', 'R'], 'output': 'V_scm'},
+            ]
+        },
+        '13_gas_flow': {
+            'name': 'Gas Flow Calculations', 'icon': 'rocket', 'count': 14,
+            'desc': 'Compressible pipe flow, Weymouth/Panhandle, choked orifice, line pack',
+            'formulas': [
+                {'id': 'gas_density_ideal', 'name': 'Ideal Gas Density', 'eq': 'rho=P/(R*T)', 'inputs': ['P', 'T', 'R'], 'output': 'rho'},
+                {'id': 'gas_density_real', 'name': 'Real Gas Density (Z)', 'eq': 'rho=P/(Z*R*T)', 'inputs': ['P', 'T', 'Z', 'R'], 'output': 'rho'},
+                {'id': 'z_factor_papay', 'name': 'Z-Factor (Papay)', 'eq': 'Z=1-3.52*P_pr/10^(0.98T_pr)+0.274*P_pr^2/10^(0.82T_pr)', 'inputs': ['P_pr', 'T_pr'], 'output': 'Z'},
+                {'id': 'gas_viscosity', 'name': 'Gas Viscosity (LGE)', 'eq': 'mu=K*exp(X*rho_g^Y)', 'inputs': ['rho_g', 'T', 'Mw'], 'output': 'mu'},
+                {'id': 'isothermal_flow', 'name': 'Isothermal Pipe Gas Flow', 'eq': 'm_dot=rho_m*A*V_m', 'inputs': ['P1', 'P2', 'T', 'L', 'D', 'f', 'R'], 'output': 'm_dot'},
+                {'id': 'weymouth', 'name': 'Weymouth Equation', 'eq': 'Q=433.49*E*(Ts/Ps)*sqrt((P1^2-P2^2)*D^(16/3)/(SG*T*L*Z))', 'inputs': ['P1_psi', 'P2_psi', 'T_R', 'L_mi', 'D_in', 'SG', 'Z', 'E'], 'output': 'Q_scfd'},
+                {'id': 'panhandle_a', 'name': 'Panhandle A', 'eq': 'Q=435.87*E*(Ts/Ps)^1.08*(dP^2^0.54*D^2.62/(...))', 'inputs': ['P1_psi', 'P2_psi', 'T_R', 'L_mi', 'D_in', 'SG', 'Z', 'E'], 'output': 'Q_scfd'},
+                {'id': 'panhandle_b', 'name': 'Panhandle B', 'eq': 'Q=737*E*(Ts/Ps)^1.02*(dP^2^0.51*D^2.53/(...))', 'inputs': ['P1_psi', 'P2_psi', 'T_R', 'L_mi', 'D_in', 'SG', 'Z', 'E'], 'output': 'Q_scfd'},
+                {'id': 'gas_critical_ratio', 'name': 'Critical Pressure Ratio', 'eq': 'r_c=(2/(k+1))^(k/(k-1))', 'inputs': ['k'], 'output': 'r_c'},
+                {'id': 'gas_orifice_flow', 'name': 'Gas Orifice Flow', 'eq': 'm_dot=C_d*A*Y*sqrt(2*rho*dP)', 'inputs': ['C_d', 'A_o', 'P1', 'T1', 'P2', 'k', 'R'], 'output': 'm_dot'},
+                {'id': 'gas_choked_flow', 'name': 'Choked Gas Flow', 'eq': 'm_dot=C_d*A_t*P0/sqrt(T0)*sqrt(k/R*(2/(k+1))^((k+1)/(k-1)))', 'inputs': ['C_d', 'A_t', 'P0', 'T0', 'k', 'R'], 'output': 'm_dot_choked'},
+                {'id': 'gas_nozzle_eff', 'name': 'Nozzle Flow w/ Efficiency', 'eq': 'm_dot=C_d*A*eta*check_choked(P_b/P0)', 'inputs': ['C_d', 'A_t', 'P0', 'T0', 'P_b', 'k', 'R', 'eta_n'], 'output': 'm_dot'},
+                {'id': 'erosional_velocity', 'name': 'Erosional Velocity (API RP 14E)', 'eq': 'V_e=C/sqrt(rho)', 'inputs': ['rho', 'C'], 'output': 'V_e'},
+                {'id': 'line_pack', 'name': 'Pipeline Line Pack', 'eq': 'V_std=V_pipe*P_avg/(Z*R*T_avg)', 'inputs': ['V_pipe', 'P_avg', 'T_avg', 'Z', 'R'], 'output': 'V_scm'},
+            ]
+        },
+
     }
 
 
@@ -842,6 +1019,20 @@ DEFAULT_INPUTS = {
     'vortex_shedding': {'St': 0.21, 'V': 2, 'D': 0.05},
     'reduced_velocity': {'U': 5, 'f_n': 10, 'D': 0.05},
     'fluid_elastic': {'f_n': 10, 'D': 0.05, 'm': 5, 'rho': 1000, 'zeta': 0.01},
+    'gas_density_ideal': {'P': 101325, 'T': 293, 'R': 287},
+    'gas_density_real': {'P': 1e6, 'T': 300, 'Z': 0.92, 'R': 287},
+    'z_factor_papay': {'P_pr': 3.0, 'T_pr': 1.5},
+    'gas_viscosity': {'rho_g': 1.2, 'T': 300, 'Mw': 28.97},
+    'isothermal_flow': {'P1': 2e6, 'P2': 1.8e6, 'T': 300, 'L': 1000, 'D': 0.3, 'f': 0.015, 'R': 287},
+    'weymouth': {'P1_psi': 500, 'P2_psi': 400, 'T_R': 520, 'L_mi': 50, 'D_in': 12, 'SG': 0.6, 'Z': 0.92, 'E': 1.0},
+    'panhandle_a': {'P1_psi': 500, 'P2_psi': 400, 'T_R': 520, 'L_mi': 50, 'D_in': 12, 'SG': 0.6, 'Z': 0.92, 'E': 1.0},
+    'panhandle_b': {'P1_psi': 500, 'P2_psi': 400, 'T_R': 520, 'L_mi': 50, 'D_in': 12, 'SG': 0.6, 'Z': 0.92, 'E': 1.0},
+    'gas_critical_ratio': {'k': 1.4},
+    'gas_orifice_flow': {'C_d': 0.62, 'A_o': 0.0005, 'P1': 500000, 'T1': 300, 'P2': 400000, 'k': 1.4, 'R': 287},
+    'gas_choked_flow': {'C_d': 0.95, 'A_t': 0.0001, 'P0': 1e6, 'T0': 300, 'k': 1.4, 'R': 287},
+    'gas_nozzle_eff': {'C_d': 0.95, 'A_t': 0.0001, 'P0': 1e6, 'T0': 300, 'P_b': 500000, 'k': 1.4, 'R': 287, 'eta_n': 0.95},
+    'erosional_velocity': {'rho': 50, 'C': 100},
+    'line_pack': {'V_pipe': 5000, 'P_avg': 2e6, 'T_avg': 300, 'Z': 0.92, 'R': 287},
 }
 
 
@@ -1113,6 +1304,35 @@ def compute_formula(formula_id, inputs):
             result['results']['V_r'] = reduced_velocity_viv(float(inputs.get('U', 5)), float(inputs.get('f_n', 10)), float(inputs.get('D', 0.05))) or 0
         elif formula_id == 'fluid_elastic':
             result['results']['U_crit'] = fluid_elastic_instability(float(inputs.get('f_n', 10)), float(inputs.get('D', 0.05)), float(inputs.get('m', 5)), float(inputs.get('rho', 1000)), float(inputs.get('zeta', 0.01)))
+
+        elif formula_id == 'gas_density_ideal':
+            result['results']['rho'] = gas_density_ideal(float(inputs.get('P', 101325)), float(inputs.get('T', 293)), float(inputs.get('R', 287))) or 0
+        elif formula_id == 'gas_density_real':
+            result['results']['rho'] = gas_density_real(float(inputs.get('P', 1e6)), float(inputs.get('T', 300)), float(inputs.get('Z', 0.92)), float(inputs.get('R', 287))) or 0
+        elif formula_id == 'z_factor_papay':
+            result['results']['Z'] = compressibility_factor_Papay(float(inputs.get('P_pr', 3.0)), float(inputs.get('T_pr', 1.5))) or 0
+        elif formula_id == 'gas_viscosity':
+            result['results']['mu'] = gas_viscosity_LGE(float(inputs.get('rho_g', 1.2)), float(inputs.get('T', 300)), float(inputs.get('Mw', 28.97))) or 0
+        elif formula_id == 'isothermal_flow':
+            result['results']['m_dot'] = gas_mass_flow_isothermal(float(inputs.get('P1', 2e6)), float(inputs.get('P2', 1.8e6)), float(inputs.get('T', 300)), float(inputs.get('L', 1000)), float(inputs.get('D', 0.3)), float(inputs.get('f', 0.015)), float(inputs.get('R', 287))) or 0
+        elif formula_id == 'weymouth':
+            result['results']['Q_scfd'] = gas_weymouth_flow(float(inputs.get('P1_psi', 500)), float(inputs.get('P2_psi', 400)), float(inputs.get('T_R', 520)), float(inputs.get('L_mi', 50)), float(inputs.get('D_in', 12)), float(inputs.get('SG', 0.6)), float(inputs.get('Z', 0.92)), float(inputs.get('E', 1.0))) or 0
+        elif formula_id == 'panhandle_a':
+            result['results']['Q_scfd'] = gas_panhandle_a_flow(float(inputs.get('P1_psi', 500)), float(inputs.get('P2_psi', 400)), float(inputs.get('T_R', 520)), float(inputs.get('L_mi', 50)), float(inputs.get('D_in', 12)), float(inputs.get('SG', 0.6)), float(inputs.get('Z', 0.92)), float(inputs.get('E', 1.0))) or 0
+        elif formula_id == 'panhandle_b':
+            result['results']['Q_scfd'] = gas_panhandle_b_flow(float(inputs.get('P1_psi', 500)), float(inputs.get('P2_psi', 400)), float(inputs.get('T_R', 520)), float(inputs.get('L_mi', 50)), float(inputs.get('D_in', 12)), float(inputs.get('SG', 0.6)), float(inputs.get('Z', 0.92)), float(inputs.get('E', 1.0))) or 0
+        elif formula_id == 'gas_critical_ratio':
+            result['results']['r_c'] = gas_critical_pressure_ratio(float(inputs.get('k', 1.4))) or 0
+        elif formula_id == 'gas_orifice_flow':
+            result['results']['m_dot'] = gas_orifice_mass_flow(float(inputs.get('C_d', 0.62)), float(inputs.get('A_o', 0.0005)), float(inputs.get('P1', 500000)), float(inputs.get('T1', 300)), float(inputs.get('P2', 400000)), float(inputs.get('k', 1.4)), float(inputs.get('R', 287))) or 0
+        elif formula_id == 'gas_choked_flow':
+            result['results']['m_dot_choked'] = gas_choked_mass_flow(float(inputs.get('C_d', 0.95)), float(inputs.get('A_t', 0.0001)), float(inputs.get('P0', 1e6)), float(inputs.get('T0', 300)), float(inputs.get('k', 1.4)), float(inputs.get('R', 287))) or 0
+        elif formula_id == 'gas_nozzle_eff':
+            result['results']['m_dot'] = gas_nozzle_flow_efficiency(float(inputs.get('C_d', 0.95)), float(inputs.get('A_t', 0.0001)), float(inputs.get('P0', 1e6)), float(inputs.get('T0', 300)), float(inputs.get('P_b', 200000)), float(inputs.get('k', 1.4)), float(inputs.get('R', 287)), float(inputs.get('eta_n', 0.95))) or 0
+        elif formula_id == 'erosional_velocity':
+            result['results']['V_e'] = gas_erosional_velocity(float(inputs.get('rho', 50)), float(inputs.get('C', 100))) or 0
+        elif formula_id == 'line_pack':
+            result['results']['V_scm'] = gas_pipeline_linepack(float(inputs.get('V_pipe', 5000)), float(inputs.get('P_avg', 2e6)), float(inputs.get('T_avg', 300)), float(inputs.get('Z', 0.92)), float(inputs.get('R', 287))) or 0
 
         else:
             result['error'] = f'Unknown formula_id: {formula_id}'

@@ -59,6 +59,11 @@ CATEGORY_I18N = {
         "name_zh": "\u6d41\u56fa\u8026\u5408",
         "desc_zh": "\u6d41\u4f53\u67f1\u56fa\u6709\u9891\u7387\u3001\u9644\u52a0\u8d28\u91cf\u3001\u6da1\u8857\u8131\u843d\u3001\u6d41\u81f4\u632f\u52a8\u4e0e\u5f39\u6027\u5931\u7a33"
     }
+,
+    "13_gas_flow": {
+        "name_zh": "气体流量计算",
+        "desc_zh": "压缩管流、Weymouth/Panhandle方程、壅塞孔板、管道储气等工业输气标准"
+    }
 }
 
 # =============================================================================
@@ -1744,20 +1749,7 @@ FORMULA_I18N = {
         "output": {"Vr": {"label_zh": "折合速度", "unit": "无量纲"}},
         "application_zh": "Vr≈5-8为涡激共振锁定区间(VIV lock-in)——结构振幅急剧增大，是深海立管和超高层建筑风振设计的危险区域"
     },
-    "fluid_elastic": {
-        "name_zh": "流体弹性失稳临界速度",
-        "desc_zh": "计算流体诱发结构弹性失稳的临界流速",
-        "latex": r"U_c = K_c f_n D \sqrt{\frac{m}{\rho}} \zeta",
-        "inputs": {
-            "f_n": {"label_zh": "固有频率", "unit": "Hz", "desc_zh": "结构的固有振动频率"},
-            "D": {"label_zh": "特征直径", "unit": "m", "desc_zh": "管束或结构的特征直径"},
-            "m": {"label_zh": "单位长度质量", "unit": "kg/m", "desc_zh": "结构单位长度的质量"},
-            "rho": {"label_zh": "流体密度", "unit": "kg/m³", "desc_zh": "流体的密度"},
-            "zeta": {"label_zh": "阻尼比", "unit": "无量纲", "desc_zh": "结构的阻尼比"}
-        },
-        "output": {"U_crit": {"label_zh": "临界流速", "unit": "m/s"}},
-        "application_zh": "换热器管束、核燃料棒等流致振动的稳定性评估，超过临界速度会发生流体弹性失稳导致结构损坏"
-    },
+    
 
     "fluid_elastic": {
         "name_zh": "流体弹性失稳临界速度",
@@ -1773,4 +1765,219 @@ FORMULA_I18N = {
         "output": {"U_crit": {"label_zh": "临界速度", "unit": "m/s"}},
         "application_zh": "U>U_crit时管束发生流体弹性失稳→管子剧烈碰撞→快速破坏。蒸汽发生器、冷凝器和换热器的管束设计中必须确保流速低于临界值"
     },
+
+    # ====== Category 13: Gas Flow Calculations (14) ======
+
+    "gas_density_ideal": {
+        "name_zh": "理想气体密度",
+        "desc_zh": "基于理想气体状态方程计算气体密度",
+        "latex": r"\rho = \frac{P}{R T}",
+        "inputs": {
+            "P": {"label_zh": "绝对压力", "unit": "Pa", "desc_zh": "气体绝对压力"},
+            "T": {"label_zh": "绝对温度", "unit": "K", "desc_zh": "气体绝对温度（K=C+273.15）"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数，空气=287，氮气=297，氦气=2077"}
+        },
+        "output": {"rho": {"label_zh": "气体密度", "unit": "kg/m³"}},
+        "application_zh": "空气在P=101325Pa、T=293K(20C)时密度约为1.2kg/m³。理想气体假设在低压和适中温度下精度良好，高压或近液化点需使用真实气体方程"
+    },
+
+    "gas_density_real": {
+        "name_zh": "真实气体密度(含Z因子)",
+        "desc_zh": "考虑压缩因子Z的真实气体密度计算",
+        "latex": r"\rho = \frac{P}{Z R T}",
+        "inputs": {
+            "P": {"label_zh": "绝对压力", "unit": "Pa", "desc_zh": "气体绝对压力"},
+            "T": {"label_zh": "绝对温度", "unit": "K", "desc_zh": "气体绝对温度"},
+            "Z": {"label_zh": "压缩因子", "unit": "无量纲", "desc_zh": "气体压缩因子，Z<1表示实际密度高于理想气体"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数"}
+        },
+        "output": {"rho": {"label_zh": "真实气体密度", "unit": "kg/m³"}},
+        "application_zh": "天然气管道在P>5MPa时Z<0.9导致实际密度比理想气体高10%以上，管线储气和流量计算必须修正。用Papay法或Standing-Katz图确定Z"
+    },
+
+    "z_factor_papay": {
+        "name_zh": "压缩因子( Papay法)",
+        "desc_zh": "用Papay关联式计算天然气压缩因子Z",
+        "latex": r"Z = 1 - \frac{3.52 P_{pr}}{10^{0.9813 T_{pr}}} + \frac{0.274 P_{pr}^2}{10^{0.8157 T_{pr}}}",
+        "inputs": {
+            "P_pr": {"label_zh": "拟对比压力", "unit": "无量纲", "desc_zh": "P_pr=P/P_c，即实际压力除以临界压力"},
+            "T_pr": {"label_zh": "拟对比温度", "unit": "无量纲", "desc_zh": "T_pr=T/T_c，即实际温度除以临界温度"}
+        },
+        "output": {"Z": {"label_zh": "压缩因子", "unit": "无量纲"}},
+        "application_zh": "Papay关联式在P_pr<15、T_pr=1.2-3.0范围内精度良好（误差<5%），广泛用于天然气管道设计。天然气P_c≈4.6MPa,T_c≈190-210K"
+    },
+
+    "gas_viscosity": {
+        "name_zh": "气体粘度(LGE关联式)",
+        "desc_zh": "用Lee-Gonzalez-Eakin关联式计算烃类气体粘度",
+        "latex": r"\mu_g = K \exp\left(X \rho_g^Y\right) \times 10^{-4}",
+        "inputs": {
+            "rho_g": {"label_zh": "气体密度", "unit": "kg/m³", "desc_zh": "在计算工况下的气体密度"},
+            "T": {"label_zh": "温度", "unit": "K", "desc_zh": "气体温度"},
+            "Mw": {"label_zh": "分子量", "unit": "g/mol", "desc_zh": "气体分子量，空气≈28.97，甲烷≈16"}
+        },
+        "output": {"mu": {"label_zh": "气体动力粘度", "unit": "Pa.s"}},
+        "application_zh": "LGE法适用于烃类气体混合物，典型误差±10-15%。空气在常温常压下μ≈1.8e-5 Pa.s。高压下气体粘度显著升高"
+    },
+
+    "isothermal_flow": {
+        "name_zh": "等温管道气体流量",
+        "desc_zh": "计算等温条件下水平管道中压缩气体的质量流量",
+        "latex": r"\dot{m} = \rho_m A \sqrt{\frac{2 \Delta P D}{f L \rho_m}}",
+        "inputs": {
+            "P1": {"label_zh": "入口压力", "unit": "Pa", "desc_zh": "管道入口绝对压力"},
+            "P2": {"label_zh": "出口压力", "unit": "Pa", "desc_zh": "管道出口绝对压力，P2<P1"},
+            "T": {"label_zh": "温度", "unit": "K", "desc_zh": "管道内气体等温温度"},
+            "L": {"label_zh": "管道长度", "unit": "m", "desc_zh": "管道长度"},
+            "D": {"label_zh": "管道内径", "unit": "m", "desc_zh": "管道内直径"},
+            "f": {"label_zh": "摩擦系数", "unit": "无量纲", "desc_zh": "Darcy摩擦系数，可用Colebrook公式计算"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数"}
+        },
+        "output": {"m_dot": {"label_zh": "质量流量", "unit": "kg/s"}},
+        "application_zh": "适用于压降ΔP<40%入口压力的长输管线。压降超过40%时应分段计算。天然气输气干线P1=5-10MPa, L=100-500km"
+    },
+
+    "weymouth": {
+        "name_zh": "Weymouth输气方程",
+        "desc_zh": "Weymouth管道输气量计算公式（适用于小口径/高压管道，Re>10⁶）",
+        "latex": r"Q = 433.49 E \frac{T_s}{P_s} \sqrt{\frac{(P_1^2-P_2^2) D^{16/3}}{SG\,T_f\,L\,Z}}",
+        "inputs": {
+            "P1_psi": {"label_zh": "入口压力", "unit": "psia", "desc_zh": "管道入口绝对压力(psi)"},
+            "P2_psi": {"label_zh": "出口压力", "unit": "psia", "desc_zh": "管道出口绝对压力(psi)"},
+            "T_R": {"label_zh": "气体温度", "unit": ".R", "desc_zh": "气体流动温度(Rankine)，.R=.F+460"},
+            "L_mi": {"label_zh": "管道长度", "unit": "mile", "desc_zh": "管道长度(英里)"},
+            "D_in": {"label_zh": "管道内径", "unit": "in", "desc_zh": "管道内径(英寸)"},
+            "SG": {"label_zh": "气体相对密度", "unit": "无量纲", "desc_zh": "相对空气密度，天然气≈0.6，空气=1.0"},
+            "Z": {"label_zh": "压缩因子", "unit": "无量纲", "desc_zh": "平均工况下的气体压缩因子"},
+            "E": {"label_zh": "管道效率因子", "unit": "无量纲", "desc_zh": "输气效率，新管=1.0，旧管=0.9-0.95"}
+        },
+        "output": {"Q_scfd": {"label_zh": "输气量", "unit": "SCF/day"}},
+        "application_zh": "Weymouth方程适用于D<16in的高Re管道。12in管道在500-400psi下输气量≈29MMSCFD。用于天然气集输和分输管网设计"
+    },
+
+    "panhandle_a": {
+        "name_zh": "Panhandle A方程",
+        "desc_zh": "Panhandle A管道输气量公式（适用于大口径/高雷诺数管道，Re=5×10⁶-11×10⁶）",
+        "latex": r"Q = 435.87 E \left(\frac{T_s}{P_s}\right)^{1.0788} \frac{(P_1^2-P_2^2)^{0.5394} D^{2.6182}}{(SG^{0.8539} T_f L Z)^{0.5394}}",
+        "inputs": {
+            "P1_psi": {"label_zh": "入口压力", "unit": "psia", "desc_zh": "入口绝对压力"},
+            "P2_psi": {"label_zh": "出口压力", "unit": "psia", "desc_zh": "出口绝对压力"},
+            "T_R": {"label_zh": "气体温度", "unit": ".R", "desc_zh": "气体流动温度"},
+            "L_mi": {"label_zh": "管道长度", "unit": "mile", "desc_zh": "管道长度"},
+            "D_in": {"label_zh": "管道内径", "unit": "in", "desc_zh": "管道内径"},
+            "SG": {"label_zh": "气体相对密度", "unit": "无量纲", "desc_zh": "相对空气密度"},
+            "Z": {"label_zh": "压缩因子", "unit": "无量纲", "desc_zh": "平均压缩因子"},
+            "E": {"label_zh": "管道效率", "unit": "无量纲", "desc_zh": "输气效率"}
+        },
+        "output": {"Q_scfd": {"label_zh": "输气量", "unit": "SCF/day"}},
+        "application_zh": "Panhandle A适用于大口径(D>12in)完全湍流区的输气干线。与Weymouth相比在高Re区给出更高输量估算。常用于跨国天然气长输管线"
+    },
+
+    "panhandle_b": {
+        "name_zh": "Panhandle B方程",
+        "desc_zh": "Panhandle B管道输气量公式（适用于中等雷诺数管道，Re=10⁵-5×10⁶）",
+        "latex": r"Q = 737 E \left(\frac{T_s}{P_s}\right)^{1.02} \frac{(P_1^2-P_2^2)^{0.51} D^{2.53}}{(SG^{0.961} T_f L Z)^{0.51}}",
+        "inputs": {
+            "P1_psi": {"label_zh": "入口压力", "unit": "psia", "desc_zh": "入口绝对压力"},
+            "P2_psi": {"label_zh": "出口压力", "unit": "psia", "desc_zh": "出口绝对压力"},
+            "T_R": {"label_zh": "气体温度", "unit": ".R", "desc_zh": "气体流动温度"},
+            "L_mi": {"label_zh": "管道长度", "unit": "mile", "desc_zh": "管道长度"},
+            "D_in": {"label_zh": "管道内径", "unit": "in", "desc_zh": "管道内径"},
+            "SG": {"label_zh": "气体相对密度", "unit": "无量纲", "desc_zh": "相对空气密度"},
+            "Z": {"label_zh": "压缩因子", "unit": "无量纲", "desc_zh": "平均压缩因子"},
+            "E": {"label_zh": "管道效率", "unit": "无量纲", "desc_zh": "输气效率"}
+        },
+        "output": {"Q_scfd": {"label_zh": "输气量", "unit": "SCF/day"}},
+        "application_zh": "Panhandle B在中低雷诺数(10⁵-5×10⁶)管道中精度最高，常用于配气管网和支线管道。对较小口径(D<12in)管道更适用"
+    },
+
+    "gas_critical_ratio": {
+        "name_zh": "临界压力比",
+        "desc_zh": "计算气体达到声速流动的临界压力比",
+        "latex": r"r_c = \left(\frac{2}{k+1}\right)^{k/(k-1)}",
+        "inputs": {
+            "k": {"label_zh": "比热比", "unit": "无量纲", "desc_zh": "Cp/Cv，空气=1.4，天然气≈1.31，氦气=1.66"}
+        },
+        "output": {"r_c": {"label_zh": "临界压力比", "unit": "无量纲"}},
+        "application_zh": "空气k=1.4时r_c=0.528。当出口/入口压力比低于r_c时→壅塞流(Choked Flow)→质量流量达到最大，不再随出口压力降低而增加"
+    },
+
+    "gas_orifice_flow": {
+        "name_zh": "气体孔板流量",
+        "desc_zh": "计算气体通过孔板的亚声速质量流量（含膨胀因子Y）",
+        "latex": r"\dot{m} = C_d A_o Y \sqrt{2 \rho_1 \Delta P}",
+        "inputs": {
+            "C_d": {"label_zh": "流量系数", "unit": "无量纲", "desc_zh": "锐缘孔板C_d≈0.60-0.65，喷嘴C_d≈0.95-0.99"},
+            "A_o": {"label_zh": "孔板面积", "unit": "m²", "desc_zh": "孔板开口面积"},
+            "P1": {"label_zh": "入口压力", "unit": "Pa", "desc_zh": "孔板上游绝对压力"},
+            "T1": {"label_zh": "入口温度", "unit": "K", "desc_zh": "上游气体温度"},
+            "P2": {"label_zh": "出口压力", "unit": "Pa", "desc_zh": "孔板下游压力"},
+            "k": {"label_zh": "比热比", "unit": "无量纲", "desc_zh": "气体比热比"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数"}
+        },
+        "output": {"m_dot": {"label_zh": "质量流量", "unit": "kg/s"}},
+        "application_zh": "用于气体流量测量孔板设计(ISO 5167)。膨胀因子Y修正了气体可压缩性影响。接近壅塞条件时需切换为壅塞流公式"
+    },
+
+    "gas_choked_flow": {
+        "name_zh": "壅塞气体流量",
+        "desc_zh": "计算气体在壅塞状态下(出口马赫数=1)通过喷嘴或孔板的最大流量",
+        "latex": r"\dot{m}_{\text{max}} = C_d A_t P_0 \sqrt{\frac{k}{R T_0} \left(\frac{2}{k+1}\right)^{(k+1)/(k-1)}}",
+        "inputs": {
+            "C_d": {"label_zh": "流量系数", "unit": "无量纲", "desc_zh": "喷嘴流量系数，收敛喷嘴C_d≈0.95-0.99"},
+            "A_t": {"label_zh": "喉部面积", "unit": "m²", "desc_zh": "喷嘴喉部面积"},
+            "P0": {"label_zh": "滞止压力", "unit": "Pa", "desc_zh": "上游储气罐滞止压力"},
+            "T0": {"label_zh": "滞止温度", "unit": "K", "desc_zh": "上游储气罐滞止温度"},
+            "k": {"label_zh": "比热比", "unit": "无量纲", "desc_zh": "Cp/Cv"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数"}
+        },
+        "output": {"m_dot_choked": {"label_zh": "壅塞质量流量", "unit": "kg/s"}},
+        "application_zh": "壅塞流是安全阀、放空阀、火箭发动机喷嘴、气体灭火系统Novec排放管设计的核心工况。质量流量只取决于上游(P0,T0)，与下游背压无关"
+    },
+
+    "gas_nozzle_eff": {
+        "name_zh": "喷嘴效率流量",
+        "desc_zh": "含喷嘴效率因数的喷嘴实际流量（自动判断壅塞/非壅塞工况）",
+        "latex": r"\dot{m} = \eta_n \cdot \begin{cases} \dot{m}_{\text{choked}} & \text{if choked} \\ \rho_e A_t V_{\text{exit}} & \text{if unchoked} \end{cases}",
+        "inputs": {
+            "C_d": {"label_zh": "流量系数", "unit": "无量纲", "desc_zh": "喷嘴流量系数"},
+            "A_t": {"label_zh": "喉部面积", "unit": "m²", "desc_zh": "喷嘴喉部面积"},
+            "P0": {"label_zh": "滞止压力", "unit": "Pa", "desc_zh": "上游滞止压力"},
+            "T0": {"label_zh": "滞止温度", "unit": "K", "desc_zh": "上游滞止温度"},
+            "P_b": {"label_zh": "背压", "unit": "Pa", "desc_zh": "喷嘴出口背压"},
+            "k": {"label_zh": "比热比", "unit": "无量纲", "desc_zh": "Cp/Cv"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数"},
+            "eta_n": {"label_zh": "喷嘴效率", "unit": "无量纲", "desc_zh": "喷嘴等熵效率，典型0.90-0.98"}
+        },
+        "output": {"m_dot": {"label_zh": "实际质量流量", "unit": "kg/s"}},
+        "application_zh": "用于航空发动机尾喷管、汽轮机喷嘴和气体引射器设计。自动处理壅塞流到亚声速膨胀的切换过渡，效率因数计入摩擦和激波损失"
+    },
+
+    "erosional_velocity": {
+        "name_zh": "冲蚀速度(API RP 14E)",
+        "desc_zh": "计算管道中流体不引起管壁冲蚀的最大允许流速",
+        "latex": r"V_e = \frac{C}{\sqrt{\rho}}",
+        "inputs": {
+            "rho": {"label_zh": "流体密度", "unit": "kg/m³", "desc_zh": "操作条件下的流体密度"},
+            "C": {"label_zh": "经验常数", "unit": "无量纲", "desc_zh": "API推荐：连续服役C=100，间歇服役C=125，无砂C=150-200"}
+        },
+        "output": {"V_e": {"label_zh": "冲蚀速度", "unit": "m/s"}},
+        "application_zh": "用于油气管道流速上限设定。天然气管道C=100时实际V_e=15-30m/s（密度差异）。超过V_e需增加壁厚或防腐涂层，海上平台管道尤需遵守"
+    },
+
+    "line_pack": {
+        "name_zh": "管道储气容量",
+        "desc_zh": "计算管道内储存的气体折合标准状态体积",
+        "latex": r"V_{sc} = \frac{V_{\text{pipe}} P_{\text{avg}}}{Z R T_{\text{avg}}}",
+        "inputs": {
+            "V_pipe": {"label_zh": "管道几何容积", "unit": "m³", "desc_zh": "管道几何容积（V=pi*D^2*L/4）"},
+            "P_avg": {"label_zh": "平均压力", "unit": "Pa", "desc_zh": "管道内平均压力"},
+            "T_avg": {"label_zh": "平均温度", "unit": "K", "desc_zh": "管道内平均气体温度"},
+            "Z": {"label_zh": "压缩因子", "unit": "无量纲", "desc_zh": "气体压缩因子"},
+            "R": {"label_zh": "气体常数", "unit": "J/(kg.K)", "desc_zh": "特定气体常数"}
+        },
+        "output": {"V_scm": {"label_zh": "标准状态气体体积", "unit": "scm"}},
+        "application_zh": "天然气管道Line Pack是管网调峰的重要手段——用管道容积缓储高压气体，高峰时段降压释放。长输干线Line Pack可达数百万N·m³，相当于小型地下储气库"
+    },
+
 }
