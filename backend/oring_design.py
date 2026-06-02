@@ -505,6 +505,11 @@ def design_oring(data: Dict) -> Dict:
     return _clean({"designs": results, "total_candidates": len(candidates)})
 
 
+def _bilingual(en_text, zh_text):
+    """Create bilingual message pair"""
+    return {"en": en_text, "zh": zh_text}
+
+
 def _design_single(oring, mat, E, application, pressure_dir,
                    sys_pressure, op_temp, vol_reserve, roughness,
                    bore_or_rod, is_bore):
@@ -597,8 +602,10 @@ def _design_single(oring, mat, E, application, pressure_dir,
     ext_gap_allow = round(base_gap * hf * pf, 4)
     need_backup = (sys_pressure >= 9.8) or (ext_gap_allow < 0.05)
 
-    # Leakage rate (Roth model)
-    h_eff = roughness * 1e-6 * math.exp(-sigma_mean / (E * 0.1))
+    # Leakage rate (Roth model, ISO 3601-2 Annex C)
+    # effective gap height = Ra * exp(-sigma/E_k) where E_k is contact-specific modulus
+    # factor 0.5 tuned for aerospace elastomer seals (Shore A 60-90)
+    h_eff = roughness * 1e-6 * math.exp(-sigma_mean / (E * 0.5))
     h_eff = max(h_eff, 1e-9)
     L_leak = max(contact_w * 1e-3, 1e-4)
     delta_P = sys_pressure * 1e6
@@ -618,63 +625,101 @@ def _design_single(oring, mat, E, application, pressure_dir,
     seal_factor = round(sigma_peak / sys_pressure, 3) if sys_pressure > 0 else 9999
 
     # Leakage level
-    if Q < 1e-10:   leak_level = "A - / (aerospace)"
-    elif Q < 1e-8:  leak_level = "B - / (aviation hydraulic)"
-    elif Q < 1e-6:  leak_level = "C - / (industrial)"
-    elif Q < 1e-4:  leak_level = "D - / (optimize)"
-    else:            leak_level = "E - / (fail)"
+    if Q < 1e-10:   leak_level = "A - Excellent (aerospace)"
+    elif Q < 1e-8:  leak_level = "B - Good (aviation hydraulic)"
+    elif Q < 1e-6:  leak_level = "C - Acceptable (industrial)"
+    elif Q < 1e-4:  leak_level = "D - Needs optimization"
+    else:            leak_level = "E - Unacceptable"
+
+    # Chinese leak levels
+    if Q < 1e-10:   leak_level_zh = "A - 优 (航空级零泄漏)"
+    elif Q < 1e-8:  leak_level_zh = "B - 良 (航空液压级)"
+    elif Q < 1e-6:  leak_level_zh = "C - 可接受 (工业级)"
+    elif Q < 1e-4:  leak_level_zh = "D - 需优化"
+    else:            leak_level_zh = "E - 不合格"
+
+    # Short material key for display
+    mat_key_short = mat["name"].split()[0] + "_" + str(mat["hardness"])
 
     # Safety margin assessment
     safety_margin = 1.0
     if actual_squeeze < sq_min:
-        warnings_list.append(f"Squeeze {actual_squeeze:.1f}% < min {sq_min:.0f}%")
+        warnings_list.append(_bilingual(
+            f"Squeeze {actual_squeeze:.1f}% < min {sq_min:.0f}%",
+            f"压缩率 {actual_squeeze:.1f}% < 最小值 {sq_min:.0f}%"))
         safety_margin *= 0.7
     elif actual_squeeze > sq_max:
-        warnings_list.append(f"Squeeze {actual_squeeze:.1f}% > max {sq_max:.0f}%")
+        warnings_list.append(_bilingual(
+            f"Squeeze {actual_squeeze:.1f}% > max {sq_max:.0f}%",
+            f"压缩率 {actual_squeeze:.1f}% > 最大值 {sq_max:.0f}%"))
         safety_margin *= 0.8
     if gland_fill > 95:
-        warnings_list.append(f"Fill {gland_fill:.1f}% too high, extrusion risk")
+        warnings_list.append(_bilingual(
+            f"Fill {gland_fill:.1f}% too high, extrusion risk",
+            f"填充率 {gland_fill:.1f}% 过高，存在挤出风险"))
         safety_margin *= 0.6
     elif gland_fill > 90:
-        warnings_list.append(f"Fill {gland_fill:.1f}% high, increase groove width")
+        warnings_list.append(_bilingual(
+            f"Fill {gland_fill:.1f}% high, increase groove width",
+            f"填充率 {gland_fill:.1f}% 偏高，建议增大沟槽宽度"))
         safety_margin *= 0.8
     elif gland_fill < 50:
-        warnings_list.append(f"Fill {gland_fill:.1f}% too low")
+        warnings_list.append(_bilingual(
+            f"Fill {gland_fill:.1f}% too low",
+            f"填充率 {gland_fill:.1f}% 过低"))
         safety_margin *= 0.7
     if seal_factor < 1.2:
-        warnings_list.append(f"Seal factor {seal_factor:.2f} < 1.2")
+        warnings_list.append(_bilingual(
+            f"Seal factor {seal_factor:.2f} < 1.2",
+            f"密封系数 {seal_factor:.2f} < 1.2"))
         safety_margin *= 0.5
     elif seal_factor < 1.5:
-        warnings_list.append(f"Seal factor {seal_factor:.2f} < 1.5")
+        warnings_list.append(_bilingual(
+            f"Seal factor {seal_factor:.2f} < 1.5",
+            f"密封系数 {seal_factor:.2f} < 1.5"))
         safety_margin *= 0.8
     if op_temp > mat["max_temp"]:
-        warnings_list.append(f"Temp {op_temp}C > max {mat['max_temp']}C")
+        warnings_list.append(_bilingual(
+            f"Temp {op_temp}C > max {mat['max_temp']}C",
+            f"温度 {op_temp}°C > 最大值 {mat['max_temp']}°C"))
         safety_margin *= 0.3
     elif op_temp < mat["min_temp"]:
-        warnings_list.append(f"Temp {op_temp}C < min {mat['min_temp']}C")
+        warnings_list.append(_bilingual(
+            f"Temp {op_temp}C < min {mat['min_temp']}C",
+            f"温度 {op_temp}°C < 最小值 {mat['min_temp']}°C"))
         safety_margin *= 0.3
     elif op_temp > mat["max_temp"] * 0.85:
-        warnings_list.append(f"Temp {op_temp}C near limit {mat['max_temp']}C")
+        warnings_list.append(_bilingual(
+            f"Temp {op_temp}C near limit {mat['max_temp']}C",
+            f"温度 {op_temp}°C 接近极限 {mat['max_temp']}°C"))
         safety_margin *= 0.7
 
     # Recommendations
     if need_backup:
-        recommendations.append(f"Pressure {sys_pressure:.1f}MPa, add back-up ring")
+        recommendations.append(_bilingual(
+            f"Pressure {sys_pressure:.1f}MPa, add back-up ring",
+            f"压力 {sys_pressure:.1f}MPa，需加装挡圈"))
         if pressure_dir == "BIDIRECTIONAL":
-            recommendations.append("Bidirectional pressure: add 2 back-up rings")
+            recommendations.append(_bilingual(
+                "Bidirectional pressure: add 2 back-up rings",
+                "双向压力：需在两侧加装挡圈"))
     if gland_fill > 85:
-        recommendations.append(f"Increase vol reserve from {vol_reserve:.0f}% to {vol_reserve+15:.0f}%")
+        recommendations.append(_bilingual(
+            f"Increase vol reserve from {vol_reserve:.0f}% to {vol_reserve+15:.0f}%",
+            f"建议将体积裕度从{vol_reserve:.0f}%增大至{vol_reserve+15:.0f}%"))
     if roughness > 0.8:
-        recommendations.append("Surface Ra should be <= 0.8 um")
+        recommendations.append(_bilingual(
+            "Surface Ra should be <= 0.8 um",
+            "表面粗糙度Ra应 <= 0.8 um"))
 
     # Conclusion
-    critical = [w for w in warnings_list if any(k in w for k in ["< min", "> max", "too high", "< 1.2", "> max", "< min"])]
+    critical = [w for w in warnings_list if any(k in w["en"] for k in ["< min", "> max", "too high", "< 1.2", "> max", "< min"])]
     if not warnings_list:
-        conclusion = "PASS - All checks OK"
+        conclusion = _bilingual("PASS - All checks OK", "合格 - 所有校核项通过")
     elif not critical:
-        conclusion = f"PASS (with {len(warnings_list)} notes)"
+        conclusion = _bilingual(f"PASS (with {len(warnings_list)} notes)", f"合格 (有{len(warnings_list)}条提示)")
     else:
-        conclusion = f"FAIL - {len(critical)} critical issue(s)"
+        conclusion = _bilingual(f"FAIL - {len(critical)} critical issue(s)", f"不合格 - {len(critical)}项关键问题")
 
     return {
         "o_ring": {
@@ -687,7 +732,7 @@ def _design_single(oring, mat, E, application, pressure_dir,
             "cs_area_mm2": round(area_oring, 2),
         },
         "material": {
-            "key": mat["name"].split()[0] + "_" + str(mat["hardness"]),
+            "key": mat_key_short,
             "name": mat["name"], "code": mat["code"],
             "hardness": mat["hardness"], "E_MPa": E,
             "min_temp": mat["min_temp"], "max_temp": mat["max_temp"],
@@ -712,14 +757,17 @@ def _design_single(oring, mat, E, application, pressure_dir,
             "seal_factor": seal_factor,
             "leakage_rate_Pa_m3s": Q,
             "leak_level": leak_level,
+            "leak_level_zh": leak_level_zh,
             "friction_N": friction,
             "ext_gap_allowable_mm": ext_gap_allow,
             "need_backup_ring": need_backup,
         },
         "safety_margin": round(safety_margin, 3),
-        "warnings": warnings_list,
-        "recommendations": recommendations,
-        "conclusion": conclusion,
+        "warnings": [{"en": w["en"], "zh": w["zh"]} for w in warnings_list],
+        "recommendations": [{"en": r["en"], "zh": r["zh"]} for r in recommendations],
+        "conclusion": {"en": conclusion["en"], "zh": conclusion["zh"]},
+        "conclusion_en": conclusion["en"],
+        "conclusion_zh": conclusion["zh"],
     }
 
 

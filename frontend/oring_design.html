@@ -3,147 +3,154 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>O形密封圈设计 - 航空航天阀门研发平台</title>
+<title>O型密封圈设计 - 航空航天阀门研发平台 | O-Ring Seal Design - Aerospace Valve R&D</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0a0e1a;--card:#111827;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff88;--text:#e0e7ff;--dim:#6b7fa3;--danger:#ff4757;--warn:#ffa502;--purple:#a855f7}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
-.header h1{font-size:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header .back{color:var(--dim);text-decoration:none;font-size:14px}.header .back:hover{color:var(--accent)}
-.header .sub{margin-left:auto;font-size:10px;color:var(--dim)}
-.main{max-width:1400px;margin:0 auto;padding:24px;display:grid;grid-template-columns:340px 1fr;gap:24px}
+.header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.header h1{font-size:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;min-width:200px}
+.header .back{color:var(--dim);text-decoration:none;font-size:13px;white-space:nowrap}.header .back:hover{color:var(--accent)}
+.header .sub{font-size:9px;color:var(--dim);margin-left:auto}
+.lang-btn{background:rgba(0,212,255,.08);border:1px solid var(--border);color:var(--accent);padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.lang-btn:hover{background:rgba(0,212,255,.15)}
+.lang-btn.en{color:var(--dim);border-color:transparent}
+.main{max-width:1440px;margin:0 auto;padding:20px;display:grid;grid-template-columns:360px 1fr;gap:20px}
 @media(max-width:1100px){.main{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
-.card h2{font-size:15px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.card h2{font-size:14px;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .fg{display:flex;flex-direction:column;gap:2px}
 .fg label{font-size:11px;color:var(--dim);font-weight:500}
-.fg input,.fg select{background:#0d1525;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-size:13px;transition:border-color .2s}
+.fg input,.fg select{background:#0d1525;border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;transition:border-color .2s}
 .fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
-.fg .u{font-size:10px;color:var(--dim)}
+.fg input:invalid{border-color:var(--danger)}
+.fg .u{font-size:9px;color:var(--dim)}
 .full{grid-column:1/-1}
-.sec-title{font-size:12px;color:var(--accent2);margin:10px 0 6px;padding-bottom:2px;border-bottom:1px solid rgba(0,255,136,.2)}
-.btn-go{background:linear-gradient(135deg,#0066ff,#00d4ff);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:12px;transition:transform .1s,box-shadow .2s}
+.sec-title{font-size:11px;color:var(--accent2);margin:8px 0 5px;padding-bottom:2px;border-bottom:1px solid rgba(0,255,136,.15)}
+.btn-go{background:linear-gradient(135deg,#0066ff,#00d4ff);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:transform .1s,box-shadow .2s}
 .btn-go:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,.3)}
 .btn-go:disabled{opacity:.5;cursor:not-allowed}
-.preset-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
-.pbtn{background:#1a2540;border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .2s}
+.preset-bar{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.pbtn{background:#1a2540;border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:10px;cursor:pointer;transition:all .2s;white-space:nowrap}
 .pbtn:hover{border-color:var(--accent);color:var(--accent)}
 .pbtn.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
 .loading{display:none;text-align:center;padding:40px}.loading.show{display:block}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 8px}@keyframes spin{to{transform:rotate(360deg)}}
 .results{display:none}.results.show{display:block}
-.candidates{display:flex;flex-direction:column;gap:10px}
-.cand-card{background:#0d1525;border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s}
+.candidates{display:flex;flex-direction:column;gap:8px}
+.cand-card{background:#0d1525;border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s}
 .cand-card:hover,.cand-card.selected{border-color:var(--accent);background:rgba(0,212,255,.05)}
-.cand-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cand-dash{font-size:16px;font-weight:700;color:var(--accent)}
-.cand-safe{font-size:12px;padding:3px 8px;border-radius:4px}
+.cand-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cand-dash{font-size:15px;font-weight:700;color:var(--accent)}
+.cand-safe{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600}
 .cand-safe.good{background:rgba(0,255,136,.15);color:var(--accent2)}
 .cand-safe.warn{background:rgba(255,165,2,.15);color:var(--warn)}
 .cand-safe.fail{background:rgba(255,71,87,.15);color:var(--danger)}
-.cand-row{display:flex;gap:16px;font-size:12px;color:var(--dim);flex-wrap:wrap}
-.cand-row span{display:flex;align-items:center;gap:4px}
+.cand-row{display:flex;gap:12px;font-size:11px;color:var(--dim);flex-wrap:wrap}
+.cand-row span{display:flex;align-items:center;gap:3px}
 .cand-row .v{color:var(--text);font-weight:500}
-.detail-panel{margin-top:14px;display:none}
+.detail-panel{margin-top:12px;display:none}
 .detail-panel.show{display:block}
-.dg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 @media(max-width:700px){.dg{grid-template-columns:repeat(2,1fr)}}
-.di{background:#0d1525;border-radius:6px;padding:8px 10px;border:1px solid rgba(30,58,95,.5)}
-.di .l{font-size:10px;color:var(--dim)}.di .v{font-size:14px;font-weight:700;color:var(--accent);margin-top:1px}
+.di{background:#0d1525;border-radius:6px;padding:7px 9px;border:1px solid rgba(30,58,95,.5)}
+.di .l{font-size:9px;color:var(--dim)}.di .v{font-size:13px;font-weight:700;color:var(--accent);margin-top:1px}
 .di .v.ok{color:var(--accent2)}.di .v.wn{color:var(--warn)}.di .v.ng{color:var(--danger)}
-.di .s{font-size:9px;color:var(--dim)}
-.tabs{display:flex;gap:3px;margin-bottom:10px;flex-wrap:wrap}
-.tb{background:transparent;border:1px solid var(--border);color:var(--dim);padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.di .s{font-size:8px;color:var(--dim)}
+.tabs{display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap}
+.tb{background:transparent;border:1px solid var(--border);color:var(--dim);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .2s}
 .tb.active{background:rgba(0,212,255,.15);border-color:var(--accent);color:var(--accent)}
 .tc{display:none}.tc.active{display:block}
 .wl{list-style:none;padding:0}
-.wl li{padding:6px 10px;margin:3px 0;background:rgba(255,165,2,.08);border-radius:6px;border-left:3px solid var(--warn);font-size:12px}
+.wl li{padding:5px 8px;margin:2px 0;background:rgba(255,165,2,.08);border-radius:6px;border-left:3px solid var(--warn);font-size:11px}
 .rl{list-style:none;padding:0}
-.rl li{padding:6px 10px;margin:3px 0;background:rgba(0,212,255,.08);border-radius:6px;border-left:3px solid var(--accent);font-size:12px}
-.conclusion{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px;font-weight:600;color:var(--accent2)}
+.rl li{padding:5px 8px;margin:2px 0;background:rgba(0,212,255,.08);border-radius:6px;border-left:3px solid var(--accent);font-size:11px}
+.conclusion{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:13px;font-weight:600;color:var(--accent2)}
 .conclusion.has-warn{background:rgba(255,165,2,.08);border-color:rgba(255,165,2,.3);color:var(--warn)}
 .conclusion.has-fail{background:rgba(255,71,87,.08);border-color:rgba(255,71,87,.3);color:var(--danger)}
-.viz-box{background:#080c18;border-radius:8px;padding:16px;margin-top:10px;text-align:center;min-height:140px}
-.viz-box svg{max-width:100%;height:120px}
-.help-panel{background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:14px;margin-bottom:14px;font-size:12px;line-height:1.7}
-.help-panel h3{color:var(--accent);font-size:13px;margin-bottom:8px}
-.help-panel p{color:var(--dim);margin-bottom:6px}
-.help-panel code{background:#0d1525;padding:2px 5px;border-radius:3px;font-size:11px;color:var(--accent2)}
+.viz-box{background:#080c18;border-radius:8px;padding:14px;margin-top:8px;text-align:center;min-height:130px}
+.viz-box svg{max-width:100%;height:110px}
+.help-panel{background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.12);border-radius:8px;padding:12px;margin-bottom:12px;font-size:11px;line-height:1.6}
+.help-panel h3{color:var(--accent);font-size:12px;margin-bottom:6px}
+.help-panel p{color:var(--dim);margin-bottom:4px}
+.help-panel code{background:#0d1525;padding:1px 4px;border-radius:3px;font-size:10px;color:var(--accent2)}
+.error-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(255,71,87,.9);color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeInOut 3s forwards}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
 </style>
 </head>
 <body>
 <div class="header">
-<a href="/" class="back">&larr; return</a>
-<h1>O-Ring Seal Design</h1>
-<span class="sub">AS568 | SAE AS4716C | HB/Z 4-1995 | Roth Leakage</span>
+<a href="/" class="back" data-i18n="back">&larr; 返回主页</a>
+<h1 data-i18n="title">O型密封圈设计</h1>
+<button class="lang-btn" id="langBtn" onclick="toggleLang()" title="Switch Language">EN</button>
+<span class="sub" data-i18n="subtitle">AS568F | SAE AS4716C | ISO 3601-2 | Roth 泄漏模型</span>
 </div>
 
 <div class="main">
 <div>
 <div class="card">
-<h2>Design Input</h2>
+<h2 data-i18n="designInput">设计输入</h2>
 <div class="preset-bar">
-<button class="pbtn active" onclick="loadPreset('hydraulic_piston',this)">Hydraulic Piston</button>
-<button class="pbtn" onclick="loadPreset('hydraulic_rod',this)">Hydraulic Rod</button>
-<button class="pbtn" onclick="loadPreset('high_temp',this)">High Temp</button>
-<button class="pbtn" onclick="loadPreset('low_pressure',this)">Low Pressure</button>
+<button class="pbtn active" onclick="loadPreset('hydraulic_piston',this)" data-i18n="presetPiston">液压活塞密封</button>
+<button class="pbtn" onclick="loadPreset('hydraulic_rod',this)" data-i18n="presetRod">液压杆密封</button>
+<button class="pbtn" onclick="loadPreset('high_temp',this)" data-i18n="presetHT">高温工况</button>
+<button class="pbtn" onclick="loadPreset('low_pressure',this)" data-i18n="presetLP">低压工况</button>
 </div>
 
 <div class="form-grid">
-<div class="fg full"><label>Material</label>
+<div class="fg full"><label data-i18n="lblMaterial">材料</label>
 <select id="material"></select></div>
 
-<div class="sec-title">Installation</div>
-<div class="fg"><label>Bore/Rod Dia</label><input type="number" id="bore_or_rod_dia_mm" value="63" step="0.5"><span class="u">mm</span></div>
-<div class="fg"><label>Seal Type</label>
-<select id="is_bore_seal"><option value="true">Piston (Bore)</option><option value="false">Rod</option></select></div>
+<div class="sec-title" data-i18n="secInstall">安装参数</div>
+<div class="fg"><label data-i18n="lblDia">孔/杆直径</label><input type="number" id="bore_or_rod_dia_mm" value="63" step="0.5" min="2" max="700"><span class="u">mm</span></div>
+<div class="fg"><label data-i18n="lblSealType">密封类型</label>
+<select id="is_bore_seal"><option value="true" data-i18n="optPiston">活塞密封 (孔用)</option><option value="false" data-i18n="optRod">杆密封 (轴用)</option></select></div>
 
-<div class="sec-title">Operating Conditions</div>
-<div class="fg"><label>Application</label>
-<select id="application"><option value="STATIC_RADIAL">Static Radial</option><option value="STATIC_FACE">Static Face</option><option value="DYNAMIC_RECIPROCATING">Dynamic Reciprocating</option><option value="DYNAMIC_ROTARY">Dynamic Rotary</option></select></div>
-<div class="fg"><label>Pressure Dir</label>
-<select id="pressure_dir"><option value="INTERNAL">Internal</option><option value="EXTERNAL">External</option><option value="BIDIRECTIONAL">Bidirectional</option></select></div>
-<div class="fg"><label>System Pressure</label><input type="number" id="system_pressure" value="21" step="0.5"><span class="u">MPa</span></div>
-<div class="fg"><label>Operating Temp</label><input type="number" id="operating_temp" value="150" step="5"><span class="u">C</span></div>
+<div class="sec-title" data-i18n="secOp">运行工况</div>
+<div class="fg"><label data-i18n="lblApp">应用类型</label>
+<select id="application"><option value="STATIC_RADIAL" data-i18n="optStaticR">静态径向</option><option value="STATIC_FACE" data-i18n="optStaticF">静态端面</option><option value="DYNAMIC_RECIPROCATING" data-i18n="optDynRec">动态往复</option><option value="DYNAMIC_ROTARY" data-i18n="optDynRot">动态旋转</option></select></div>
+<div class="fg"><label data-i18n="lblPDir">压力方向</label>
+<select id="pressure_dir"><option value="INTERNAL" data-i18n="optInternal">内压</option><option value="EXTERNAL" data-i18n="optExternal">外压</option><option value="BIDIRECTIONAL" data-i18n="optBi">双向</option></select></div>
+<div class="fg"><label data-i18n="lblPress">系统压力</label><input type="number" id="system_pressure" value="21" step="0.5" min="0.1" max="500"><span class="u">MPa</span></div>
+<div class="fg"><label data-i18n="lblTemp">工作温度</label><input type="number" id="operating_temp" value="150" step="5" min="-270" max="500"><span class="u">&deg;C</span></div>
 
-<div class="sec-title">Optional</div>
-<div class="fg"><label>Preferred CS (0=auto)</label><input type="number" id="cs_preferred_mm" value="0" step="0.01"><span class="u">mm</span></div>
-<div class="fg"><label>Volume Reserve</label><input type="number" id="volume_reserve_pct" value="30" step="5"><span class="u">%</span></div>
-<div class="fg"><label>Surface Ra</label><input type="number" id="surface_roughness_ra" value="0.8" step="0.1"><span class="u">um</span></div>
+<div class="sec-title" data-i18n="secOpt">可选参数</div>
+<div class="fg"><label data-i18n="lblCS">优选截面 CS (0=自动)</label><input type="number" id="cs_preferred_mm" value="0" step="0.01" min="0" max="10"><span class="u">mm</span></div>
+<div class="fg"><label data-i18n="lblVR">体积裕度</label><input type="number" id="volume_reserve_pct" value="30" step="5" min="10" max="80"><span class="u">%</span></div>
+<div class="fg"><label data-i18n="lblRa">表面粗糙度 Ra</label><input type="number" id="surface_roughness_ra" value="0.8" step="0.1" min="0.1" max="6.3"><span class="u">&micro;m</span></div>
 </div>
 
-<button class="btn-go" id="btnCalc" onclick="runCalc()">Calculate Design</button>
+<button class="btn-go" id="btnCalc" onclick="runCalc()" data-i18n="btnCalc">开始计算</button>
 </div>
 
-<div class="card" style="margin-top:14px">
-<h2>Program Description</h2>
+<div class="card" style="margin-top:12px">
+<h2 data-i18n="helpTitle">程序说明</h2>
 <div class="help-panel">
-<h3>Standards</h3>
-<p>SAE AS568F (2026), ISO 3601-2:2025, SAE AS4716C, SAE ARP1234F-2025, SAE MAP3439A-2021, HB/Z 4-1995</p>
-<h3>Core Calculations</h3>
-<p><code>Squeeze Ratio</code> 15-26% per CS per SAE ARP1234D<br>
-<code>Groove Depth</code> h = d2 - d2*S% per MAP3439A<br>
-<code>Groove Width</code> 130% volume + thermal expansion + fluid swell<br>
-<code>Leakage Rate</code> Roth model with 2025 variable-height channel</p>
-<h3>Safety Checks</h3>
-<p>Compression ratio, gland fill, seal factor, extrusion gap, temperature limits, back-up ring requirement</p>
-<h3>Usage</h3>
-<p>1. Select preset or enter parameters<br>
-2. Click Calculate to get candidate O-rings<br>
-3. Click a candidate to view full design details<br>
-4. Check warnings and recommendations</p>
+<h3 data-i18n="helpStd">设计标准</h3>
+<p data-i18n="helpStdTxt">SAE AS568F (2026), ISO 3601-2:2025, SAE AS4716C, SAE ARP1234F-2025, SAE MAP3439A-2021, HB/Z 4-1995</p>
+<h3 data-i18n="helpCalc">核心算法</h3>
+<p data-i18n="helpCalcTxt"><code>压缩率 Squeeze</code> 按CS分档15-26% (SAE ARP1234)<br>
+<code>沟槽深度 Groove Depth</code> h = d\u2082 - d\u2082\u00d7S% (MAP3439A)<br>
+<code>沟槽宽度 Groove Width</code> 130%体积 + 热膨胀 + 介质溶胀<br>
+<code>泄漏率 Leakage</code> Roth分子流模型 (ISO 3601-2 Annex C)</p>
+<h3 data-i18n="helpCheck">安全校核项</h3>
+<p data-i18n="helpCheckTxt">压缩率范围、沟槽填充率、密封系数、挤出间隙、温度极限、挡圈需求判定</p>
+<h3 data-i18n="helpUsage">使用步骤</h3>
+<p data-i18n="helpUsageTxt">1. 选择预设工况或手动输入参数<br>
+2. 点击计算获取AS568候选O型圈<br>
+3. 点击候选查看完整设计细节<br>
+4. 检查警告和推荐建议</p>
 </div>
 </div>
 </div>
 
 <div>
-<div class="loading" id="ld"><div class="spinner"></div><p>Searching AS568 database...</p></div>
+<div class="loading" id="ld"><div class="spinner"></div><p id="ldText" data-i18n="loading">正在搜索 AS568 数据库...</p></div>
 <div class="results" id="rp">
 <div class="card">
-<h2>Design Candidates</h2>
+<h2 id="candTitle" data-i18n="candidates">设计候选</h2>
 <div class="candidates" id="candList"></div>
 <div class="detail-panel" id="detailPanel"></div>
 </div>
@@ -151,14 +158,106 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 </div>
 
+<div id="toast" style="display:none" class="error-toast"></div>
+
 <script>
+const I18N={
+zh:{
+title:'O型密封圈设计',subtitle:'AS568F | SAE AS4716C | ISO 3601-2 | Roth 泄漏模型',
+back:'\u2190 返回主页',designInput:'设计输入',
+presetPiston:'液压活塞密封',presetRod:'液压杆密封',presetHT:'高温工况',presetLP:'低压工况',
+lblMaterial:'材料',lblDia:'孔/杆直径',lblSealType:'密封类型',lblApp:'应用类型',
+lblPDir:'压力方向',lblPress:'系统压力',lblTemp:'工作温度',
+lblCS:'优选截面 CS (0=自动)',lblVR:'体积裕度',lblRa:'表面粗糙度 Ra',
+optPiston:'活塞密封 (孔用)',optRod:'杆密封 (轴用)',
+optStaticR:'静态径向',optStaticF:'静态端面',optDynRec:'动态往复',optDynRot:'动态旋转',
+optInternal:'内压',optExternal:'外压',optBi:'双向',
+secInstall:'安装参数',secOp:'运行工况',secOpt:'可选参数',
+btnCalc:'开始计算',
+helpTitle:'程序说明',helpStd:'设计标准',helpCalc:'核心算法',helpCheck:'安全校核项',helpUsage:'使用步骤',
+helpStdTxt:'SAE AS568F (2026), ISO 3601-2:2025, SAE AS4716C, SAE ARP1234F-2025, SAE MAP3439A-2021, HB/Z 4-1995',
+helpCalcTxt:'<code>压缩率 Squeeze</code> 按CS分档15-26% (SAE ARP1234)<br><code>沟槽深度 Groove Depth</code> h = d\u2082 - d\u2082\u00d7S% (MAP3439A)<br><code>沟槽宽度 Groove Width</code> 130%体积 + 热膨胀 + 介质溶胀<br><code>泄漏率 Leakage</code> Roth分子流模型 (ISO 3601-2 Annex C)',
+helpCheckTxt:'压缩率范围、沟槽填充率、密封系数、挤出间隙、温度极限、挡圈需求判定',
+helpUsageTxt:'1. 选择预设工况或手动输入参数<br>2. 点击计算获取AS568候选O型圈<br>3. 点击候选查看完整设计细节<br>4. 检查警告和推荐建议',
+candidates:'设计候选',loading:'正在搜索 AS568 数据库...',
+tabGeo:'几何尺寸',tabGroove:'沟槽设计',tabPerf:'密封性能',tabMat:'材料属性',
+lblDash:'代号',lblID:'内径',lblCS:'截面',lblOD:'外径',
+lblIDNom:'英制ID',lblCSNom:'英制CS',lblIDTol:'ID公差',lblCSTol:'CS公差',
+lblDepth:'深度 h',lblWidth:'宽度 W',lblGID:'槽内径',lblGOD:'槽外径',
+lblR1:'底部R1',lblR2:'边缘R2',lblRaG:'表面Ra',
+lblSq:'压缩率',lblFill:'填充率',lblCSigma:'接触应力(峰)',lblSF:'密封系数',
+lblLeak:'泄漏率',lblLeakLv:'泄漏等级',lblExtGap:'挤出间隙',lblBackup:'挡圈',
+lblMat:'材料',lblCode:'牌号',lblHard:'硬度',lblMod:'弹性模量',
+lblTRange:'温度范围',lblTExp:'热膨胀系数',lblSwelling:'介质溶胀率',
+needBackup:'需要','notNeeded:'无需',
+warnTitle:'警告',recTitle:'建议',
+noResult:'未找到合适的O型圈',reqFailed:'计算请求失败',
+},
+en:{
+title:'O-Ring Seal Design',subtitle:'AS568F | SAE AS4716C | ISO 3601-2 | Roth Leakage Model',
+back:'\u2190 Back to Home',designInput:'Design Input',
+presetPiston:'Hydraulic Piston',presetRod:'Hydraulic Rod',presetHT:'High Temp',presetLP:'Low Pressure',
+lblMaterial:'Material',lblDia:'Bore / Rod Diameter',lblSealType:'Seal Type',lblApp:'Application',
+lblPDir:'Pressure Direction',lblPress:'System Pressure',lblTemp:'Operating Temperature',
+lblCS:'Preferred CS (0=auto)',lblVR:'Volume Reserve',lblRa:'Surface Roughness Ra',
+optPiston:'Piston Seal (Bore)',optRod:'Rod Seal (Shaft)',
+optStaticR:'Static Radial',optStaticF:'Static Face',optDynRec:'Dynamic Reciprocating',optDynRot:'Dynamic Rotary',
+optInternal:'Internal',optExternal:'External',optBi:'Bidirectional',
+secInstall:'Installation',secOp:'Operating Conditions',secOpt:'Optional',
+btnCalc:'Calculate Design',
+helpTitle:'Program Description',helpStd:'Standards',helpCalc:'Core Calculations',helpCheck:'Safety Checks',helpUsage:'Usage',
+helpStdTxt:'SAE AS568F (2026), ISO 3601-2:2025, SAE AS4716C, SAE ARP1234F-2025, SAE MAP3439A-2021, HB/Z 4-1995',
+helpCalcTxt:'<code>Squeeze Ratio</code> 15-26% by CS per SAE ARP1234<br><code>Groove Depth</code> h = d\u2082 - d\u2082\u00d7S% per MAP3439A<br><code>Groove Width</code> 130% volume + thermal expansion + fluid swell<br><code>Leakage Rate</code> Roth molecular flow model (ISO 3601-2 Annex C)',
+helpCheckTxt:'Squeeze range, gland fill, seal factor, extrusion gap, temperature limits, back-up ring requirement',
+helpUsageTxt:'1. Select preset or enter parameters<br>2. Click Calculate to get AS568 O-ring candidates<br>3. Click a candidate for full design details<br>4. Review warnings and recommendations',
+candidates:'Design Candidates',loading:'Searching AS568 database...',
+tabGeo:'Geometry',tabGroove:'Groove',tabPerf:'Performance',tabMat:'Material',
+lblDash:'Dash No.',lblID:'ID',lblCS:'CS',lblOD:'OD',
+lblIDNom:'ID (inch)',lblCSNom:'CS (inch)',lblIDTol:'ID Tolerance',lblCSTol:'CS Tolerance',
+lblDepth:'Depth h',lblWidth:'Width W',lblGID:'Groove ID',lblGOD:'Groove OD',
+lblR1:'Bottom R\u2081',lblR2:'Edge R\u2082',lblRaG:'Surface Ra',
+lblSq:'Squeeze',lblFill:'Gland Fill',lblCSigma:'Contact Stress (pk)',lblSF:'Seal Factor',
+lblLeak:'Leakage Rate',lblLeakLv:'Leak Level',lblExtGap:'Extrusion Gap',lblBackup:'Back-up Ring',
+lblMat:'Material',lblCode:'Code',lblHard:'Hardness',lblMod:'E-Modulus',
+lblTRange:'Temp Range',lblTExp:'Thermal Exp.',lblSwelling:'Fluid Swell',
+needBackup:'Required',notNeeded:'Not Needed',
+warnTitle:'Warnings',recTitle:'Recommendations',
+noResult:'No suitable O-ring found',reqFailed:'Calculation request failed',
+}
+};
+let LANG='zh';
+
+function t(key){return I18N[LANG][key]||I18N['zh'][key]||key}
+
+function toggleLang(){
+LANG=LANG==='zh'?'en':'zh';
+const btn=document.getElementById('langBtn');
+btn.textContent=LANG==='zh'?'EN':'中文';
+btn.classList.toggle('en',LANG==='en');
+applyLang();
+if(CANDS.length)renderDetail(CANDS[SEL_IDX]);
+}
+
+function applyLang(){
+document.querySelectorAll('[data-i18n]').forEach(el=>{
+const k=el.getAttribute('data-i18n');
+if(el.tagName==='OPTION')el.textContent=t(k);
+else if(el.tagName==='INPUT' || el.tagName==='SELECT'){}
+else el.textContent=t(k);
+});
+// Handle help panel rich text
+const tx=['helpCalcTxt','helpCheckTxt','helpUsageTxt'];
+tx.forEach(k=>{const el=document.querySelector(`[data-i18n="${k}"]`);if(el)el.innerHTML=t(k)});
+}
+
+// ======== ENGINEERING LOGIC ========
 const PRESETS={
 hydraulic_piston:{material:'FKM_75',bore_or_rod_dia_mm:63,is_bore_seal:true,application:'STATIC_RADIAL',pressure_dir:'INTERNAL',system_pressure:21,operating_temp:150,cs_preferred_mm:3.53,volume_reserve_pct:30,surface_roughness_ra:0.8},
 hydraulic_rod:{material:'FKM_75',bore_or_rod_dia_mm:25,is_bore_seal:false,application:'STATIC_RADIAL',pressure_dir:'INTERNAL',system_pressure:21,operating_temp:150,cs_preferred_mm:3.53,volume_reserve_pct:30,surface_roughness_ra:0.8},
 high_temp:{material:'FFKM_75',bore_or_rod_dia_mm:50,is_bore_seal:true,application:'STATIC_RADIAL',pressure_dir:'INTERNAL',system_pressure:10,operating_temp:220,cs_preferred_mm:3.53,volume_reserve_pct:35,surface_roughness_ra:0.4},
 low_pressure:{material:'NBR_70',bore_or_rod_dia_mm:40,is_bore_seal:true,application:'STATIC_FACE',pressure_dir:'INTERNAL',system_pressure:5,operating_temp:80,cs_preferred_mm:2.62,volume_reserve_pct:30,surface_roughness_ra:0.8}
 };
-let MATS={}, CANDS=[], SEL_IDX=0;
+let MATS={},CANDS=[],SEL_IDX=0;
 
 async function loadMaterials(){
 const r=await fetch('/api/oring/materials');
@@ -167,6 +266,7 @@ MATS={};
 const sel=document.getElementById('material');
 sel.innerHTML=Object.entries(MATS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
 }
+
 function loadPreset(name,el){
 document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
 el.classList.add('active');
@@ -176,25 +276,47 @@ const e=document.getElementById(k);
 if(e)e.value=v;
 }
 }
-function rv(l,v,u,cls){return`<div class="di"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div>${u?`<div class="s">${u}</div>`:''}</div>`}
+
 function clsSafe(s){return s>=0.7?'good':s>=0.5?'warn':'fail'}
+
+function rv(l,v,u,cls){return`<div class="di"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div>${u?`<div class="s">${u}</div>`:''}</div>`}
+
 function drawOring(cs,id,od,gd,gw){
 const svg=document.getElementById('vizSvg');if(!svg)return;
-const scale=Math.min(300/(od+20),60/cs);
-const cx=150,cy=70;
-const W=(od+gw*2)*scale,h0=cy-20;
-let s=`<defs><linearGradient id="og" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#0066ff"/></linearGradient></defs>`;
-// Groove outline
-s+=`<rect x="${cx-(od+gw*2)*scale/2}" y="${cy-gd*scale}" width="${(od+gw*2)*scale}" height="${gd*scale}" fill="none" stroke="#334" stroke-width="1" stroke-dasharray="4,2"/>`;
-// O-ring
+const scale=Math.min(270/(od+30),55/cs);
+const cx=150,cy=65,clr='#00d4ff';
 const or=id*scale/2,ir=cs*scale/2;
-s+=`<ellipse cx="${cx}" cy="${cy-cs*scale/2}" rx="${or+ir}" ry="${ir}" fill="url(#og)" opacity="0.8"/>`;
-// Dimensions
-s+=`<line x1="${cx-or-ir-10}" y1="${cy}" x2="${cx-or-ir-10}" y2="${cy-cs*scale}" stroke="#00d4ff" stroke-width="1"/><text x="${cx-or-ir-15}" y="${cy-cs*scale/2+3}" fill="#00d4ff" font-size="9" text-anchor="end">d2=${cs.toFixed(2)}</text>`;
-s+=`<line x1="${cx-or-ir}" y1="${cy+15}" x2="${cx+or+ir}" y2="${cy+15}" stroke="#a855f7" stroke-width="1"/><text x="${cx}" y="${cy+28}" fill="#a855f7" font-size="9" text-anchor="middle">ID=${id.toFixed(1)} OD=${od.toFixed(1)}</text>`;
-s+=`<text x="${cx}" y="${cy-gd*scale-5}" fill="#ffa502" font-size="9" text-anchor="middle">h=${gd.toFixed(2)} W=${gw.toFixed(2)}</text>`;
-svg.innerHTML=s;
+const gx=cx-(od+gw*2)*scale/2,gy=cy-gd*scale;
+let s=[];
+// Groove cross-section
+s.push(`<defs><linearGradient id="og" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#00d4ff" stop-opacity="0.9"/><stop offset="100%" stop-color="#0066ff" stop-opacity="0.7"/></linearGradient></defs>`);
+s.push(`<rect x="${gx}" y="${gy}" width="${(od+gw*2)*scale}" height="${gd*scale+cy-gy}" fill="rgba(0,0,0,0.3)" stroke="#334" stroke-width="1" stroke-dasharray="4,3"/>`);
+// Housing surfaces
+s.push(`<rect x="0" y="0" width="${gx}" height="100" fill="#111" fill-opacity="0.5"/>`);
+s.push(`<rect x="${gx+(od+gw*2)*scale}" y="0" width="${300-gx-(od+gw*2)*scale}" height="100" fill="#111" fill-opacity="0.5"/>`);
+s.push(`<rect x="0" y="${cy+gd*scale}" width="300" height="${100-cy-gd*scale}" fill="#0d0d15"/>`);
+// Groove bottom surface
+s.push(`<line x1="${gx}" y1="${cy}" x2="${gx+(od+gw*2)*scale}" y2="${cy}" stroke="#0ff" stroke-width="0.5" opacity="0.3"/>`);
+// O-ring original outline
+s.push(`<ellipse cx="${cx}" cy="${cy-cs*scale/2}" rx="${or+ir}" ry="${ir}" fill="url(#og)" opacity="0.85"/>`);
+// O-ring center mark
+s.push(`<circle cx="${cx}" cy="${cy-cs*scale/2}" r="${ir*0.15}" fill="${clr}" opacity="0.6"/>`);
+// Dimension: CS
+s.push(`<line x1="${cx-or-ir-8}" y1="${cy-cs*scale}" x2="${cx-or-ir-8}" y2="${cy}" stroke="${clr}" stroke-width="0.8"/>`);
+s.push(`<line x1="${cx-or-ir-12}" y1="${cy-cs*scale}" x2="${cx-or-ir-4}" y2="${cy-cs*scale}" stroke="${clr}" stroke-width="0.4"/>`);
+s.push(`<line x1="${cx-or-ir-12}" y1="${cy}" x2="${cx-or-ir-4}" y2="${cy}" stroke="${clr}" stroke-width="0.4"/>`);
+s.push(`<text x="${cx-or-ir-13}" y="${cy-cs*scale/2+3}" fill="${clr}" font-size="8" text-anchor="end">CS ${cs.toFixed(2)}</text>`);
+// Dimension: ID/OD
+s.push(`<line x1="${cx-or-ir}" y1="${cy-cs*scale/2+15}" x2="${cx+or+ir}" y2="${cy-cs*scale/2+15}" stroke="#a855f7" stroke-width="0.8"/>`);
+s.push(`<text x="${cx}" y="${cy-cs*scale/2+27}" fill="#a855f7" font-size="8" text-anchor="middle">ID ${id.toFixed(1)} / OD ${od.toFixed(1)} mm</text>`);
+// Dimension: groove depth/width
+s.push(`<text x="${cx}" y="${gy-4}" fill="#ffa502" font-size="8" text-anchor="middle">h ${gd.toFixed(2)} / W ${gw.toFixed(2)} mm</text>`);
+// Compression arrow
+s.push(`<line x1="${cx+or+ir+5}" y1="${cy-gd*scale}" x2="${cx+or+ir+5}" y2="${cy-cs*scale}" stroke="#0f8" stroke-width="1.5" marker-end="url(#arrSq)"/>`);
+s.push(`<text x="${cx+or+ir+9}" y="${cy-(gd+cs)*scale/2+3}" fill="#0f8" font-size="7">squeeze</text>`);
+svg.innerHTML=s.join('\n');
 }
+
 function renderCandidates(list){
 const el=document.getElementById('candList');
 el.innerHTML=list.map((c,i)=>`
@@ -206,97 +328,106 @@ el.innerHTML=list.map((c,i)=>`
 <div class="cand-row">
 <span>ID <b class="v">${c.o_ring.id_mm.toFixed(2)}</b>mm</span>
 <span>CS <b class="v">${c.o_ring.cs_mm.toFixed(2)}</b>mm</span>
-<span>Squeeze <b class="v">${c.performance.squeeze_pct.toFixed(1)}%</b></span>
-<span>Fill <b class="v">${c.performance.gland_fill_pct.toFixed(1)}%</b></span>
-<span>SealF <b class="v">${c.performance.seal_factor.toFixed(2)}</b></span>
+<span>${t('lblSq')} <b class="v">${c.performance.squeeze_pct.toFixed(1)}%</b></span>
+<span>${t('lblFill')} <b class="v">${c.performance.gland_fill_pct.toFixed(1)}%</b></span>
+<span>${t('lblSF')} <b class="v">${c.performance.seal_factor.toFixed(2)}</b></span>
 </div>
 </div>
 `).join('');
 }
+
 function renderDetail(c){
 const o=c.o_ring,g=c.groove,p=c.performance,m=c.material;
 const sqRange=p.squeeze_range||[15,21,25];
 const detail=`
 <div class="tabs" id="tabBar">
-<button class="tb active" onclick="switchTab('tc-geo',this)">Geometry</button>
-<button class="tb" onclick="switchTab('tc-groove',this)">Groove</button>
-<button class="tb" onclick="switchTab('tc-perf',this)">Performance</button>
-<button class="tb" onclick="switchTab('tc-mat',this)">Material</button>
+<button class="tb active" onclick="switchTab('tc-geo',this)" data-i18n="tabGeo">${t('tabGeo')}</button>
+<button class="tb" onclick="switchTab('tc-groove',this)" data-i18n="tabGroove">${t('tabGroove')}</button>
+<button class="tb" onclick="switchTab('tc-perf',this)" data-i18n="tabPerf">${t('tabPerf')}</button>
+<button class="tb" onclick="switchTab('tc-mat',this)" data-i18n="tabMat">${t('tabMat')}</button>
 </div>
 <div id="tc-geo" class="tc active">
 <div class="dg">
-${rv('Dash',o.dash,'AS568')}
-${rv('ID',o.id_mm.toFixed(2),'mm')}
-${rv('CS',o.cs_mm.toFixed(2),'mm')}
-${rv('OD',o.od_mm.toFixed(2),'mm')}
-${rv('ID Nominal',o.id_nom_inch,'"')}
-${rv('CS Nominal',o.cs_nom_inch,'"')}
-${rv('ID Tolerance',`+${o.id_tol_p}/-${o.id_tol_m}`,'mm')}
-${rv('CS Tolerance',`+/-${o.cs_tol_p}`,'mm')}
+${rv(t('lblDash'),o.dash,'AS568')}
+${rv(t('lblID'),o.id_mm.toFixed(2),'mm')}
+${rv(t('lblCS'),o.cs_mm.toFixed(2),'mm')}
+${rv(t('lblOD'),o.od_mm.toFixed(2),'mm')}
+${rv(t('lblIDNom'),o.id_nom_inch,'in')}
+${rv(t('lblCSNom'),o.cs_nom_inch,'in')}
+${rv(t('lblIDTol'),`+${o.id_tol_p}/-${o.id_tol_m}`,'mm')}
+${rv(t('lblCSTol'),`\u00b1${o.cs_tol_p}`,'mm')}
 </div>
 </div>
 <div id="tc-groove" class="tc">
 <div class="dg">
-${rv('Depth h',g.depth_nom.toFixed(3),`mm (${g.depth_min}~${g.depth_max})`)}
-${rv('Width W',g.width_nom.toFixed(3),`mm (${g.width_min}~${g.width_max})`)}
-${rv('Groove ID',g.groove_id.toFixed(2),'mm')}
-${rv('Groove OD',g.groove_od.toFixed(2),'mm')}
-${rv('Corner R1',g.r1.toFixed(2),'mm')}
-${rv('Edge R2',g.r2.toFixed(2),'mm')}
-${rv('Surface Ra',g.Ra,'um')}
+${rv(t('lblDepth'),g.depth_nom.toFixed(3),`mm (${g.depth_min}~${g.depth_max})`)}
+${rv(t('lblWidth'),g.width_nom.toFixed(3),`mm (${g.width_min}~${g.width_max})`)}
+${rv(t('lblGID'),g.groove_id.toFixed(2),'mm')}
+${rv(t('lblGOD'),g.groove_od.toFixed(2),'mm')}
+${rv(t('lblR1'),g.r1.toFixed(2),'mm')}
+${rv(t('lblR2'),g.r2.toFixed(2),'mm')}
+${rv(t('lblRaG'),g.Ra,'\u00b5m')}
 </div>
 <div class="viz-box"><svg viewBox="0 0 300 100" id="vizSvg"></svg></div>
 </div>
 <div id="tc-perf" class="tc">
 <div class="dg">
-${rv('Squeeze',p.squeeze_pct.toFixed(1),`% (${sqRange[0]}~${sqRange[2]})`,p.squeeze_pct>=sqRange[0]&&p.squeeze_pct<=sqRange[2]?'ok':'wn')}
-${rv('Gland Fill',p.gland_fill_pct.toFixed(1),'%',p.gland_fill_pct<90?'ok':p.gland_fill_pct<95?'wn':'ng')}
-${rv('Contact Stress',p.contact_stress_peak_MPa.toFixed(2),'MPa')}
-${rv('Seal Factor',p.seal_factor.toFixed(2),'>1.2',p.seal_factor>=1.5?'ok':p.seal_factor>=1.2?'wn':'ng')}
-${rv('Leakage',p.leakage_rate_Pa_m3s.toExponential(2),'Pa.m3/s')}
-${rv('Leak Level',p.leak_level,'')}
-${rv('Ext Gap Allow',p.ext_gap_allowable_mm.toFixed(4),'mm')}
-${rv('Back-up Ring',p.need_backup_ring?'Required':'Not needed','',p.need_backup_ring?'wn':'ok')}
+${rv(t('lblSq'),p.squeeze_pct.toFixed(1),`% (${sqRange[0]}~${sqRange[2]})`,p.squeeze_pct>=sqRange[0]&&p.squeeze_pct<=sqRange[2]?'ok':'wn')}
+${rv(t('lblFill'),p.gland_fill_pct.toFixed(1),'%',p.gland_fill_pct<90?'ok':p.gland_fill_pct<95?'wn':'ng')}
+${rv(t('lblCSigma'),p.contact_stress_peak_MPa.toFixed(2),'MPa')}
+${rv(t('lblSF'),p.seal_factor.toFixed(2),'\u22651.2',p.seal_factor>=1.5?'ok':p.seal_factor>=1.2?'wn':'ng')}
+${rv(t('lblLeak'),p.leakage_rate_Pa_m3s.toExponential(2),'Pa\u00b7m\u00b3/s')}
+${rv(t('lblLeakLv'),LANG==='zh'&&p.leak_level_zh?p.leak_level_zh:p.leak_level,'')}
+${rv(t('lblExtGap'),p.ext_gap_allowable_mm.toFixed(4),'mm')}
+${rv(t('lblBackup'),p.need_backup_ring?t('needBackup'):t('notNeeded'),'',p.need_backup_ring?'wn':'ok')}
 </div>
 </div>
 <div id="tc-mat" class="tc">
 <div class="dg">
-${rv('Material',m.name,'')}
-${rv('Code',m.code,'')}
-${rv('Hardness',m.hardness,'Shore A')}
-${rv('E Modulus',m.E_MPa.toFixed(1),'MPa')}
-${rv('Temp Range',`${m.min_temp}~${m.max_temp}`,'C')}
-${rv('Thermal Exp',m.thermal_exp.toExponential(1),'/C')}
-${rv('Fluid Swell',m.fluid_swell,'%')}
+${rv(t('lblMat'),m.name,'')}
+${rv(t('lblCode'),m.code,'')}
+${rv(t('lblHard'),m.hardness,'Shore A')}
+${rv(t('lblMod'),m.E_MPa.toFixed(1),'MPa')}
+${rv(t('lblTRange'),`${m.min_temp}~${m.max_temp}`,'\u00b0C')}
+${rv(t('lblTExp'),m.thermal_exp.toExponential(1),'/C')}
+${rv(t('lblSwelling'),m.fluid_swell,'%')}
 </div>
 </div>
-${c.warnings.length?`<div class="card" style="margin-top:10px"><h2>Warnings</h2><ul class="wl">${c.warnings.map(w=>`<li>${w}</li>`).join('')}</ul></div>`:''}
-${c.recommendations.length?`<div class="card" style="margin-top:10px"><h2>Recommendations</h2><ul class="rl">${c.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul></div>`:''}
-<div class="conclusion ${c.safety_margin<0.5?'has-fail':c.safety_margin<0.7?'has-warn':''}">${c.conclusion}</div>
+${(c.warnings||[]).length?`<div class="card" style="margin-top:8px"><h2>${t('warnTitle')}</h2><ul class="wl">${c.warnings.map(w=>`<li>${typeof w==='object'?w[LANG]:w}</li>`).join('')}</ul></div>`:''}
+${(c.recommendations||[]).length?`<div class="card" style="margin-top:8px"><h2>${t('recTitle')}</h2><ul class="rl">${c.recommendations.map(r=>`<li>${typeof r==='object'?r[LANG]:r}</li>`).join('')}</ul></div>`:''}
+<div class="conclusion ${c.safety_margin<0.5?'has-fail':c.safety_margin<0.7?'has-warn':''}">${typeof c.conclusion==='object'?c.conclusion[LANG]:c.conclusion}</div>
 `;
 document.getElementById('detailPanel').innerHTML=detail;
 document.getElementById('detailPanel').classList.add('show');
-setTimeout(()=>drawOring(o.cs_mm,o.id_mm,o.od_mm,g.depth_nom,g.width_nom),50);
+setTimeout(()=>drawOring(o.cs_mm,o.id_mm,o.od_mm,g.depth_nom,g.width_nom),80);
 }
+
 function selectCand(i){
 SEL_IDX=i;
 document.querySelectorAll('.cand-card').forEach((el,idx)=>el.classList.toggle('selected',idx===i));
 renderDetail(CANDS[i]);
 }
+
 function switchTab(id,btn){
 document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
 document.querySelectorAll('.tc').forEach(t=>t.classList.toggle('active',t.id===id));
 }
 
+function showToast(msg){
+const t=document.getElementById('toast');
+t.textContent=msg;t.style.display='block';
+t.style.animation='none';t.offsetHeight;t.style.animation='fadeInOut 3s forwards';
+setTimeout(()=>t.style.display='none',3000);
+}
+
 async function runCalc(){
 const btn=document.getElementById('btnCalc');
 const ld=document.getElementById('ld');
 const rp=document.getElementById('rp');
-btn.disabled=true;
-ld.classList.add('show');
-rp.classList.remove('show');
+btn.disabled=true;ld.classList.add('show');rp.classList.remove('show');
 document.getElementById('detailPanel').classList.remove('show');
+document.getElementById('ldText').textContent=t('loading');
 
 const body={};
 ['bore_or_rod_dia_mm','system_pressure','operating_temp','cs_preferred_mm','volume_reserve_pct','surface_roughness_ra'].forEach(f=>{
@@ -306,20 +437,25 @@ body.material=document.getElementById('material').value;
 body.is_bore_seal=document.getElementById('is_bore_seal').value==='true';
 body.application=document.getElementById('application').value;
 body.pressure_dir=document.getElementById('pressure_dir').value;
+// Input validation
+if(!body.material||!MATS[body.material]){showToast('Please select a valid material');btn.disabled=false;ld.classList.remove('show');return}
+if(body.bore_or_rod_dia_mm<1){showToast('Diameter must be >= 1mm');btn.disabled=false;ld.classList.remove('show');return}
 
 try{
 const r=await fetch('/api/oring/design',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 const d=await r.json();
-if(d.error){alert('Error: '+d.error);return;}
+if(d.error){showToast(d.error);btn.disabled=false;ld.classList.remove('show');return;}
 CANDS=d.designs||[];
-if(!CANDS.length){alert('No suitable O-ring found');return;}
+if(!CANDS.length){showToast(t('noResult'));btn.disabled=false;ld.classList.remove('show');return;}
+document.getElementById('candTitle').textContent=`${t('candidates')} (${CANDS.length} / ${d.total_candidates} total)`;
 renderCandidates(CANDS);
 selectCand(0);
 rp.classList.add('show');
-}catch(e){alert('Request failed: '+e.message);}
+}catch(e){showToast(t('reqFailed')+': '+e.message);}
 finally{btn.disabled=false;ld.classList.remove('show');}
 }
 
+applyLang();
 loadMaterials();
 </script>
 </body>
