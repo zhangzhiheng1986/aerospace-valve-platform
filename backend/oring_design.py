@@ -487,6 +487,16 @@ def design_oring(data: Dict) -> Dict:
     # Search O-ring candidates
     candidates = _search_oring(bore_or_rod, is_bore, cs_preferred)
     if not candidates:
+        # Provide guidance on valid diameter range
+        rng = get_diameter_range(is_bore, cs_preferred)
+        if rng.get("valid"):
+            if is_bore:
+                hint = "Valid bore diameter range: {:.0f} - {:.0f} mm (piston seal)".format(
+                    rng["bore_min"], rng["bore_max"])
+            else:
+                hint = "Valid rod diameter range: {:.0f} - {:.0f} mm (shaft seal)".format(
+                    rng["rod_min"], rng["rod_max"])
+            return {"error": f"No AS568 O-ring found for diameter {bore_or_rod}mm. {hint}"}
         return {"error": f"No AS568 O-ring found for diameter {bore_or_rod}mm"}
 
     # Design for top candidates (max 5)
@@ -788,3 +798,72 @@ def get_cs_options() -> List[Dict]:
         {"value": 5.33, "label": "5.33mm (0.210\") - 300 Series"},
         {"value": 6.99, "label": "6.99mm (0.275\") - 400 Series"},
     ]
+
+
+def get_diameter_range(is_bore_seal=True, cs_preferred_mm=None):
+    """
+    Calculate valid bore/rod diameter range based on AS568 database coverage.
+    Uses the same search criteria as _search_oring() to give users guidance.
+    """
+    all_ids = sorted(v[1] for v in AS568_DATA.values())
+    if not all_ids:
+        return {"valid": False, "error": "AS568 database empty"}
+
+    if cs_preferred_mm is not None:
+        # Filter by CS tolerance (same as _search_oring: abs(cs_mm - cs_preferred_mm) < 0.5)
+        filtered = sorted(
+            v[1] for v in AS568_DATA.values()
+            if abs(v[3] - cs_preferred_mm) < 0.5
+        )
+        if filtered:
+            all_ids = filtered
+
+    if is_bore_seal:
+        # Piston seal: O-ring ID slightly smaller than bore
+        # bore * 0.85 <= id_mm <= bore * 0.98 => id_mm/0.98 <= bore <= id_mm/0.85
+        bore_min = round(all_ids[0] / 0.98, 1)
+        bore_max = round(all_ids[-1] / 0.85, 1)
+        rod_min = None
+        rod_max = None
+    else:
+        # Rod seal: O-ring ID >= rod * 1.02 => rod <= id_mm/1.02
+        bore_min = None
+        bore_max = None
+        rod_min = round(all_ids[0] / 1.15, 1)
+        rod_max = round(all_ids[-1] / 1.02, 1)
+
+    # Pick recommendation points: cover the range with sensible steps
+    raw_recs = [5, 10, 25, 50, 63, 100, 200, 400, 650]
+    if is_bore_seal:
+        recommended = [r for r in raw_recs if bore_min <= r <= bore_max]
+        if recommended and recommended[0] > bore_min:
+            recommended.insert(0, int(bore_min))
+    else:
+        recommended = [r for r in raw_recs if rod_min <= r <= rod_max]
+        if recommended and recommended[0] > rod_min:
+            recommended.insert(0, int(rod_min))
+
+    # Total AS568 coverage (regardless of CS filter)
+    total_ids = sorted(v[1] for v in AS568_DATA.values())
+    total_bore_min = round(total_ids[0] / 0.98, 1)
+    total_bore_max = round(total_ids[-1] / 0.85, 1)
+    total_rod_min = round(total_ids[0] / 1.15, 1)
+    total_rod_max = round(total_ids[-1] / 1.02, 1)
+
+    return {
+        "valid": True,
+        "is_bore_seal": is_bore_seal,
+        "cs_preferred_mm": cs_preferred_mm,
+        "bore_min": bore_min,
+        "bore_max": bore_max,
+        "rod_min": rod_min,
+        "rod_max": rod_max,
+        "recommended": recommended,
+        "unit": "mm",
+        "total_range": {
+            "bore": {"min": total_bore_min, "max": total_bore_max},
+            "rod": {"min": total_rod_min, "max": total_rod_max}
+        },
+        "as568_count": len(AS568_DATA),
+        "filtered_count": len(all_ids)
+    }

@@ -77,6 +77,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .help-panel p{color:var(--dim);margin-bottom:4px}
 .help-panel code{background:#0d1525;padding:1px 4px;border-radius:3px;font-size:10px;color:var(--accent2)}
 .error-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(255,71,87,.9);color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeInOut 3s forwards}
+.dia-hint{font-size:10px;color:var(--dim);margin-top:3px;min-height:14px;transition:color .2s}
+.dia-hint.ok{color:var(--accent2)}
+.dia-hint.warn{color:var(--warn)}
+.dia-hint.err{color:var(--danger)}
+.dia-quick{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.dq-btn{background:#0d1525;border:1px solid var(--border);color:var(--dim);padding:2px 6px;border-radius:4px;font-size:9px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.dq-btn:hover{color:var(--accent);border-color:var(--accent);background:rgba(0,212,255,.08)}
+.dq-btn.current{color:var(--accent2);border-color:var(--accent2);background:rgba(0,255,136,.08)}
 @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
 </style>
 </head>
@@ -104,9 +112,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <select id="material"></select></div>
 
 <div class="sec-title" data-i18n="secInstall">安装参数</div>
-<div class="fg"><label data-i18n="lblDia">孔/杆直径</label><input type="number" id="bore_or_rod_dia_mm" value="63" step="0.5" min="2" max="700"><span class="u">mm</span></div>
+<div class="fg"><label data-i18n="lblDia">孔/杆直径</label><input type="number" id="bore_or_rod_dia_mm" value="63" step="0.5" min="1" max="800" oninput="onDiaInput()" onchange="onDiaChange()"><span class="u">mm</span><div class="dia-hint" id="diaHint"></div><div class="dia-quick" id="diaQuick"></div></div>
 <div class="fg"><label data-i18n="lblSealType">密封类型</label>
-<select id="is_bore_seal"><option value="true" data-i18n="optPiston">活塞密封 (孔用)</option><option value="false" data-i18n="optRod">杆密封 (轴用)</option></select></div>
+<select id="is_bore_seal" onchange="onDiaChange()"><option value="true" data-i18n="optPiston">活塞密封 (孔用)</option><option value="false" data-i18n="optRod">杆密封 (轴用)</option></select></div>
 
 <div class="sec-title" data-i18n="secOp">运行工况</div>
 <div class="fg"><label data-i18n="lblApp">应用类型</label>
@@ -117,7 +125,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="fg"><label data-i18n="lblTemp">工作温度</label><input type="number" id="operating_temp" value="150" step="5" min="-270" max="500"><span class="u">&deg;C</span></div>
 
 <div class="sec-title" data-i18n="secOpt">可选参数</div>
-<div class="fg"><label data-i18n="lblCS">优选截面 CS (0=自动)</label><input type="number" id="cs_preferred_mm" value="0" step="0.01" min="0" max="10"><span class="u">mm</span></div>
+<div class="fg"><label data-i18n="lblCS">优选截面 CS (0=自动)</label><input type="number" id="cs_preferred_mm" value="0" step="0.01" min="0" max="10" onchange="onDiaChange()"><span class="u">mm</span></div>
 <div class="fg"><label data-i18n="lblVR">体积裕度</label><input type="number" id="volume_reserve_pct" value="30" step="5" min="10" max="80"><span class="u">%</span></div>
 <div class="fg"><label data-i18n="lblRa">表面粗糙度 Ra</label><input type="number" id="surface_roughness_ra" value="0.8" step="0.1" min="0.1" max="6.3"><span class="u">&micro;m</span></div>
 </div>
@@ -192,6 +200,9 @@ lblTRange:'温度范围',lblTExp:'热膨胀系数',lblSwelling:'介质溶胀率'
 needBackup:'需要',notNeeded:'无需',
 warnTitle:'警告',recTitle:'建议',
 noResult:'未找到合适的O型圈',reqFailed:'计算请求失败',
+errMaterial:'请选择有效材料',errDiaMin:'直径必须 >= 1mm',
+diaHintDefault:'输入孔径或轴径',diaHintLoading:'正在获取可用范围...',
+diaValid:'在AS568有效范围内 ({0}~{1} mm)',diaInvalid:'不在AS568可匹配范围 ({0}~{1} mm)',
 },
 en:{
 title:'O-Ring Seal Design',subtitle:'AS568F | SAE AS4716C | ISO 3601-2 | Roth Leakage Model',
@@ -223,6 +234,9 @@ lblTRange:'Temp Range',lblTExp:'Thermal Exp.',lblSwelling:'Fluid Swell',
 needBackup:'Required',notNeeded:'Not Needed',
 warnTitle:'Warnings',recTitle:'Recommendations',
 noResult:'No suitable O-ring found',reqFailed:'Calculation request failed',
+errMaterial:'Please select a valid material',errDiaMin:'Diameter must be >= 1mm',
+diaHintDefault:'Enter bore or shaft diameter',diaHintLoading:'Fetching valid range...',
+diaValid:'Within AS568 range ({0}-{1} mm)',diaInvalid:'Outside AS568 match range ({0}-{1} mm)',
 }
 };
 let LANG='zh';
@@ -275,6 +289,7 @@ for(const[k,v]of Object.entries(p)){
 const e=document.getElementById(k);
 if(e)e.value=v;
 }
+fetchDiaRange();
 }
 
 function clsSafe(s){return s>=0.7?'good':s>=0.5?'warn':'fail'}
@@ -421,6 +436,77 @@ t.style.animation='none';t.offsetHeight;t.style.animation='fadeInOut 3s forwards
 setTimeout(()=>t.style.display='none',3000);
 }
 
+// ======== DIAMETER INPUT ENHANCEMENTS ========
+let DIA_RANGE = null;  // cached range from API
+
+async function fetchDiaRange(){
+  const isBore = document.getElementById('is_bore_seal').value === 'true';
+  const cs = parseFloat(document.getElementById('cs_preferred_mm').value) || 0;
+  const params = 'is_bore_seal=' + isBore + (cs > 0 ? '&cs_preferred_mm=' + cs : '');
+  try {
+    const r = await fetch('/api/oring/diameter-range?' + params);
+    DIA_RANGE = await r.json();
+    renderDiaQuick();
+    validateDia();
+  } catch(e) {
+    DIA_RANGE = null;
+  }
+}
+
+function onDiaInput(){
+  validateDia();
+}
+
+function onDiaChange(){
+  fetchDiaRange();
+}
+
+function validateDia(){
+  const input = document.getElementById('bore_or_rod_dia_mm');
+  const hint = document.getElementById('diaHint');
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val <= 0) {
+    hint.className = 'dia-hint';
+    hint.textContent = t('diaHintDefault');
+    input.style.borderColor = '';
+    return;
+  }
+  if (!DIA_RANGE || !DIA_RANGE.valid) {
+    hint.className = 'dia-hint';
+    hint.textContent = t('diaHintLoading');
+    return;
+  }
+  const isBore = DIA_RANGE.is_bore_seal;
+  const lo = isBore ? DIA_RANGE.bore_min : DIA_RANGE.rod_min;
+  const hi = isBore ? DIA_RANGE.bore_max : DIA_RANGE.rod_max;
+  if (val >= lo && val <= hi) {
+    hint.className = 'dia-hint ok';
+    hint.textContent = t('diaValid').replace('{0}', lo).replace('{1}', hi);
+    input.style.borderColor = '#00ff88';
+  } else {
+    hint.className = 'dia-hint err';
+    hint.textContent = t('diaInvalid').replace('{0}', lo).replace('{1}', hi);
+    input.style.borderColor = '#ff4757';
+  }
+}
+
+function renderDiaQuick(){
+  const el = document.getElementById('diaQuick');
+  if (!DIA_RANGE || !DIA_RANGE.recommended) { el.innerHTML = ''; return; }
+  const current = parseFloat(document.getElementById('bore_or_rod_dia_mm').value);
+  el.innerHTML = DIA_RANGE.recommended.map(d => {
+    const cls = Math.abs(d - current) < 1 ? 'dq-btn current' : 'dq-btn';
+    return '<button class="' + cls + '" onclick="quickPickDia(' + d + ')">' + d + ' mm</button>';
+  }).join('');
+}
+
+function quickPickDia(mm){
+  const input = document.getElementById('bore_or_rod_dia_mm');
+  input.value = mm;
+  validateDia();
+  renderDiaQuick();
+}
+
 async function runCalc(){
 const btn=document.getElementById('btnCalc');
 const ld=document.getElementById('ld');
@@ -438,8 +524,17 @@ body.is_bore_seal=document.getElementById('is_bore_seal').value==='true';
 body.application=document.getElementById('application').value;
 body.pressure_dir=document.getElementById('pressure_dir').value;
 // Input validation
-if(!body.material||!MATS[body.material]){showToast('Please select a valid material');btn.disabled=false;ld.classList.remove('show');return}
-if(body.bore_or_rod_dia_mm<1){showToast('Diameter must be >= 1mm');btn.disabled=false;ld.classList.remove('show');return}
+if(!body.material||!MATS[body.material]){showToast(t('errMaterial'));btn.disabled=false;ld.classList.remove('show');return}
+if(body.bore_or_rod_dia_mm<1){showToast(t('errDiaMin'));btn.disabled=false;ld.classList.remove('show');return}
+if(DIA_RANGE&&DIA_RANGE.valid){
+  const isB=DIA_RANGE.is_bore_seal;
+  const lo=isB?DIA_RANGE.bore_min:DIA_RANGE.rod_min;
+  const hi=isB?DIA_RANGE.bore_max:DIA_RANGE.rod_max;
+  if(body.bore_or_rod_dia_mm<lo||body.bore_or_rod_dia_mm>hi){
+    showToast(t('diaInvalid').replace('{0}',lo).replace('{1}',hi));
+    btn.disabled=false;ld.classList.remove('show');return;
+  }
+}
 
 try{
 const r=await fetch('/api/oring/design',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -457,6 +552,7 @@ finally{btn.disabled=false;ld.classList.remove('show');}
 
 applyLang();
 loadMaterials();
+fetchDiaRange();
 </script>
 </body>
 </html>

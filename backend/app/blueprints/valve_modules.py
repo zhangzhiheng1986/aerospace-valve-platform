@@ -118,6 +118,13 @@ def oring_design():
     data = request.get_json() or {}
     return jsonify(prepare_json(design_oring(data)))
 
+@valve_bp.route('/api/oring/diameter-range', methods=['GET'])
+def oring_diameter_range():
+    from oring_design import get_diameter_range
+    is_bore = request.args.get('is_bore_seal', 'true').lower() == 'true'
+    cs = request.args.get('cs_preferred_mm', type=float)
+    return jsonify(prepare_json(get_diameter_range(is_bore, cs)))
+
 
 # ==================== Seal Design ====================
 @valve_bp.route('/api/seal/catalog')
