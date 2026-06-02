@@ -27,11 +27,11 @@ def list_materials():
 
 @materials_bp.route('/api/materials/detail')
 def detail():
-    material_id = request.args.get('id', '')
+    material_name = request.args.get('name', '') or request.args.get('id', '')
     from materials_database import get_material_detail
-    if not material_id:
-        return jsonify({'error': 'Missing material id'}), 400
-    result = get_material_detail(material_id)
+    if not material_name:
+        return jsonify({'error': 'Missing material name'}), 400
+    result = get_material_detail(material_name)
     if result:
         return jsonify(prepare_json(result))
     return jsonify({'error': 'Material not found'}), 404
@@ -74,4 +74,7 @@ def calculate_wire():
 @materials_bp.route('/api/materials/awg/<int:awg>')
 def awg_detail(awg):
     from materials_database import db as mdb
-    return jsonify(prepare_json(mdb.get_awg(awg)))
+    result = mdb.get_conductor_for_awg(awg)
+    if result:
+        return jsonify(prepare_json(result))
+    return jsonify({'error': 'AWG not found'}), 404
