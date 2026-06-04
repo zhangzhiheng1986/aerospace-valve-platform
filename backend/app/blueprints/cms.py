@@ -40,15 +40,18 @@ def stats():
 @cms_bp.route('/api/cms/articles', methods=['GET'])
 def list_articles():
     from cms_module import get_articles
-    category = request.args.get('category', '')
-    tag = request.args.get('tag', '')
+    category_id = request.args.get('category_id', type=int)
     search = request.args.get('search', '')
-    page = int(request.args.get('page', 1))
+    status = request.args.get('status', None)
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 50, type=int)
+    offset = (page - 1) * limit
     return jsonify(prepare_json(get_articles(
-        category=category or None,
-        tag=tag or None,
+        status=status,
+        category_id=category_id,
         search=search or None,
-        page=page
+        limit=limit,
+        offset=offset
     )))
 
 
