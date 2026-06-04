@@ -60,8 +60,39 @@ def compute_formula():
     return jsonify(prepare_json(cm(formula_id, inputs)))
 
 
+@fm_bp.route('/api/fluid_mechanics/search-index')
+def get_search_index():
+    """Return compact search index for frontend fuzzy matching."""
+    try:
+        from fluid_mechanics_i18n import FORMULA_I18N
+    except ImportError:
+        return jsonify(prepare_json([]))
+    index = []
+    for fid, fv in sorted(FORMULA_I18N.items()):
+        index.append({
+            'id': fid,
+            'name_zh': fv.get('name_zh', ''),
+            'name_en': fv.get('name_en', ''),
+            'category': fv.get('category', ''),
+            'keywords': fv.get('keywords', fv.get('name_zh', '')),
+        })
+    return jsonify(prepare_json(index))
+
+
 @fm_bp.route('/api/fluid_mechanics/defaults')
 def get_default_inputs():
     """Return default inputs for all formulas."""
     from fluid_mechanics_calc import DEFAULT_INPUTS
     return jsonify(prepare_json(DEFAULT_INPUTS))
+
+
+@fm_bp.route('/api/fluid_mechanics/unit-systems')
+def get_unit_systems():
+    """Return all unit system definitions and conversion tables."""
+    from unit_converter import UNIT_SYSTEMS, UNIT_CONVERSIONS, UNIT_LABELS, PARAM_UNIT_MAP
+    return jsonify(prepare_json({
+        'systems': UNIT_SYSTEMS,
+        'conversions': UNIT_CONVERSIONS,
+        'labels': UNIT_LABELS,
+        'param_map': PARAM_UNIT_MAP,
+    }))

@@ -6,6 +6,22 @@ Fluid Mechanics Super Calculator - Backend Formula Engine
 
 import math
 
+# Sprint 4: Non-Newtonian, Multi-Phase, Cavitation
+from fluid_mechanics_sprint4 import (
+    bingham_shear_stress, bingham_pipe_flow_rate,
+    power_law_apparent_viscosity, power_law_pipe_flow_velocity,
+    generalized_reynolds_number_power_law, dodge_metzner_friction_factor,
+    herschel_bulkley_shear_stress, casson_shear_stress,
+    homogeneous_void_fraction, homogeneous_two_phase_density,
+    mcadams_viscosity, lockhart_martinelli_X, chisholm_two_phase_multiplier,
+    drift_flux_void_fraction, baker_flow_pattern_map,
+    taitel_dukler_transition, slug_frequency,
+    cavitation_number, thoma_cavitation_parameter,
+    npsh_available, npsh_required_by_suction_specific_speed,
+    rayleigh_plesset_radius, bubble_natural_frequency,
+    cavitation_erosion_power, critical_cavitation_factor,
+)
+
 # =============================================================================
 # Safe division & JSON cleaning
 # =============================================================================
@@ -890,6 +906,50 @@ def get_all_formulas():
             ]
         },
 
+
+        '14_non_newtonian': {
+            'name': 'Non-Newtonian Fluids', 'icon': 'chart-line', 'count': 8,
+            'desc': 'Bingham, Power-law, Herschel-Bulkley, Casson models',
+            'formulas': [
+                {'id': 'bingham_shear', 'name': 'Bingham Shear Stress', 'eq': 'tau = tau_y + mu_p * gamma_dot', 'inputs': ['tau_y', 'mu_p', 'gamma_dot'], 'output': 'tau'},
+                {'id': 'bingham_pipe_Q', 'name': 'Bingham Pipe Flow Rate', 'eq': 'Q = pi*R^4*dP/(8*mu_p*L) * (1 - 4/3*phi + phi^4/3)', 'inputs': ['tau_y', 'mu_p', 'dP', 'L', 'R_pipe'], 'output': 'Q'},
+                {'id': 'power_law_mu_app', 'name': 'Power-Law Apparent Viscosity', 'eq': 'mu_app = K * gamma_dot^(n-1)', 'inputs': ['K', 'n', 'gamma_dot'], 'output': 'mu_app'},
+                {'id': 'power_law_pipe_V', 'name': 'Power-Law Pipe Velocity', 'eq': 'V = (dP/(2*K*L))^(1/n) * n/(3n+1) * R^((n+1)/n)', 'inputs': ['K', 'n', 'dP', 'L', 'R_pipe'], 'output': 'V'},
+                {'id': 're_gen_power_law', 'name': 'Gen. Reynolds (Power-Law)', 'eq': 'Re_MR = rho*V^(2-n)*D^n/(K*8^(n-1)*((3n+1)/(4n))^n)', 'inputs': ['rho', 'V', 'D', 'K', 'n'], 'output': 'Re_MR'},
+                {'id': 'dodge_metzner_f', 'name': 'Dodge-Metzner Friction Factor', 'eq': '1/sqrt(f) = 4/n^0.75*log10(Re*f^(1-n/2)) - 0.4/n^1.2', 'inputs': ['Re_MR', 'n'], 'output': 'f'},
+                {'id': 'hb_shear', 'name': 'Herschel-Bulkley Shear', 'eq': 'tau = tau_y + K * gamma_dot^n', 'inputs': ['tau_y', 'K', 'n', 'gamma_dot'], 'output': 'tau'},
+                {'id': 'casson_shear', 'name': 'Casson Shear Stress', 'eq': 'sqrt(tau) = sqrt(tau_y) + sqrt(mu_c * gamma_dot)', 'inputs': ['tau_y', 'mu_c', 'gamma_dot'], 'output': 'tau'},
+            ]
+        },
+        '15_multiphase': {
+            'name': 'Multi-Phase Flow', 'icon': 'water', 'count': 9,
+            'desc': 'Void fraction, two-phase density/viscosity, flow regimes',
+            'formulas': [
+                {'id': 'hom_void_frac', 'name': 'Homogeneous Void Fraction', 'eq': 'alpha = 1/(1 + (1-x)/x * rho_g/rho_l)', 'inputs': ['x', 'rho_g', 'rho_l'], 'output': 'alpha'},
+                {'id': 'hom_tp_density', 'name': 'Two-Phase Density', 'eq': 'rho_tp = 1/(x/rho_g + (1-x)/rho_l)', 'inputs': ['x', 'rho_g', 'rho_l'], 'output': 'rho_tp'},
+                {'id': 'mcadams_visc', 'name': 'McAdams Viscosity', 'eq': '1/mu_tp = x/mu_g + (1-x)/mu_l', 'inputs': ['x', 'mu_g', 'mu_l'], 'output': 'mu_tp'},
+                {'id': 'LM_X', 'name': 'Lockhart-Martinelli X', 'eq': 'X = ((1-x)/x)^0.9*(rho_g/rho_l)^0.5*(mu_l/mu_g)^0.1', 'inputs': ['x', 'rho_g', 'rho_l', 'mu_g', 'mu_l'], 'output': 'X'},
+                {'id': 'chisholm_phi2', 'name': 'Chisholm Multiplier', 'eq': 'phi_l^2 = 1 + C/X + 1/X^2', 'inputs': ['X', 'C'], 'output': 'phi_l2'},
+                {'id': 'drift_flux_alpha', 'name': 'Drift Flux Void Fraction', 'eq': 'alpha = j_g/(C0*(j_g+j_l) + V_gj)', 'inputs': ['j_g', 'j_l', 'C0'], 'output': 'alpha_df'},
+                {'id': 'baker_map', 'name': 'Baker Flow Map', 'eq': 'lambda=(rho_g/rho_air*rho_l/rho_w)^0.5; psi=sigma_w/sigma_st*...', 'inputs': ['G_g', 'G_l', 'lmbda', 'psi'], 'output': 'x_baker'},
+                {'id': 'taitel_dukler', 'name': 'Taitel-Dukler Transition', 'eq': 'v_sg_crit = 0.25*(g*(rho_l-rho_g)*sigma/rho_l^2)^0.25', 'inputs': ['v_sg', 'D', 'rho_g', 'rho_l', 'sigma'], 'output': 'v_sg_crit'},
+                {'id': 'slug_freq', 'name': 'Slug Frequency', 'eq': 'f_s = 0.0226*(v_sl/g/D*(19.75+v_m^2/g/D))^1.2', 'inputs': ['v_sl', 'v_sg', 'D'], 'output': 'f_s'},
+            ]
+        },
+        '16_cavitation': {
+            'name': 'Cavitation', 'icon': 'bolt', 'count': 8,
+            'desc': 'Cavitation number, NPSH, bubble dynamics, erosion',
+            'formulas': [
+                {'id': 'cav_number', 'name': 'Cavitation Number', 'eq': 'sigma = (P_ref - P_v)/(0.5*rho*V^2)', 'inputs': ['P_ref', 'P_v', 'rho', 'V'], 'output': 'sigma_c'},
+                {'id': 'thoma_param', 'name': 'Thoma Parameter', 'eq': 'sigma_T = (H_atm - H_v - H_s)/H', 'inputs': ['H_atm', 'H_v', 'H_s'], 'output': 'sigma_T'},
+                {'id': 'npsh_a', 'name': 'NPSH Available', 'eq': 'NPSH_a = (P_atm-P_v)/(rho*g) + h_s - h_f', 'inputs': ['P_atm', 'P_v', 'h_s', 'h_f', 'rho'], 'output': 'NPSH_a'},
+                {'id': 'npsh_r', 'name': 'NPSH Required (S)', 'eq': 'NPSH_r = (N*sqrt(Q)/S)^(4/3)', 'inputs': ['N', 'Q', 'S'], 'output': 'NPSH_r'},
+                {'id': 'rayleigh_plesset', 'name': 'Rayleigh-Plesset Radius', 'eq': 'R = R0 + sqrt(2*(P_v-P_inf)/(3*rho))*t', 'inputs': ['R0', 'P_v', 'P_inf', 'rho', 't'], 'output': 'R_max'},
+                {'id': 'bubble_freq', 'name': 'Bubble Natural Frequency', 'eq': 'f_n = 1/(2*pi*R0)*sqrt(3*k*P_inf/rho)', 'inputs': ['P_inf', 'rho', 'R0', 'k'], 'output': 'f_n'},
+                {'id': 'cav_erosion', 'name': 'Cavitation Erosion Power', 'eq': 'P_eros = sigma_f*rho*V^3*A/2', 'inputs': ['rho', 'V', 'A', 'sigma_f'], 'output': 'P_eros'},
+                {'id': 'crit_cav_factor', 'name': 'Critical Cavitation Factor', 'eq': 'sigma_cr = sigma_st/(0.5*rho*V^2*D)', 'inputs': ['V', 'D', 'sigma_st', 'rho'], 'output': 'sigma_cr'},
+            ]
+        },
     }
 
 
@@ -1333,6 +1393,67 @@ def compute_formula(formula_id, inputs):
             result['results']['V_e'] = gas_erosional_velocity(float(inputs.get('rho', 50)), float(inputs.get('C', 100))) or 0
         elif formula_id == 'line_pack':
             result['results']['V_scm'] = gas_pipeline_linepack(float(inputs.get('V_pipe', 5000)), float(inputs.get('P_avg', 2e6)), float(inputs.get('T_avg', 300)), float(inputs.get('Z', 0.92)), float(inputs.get('R', 287))) or 0
+
+
+        # Sprint 4: Non-Newtonian
+        elif formula_id == 'bingham_shear':
+            result['results']['tau'] = bingham_shear_stress(float(inputs.get('tau_y', 0)), float(inputs.get('mu_p', 0)), float(inputs.get('gamma_dot', 0))) or 0
+        elif formula_id == 'bingham_pipe_Q':
+            result['results']['Q'] = bingham_pipe_flow_rate(float(inputs.get('tau_y', 0)), float(inputs.get('mu_p', 1)), float(inputs.get('dP', 100000)), float(inputs.get('L', 1)), float(inputs.get('R_pipe', 0.025))) or 0
+        elif formula_id == 'power_law_mu_app':
+            result['results']['mu_app'] = power_law_apparent_viscosity(float(inputs.get('K', 1)), float(inputs.get('n', 0.5)), float(inputs.get('gamma_dot', 100))) or 0
+        elif formula_id == 'power_law_pipe_V':
+            result['results']['V'] = power_law_pipe_flow_velocity(float(inputs.get('K', 1)), float(inputs.get('n', 0.5)), float(inputs.get('dP', 100000)), float(inputs.get('L', 1)), float(inputs.get('R_pipe', 0.025))) or 0
+        elif formula_id == 're_gen_power_law':
+            result['results']['Re_MR'] = generalized_reynolds_number_power_law(float(inputs.get('rho', 1000)), float(inputs.get('V', 1)), float(inputs.get('D', 0.05)), float(inputs.get('K', 1)), float(inputs.get('n', 0.5))) or 0
+        elif formula_id == 'dodge_metzner_f':
+            result['results']['f'] = dodge_metzner_friction_factor(float(inputs.get('Re_MR', 5000)), float(inputs.get('n', 0.7))) or 0
+        elif formula_id == 'hb_shear':
+            result['results']['tau'] = herschel_bulkley_shear_stress(float(inputs.get('tau_y', 10)), float(inputs.get('K', 1)), float(inputs.get('n', 0.6)), float(inputs.get('gamma_dot', 100))) or 0
+        elif formula_id == 'casson_shear':
+            result['results']['tau'] = casson_shear_stress(float(inputs.get('tau_y', 5)), float(inputs.get('mu_c', 0.01)), float(inputs.get('gamma_dot', 100))) or 0
+
+        # Sprint 4: Multi-Phase
+        elif formula_id == 'hom_void_frac':
+            result['results']['alpha'] = homogeneous_void_fraction(float(inputs.get('x', 0.5)), float(inputs.get('rho_g', 1.2)), float(inputs.get('rho_l', 1000))) or 0
+        elif formula_id == 'hom_tp_density':
+            result['results']['rho_tp'] = homogeneous_two_phase_density(float(inputs.get('x', 0.5)), float(inputs.get('rho_g', 1.2)), float(inputs.get('rho_l', 1000))) or 0
+        elif formula_id == 'mcadams_visc':
+            result['results']['mu_tp'] = mcadams_viscosity(float(inputs.get('x', 0.5)), float(inputs.get('mu_g', 1.8e-5)), float(inputs.get('mu_l', 0.001))) or 0
+        elif formula_id == 'LM_X':
+            result['results']['X'] = lockhart_martinelli_X(float(inputs.get('x', 0.3)), float(inputs.get('rho_g', 1.2)), float(inputs.get('rho_l', 1000)), float(inputs.get('mu_g', 1.8e-5)), float(inputs.get('mu_l', 0.001))) or 0
+        elif formula_id == 'chisholm_phi2':
+            result['results']['phi_l2'] = chisholm_two_phase_multiplier(float(inputs.get('X', 1)), float(inputs.get('C', 20))) or 0
+        elif formula_id == 'drift_flux_alpha':
+            result['results']['alpha_df'] = drift_flux_void_fraction(float(inputs.get('j_g', 0.5)), float(inputs.get('j_l', 1.0)), float(inputs.get('C0', 1.2))) or 0
+        elif formula_id == 'baker_map':
+            bm = baker_flow_pattern_map(float(inputs.get('G_g', 100)), float(inputs.get('G_l', 500)), float(inputs.get('lmbda', 1)), float(inputs.get('psi', 1)))
+            if bm:
+                result['results'].update(bm)
+            else:
+                result['results']['error'] = 'Invalid input'
+        elif formula_id == 'taitel_dukler':
+            result['results']['v_sg_crit'] = taitel_dukler_transition(float(inputs.get('v_sg', 1)), float(inputs.get('D', 0.05)), float(inputs.get('rho_g', 1.2)), float(inputs.get('rho_l', 1000)), float(inputs.get('sigma', 0.073))) or 0
+        elif formula_id == 'slug_freq':
+            result['results']['f_s'] = slug_frequency(float(inputs.get('v_sl', 1)), float(inputs.get('v_sg', 2)), float(inputs.get('D', 0.05))) or 0
+
+        # Sprint 4: Cavitation
+        elif formula_id == 'cav_number':
+            result['results']['sigma_c'] = cavitation_number(float(inputs.get('P_ref', 101325)), float(inputs.get('P_v', 2340)), float(inputs.get('rho', 998)), float(inputs.get('V', 10))) or 0
+        elif formula_id == 'thoma_param':
+            result['results']['sigma_T'] = thoma_cavitation_parameter(float(inputs.get('H_atm', 10.33)), float(inputs.get('H_v', 0.24)), float(inputs.get('H_s', 3))) or 0
+        elif formula_id == 'npsh_a':
+            result['results']['NPSH_a'] = npsh_available(float(inputs.get('P_atm', 101325)), float(inputs.get('P_v', 2340)), float(inputs.get('h_s', 2)), float(inputs.get('h_f', 0.5)), float(inputs.get('rho', 998))) or 0
+        elif formula_id == 'npsh_r':
+            result['results']['NPSH_r'] = npsh_required_by_suction_specific_speed(float(inputs.get('N', 1750)), float(inputs.get('Q', 0.1)), float(inputs.get('S', 8000))) or 0
+        elif formula_id == 'rayleigh_plesset':
+            result['results']['R_max'] = rayleigh_plesset_radius(float(inputs.get('R0', 1e-5)), float(inputs.get('P_v', 2340)), float(inputs.get('P_inf', 101325)), float(inputs.get('rho', 998)), float(inputs.get('t', 1e-6))) or 0
+        elif formula_id == 'bubble_freq':
+            result['results']['f_n'] = bubble_natural_frequency(float(inputs.get('P_inf', 101325)), float(inputs.get('rho', 998)), float(inputs.get('R0', 1e-5)), float(inputs.get('k', 1.4))) or 0
+        elif formula_id == 'cav_erosion':
+            result['results']['P_eros'] = cavitation_erosion_power(float(inputs.get('rho', 998)), float(inputs.get('V', 30)), float(inputs.get('A', 0.01)), float(inputs.get('sigma_f', 0.1))) or 0
+        elif formula_id == 'crit_cav_factor':
+            result['results']['sigma_cr'] = critical_cavitation_factor(float(inputs.get('V', 10)), float(inputs.get('D', 0.1)), float(inputs.get('sigma_st', 0.073)), float(inputs.get('rho', 998))) or 0
 
         else:
             result['error'] = f'Unknown formula_id: {formula_id}'
