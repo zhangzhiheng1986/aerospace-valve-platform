@@ -6,6 +6,26 @@ Fluid Mechanics Super Calculator - Backend Formula Engine
 
 import math
 
+# Sprint 5: Pumps, Flow Measurement, Aerodynamics, Turbulence, CFD
+from fluid_mechanics_sprint5 import (
+    pump_hydraulic_power, pump_shaft_power, pump_efficiency,
+    specific_speed_metric, specific_speed_imperial, affinity_law_Q, affinity_law_H,
+    npsh_available, suction_specific_speed,
+    venturi_flow_rate, venturi_mass_flow, orifice_flow_rate,
+    pitot_velocity, weir_rectangular, weir_vnotch, nozzle_flow_rate, rotameter_flow,
+    lift_force, drag_force, lift_drag_ratio, induced_drag,
+    skin_friction_drag, wave_drag, bluff_body_drag,
+    stall_speed, aspect_ratio_fx,
+    turbulence_intensity, turbulent_kinetic_energy,
+    kolmogorov_length_scale, kolmogorov_time_scale, kolmogorov_velocity_scale,
+    eddy_viscosity_mixing_length, reynolds_stress_uv,
+    viscous_sublayer_thickness, friction_velocity, logarithmic_law,
+    cfl_condition, grid_reynolds_number, peclet_number,
+    courant_number_wave, numerical_diffusion_coeff,
+    mesh_reynolds_requirement, taylor_microscale,
+    turbulent_viscosity_ratio, dissipation_rate_estimate, y_plus_estimate,
+)
+
 # Sprint 4: Non-Newtonian, Multi-Phase, Cavitation
 from fluid_mechanics_sprint4 import (
     bingham_shear_stress, bingham_pipe_flow_rate,
@@ -936,6 +956,54 @@ def get_all_formulas():
                 {'id': 'slug_freq', 'name': 'Slug Frequency', 'eq': 'f_s = 0.0226*(v_sl/g/D*(19.75+v_m^2/g/D))^1.2', 'inputs': ['v_sl', 'v_sg', 'D'], 'output': 'f_s'},
             ]
         },
+        '17_pumps_turbo': {
+            'name': 'Pumps & Turbomachinery',
+            'name_zh': '泵与叶轮机械',
+            'formulas': [
+                'pump_hydraulic_power', 'pump_shaft_power', 'pump_efficiency',
+                'specific_speed_metric', 'specific_speed_imperial',
+                'affinity_law_Q', 'affinity_law_H',
+                'npsh_available', 'suction_specific_speed',
+            ],
+        },
+        '18_flow_measurement': {
+            'name': 'Flow Measurement',
+            'name_zh': '流量测量',
+            'formulas': [
+                'venturi_flow_rate', 'venturi_mass_flow', 'orifice_flow_rate',
+                'pitot_velocity', 'weir_rectangular', 'weir_vnotch',
+                'nozzle_flow_rate', 'rotameter_flow',
+            ],
+        },
+        '19_aerodynamics': {
+            'name': 'External Aerodynamics',
+            'name_zh': '外部空气动力学',
+            'formulas': [
+                'lift_force', 'drag_force', 'lift_drag_ratio', 'induced_drag',
+                'skin_friction_drag', 'wave_drag', 'bluff_body_drag',
+                'stall_speed', 'aspect_ratio_fx',
+            ],
+        },
+        '20_turbulence': {
+            'name': 'Turbulence',
+            'name_zh': '湍流',
+            'formulas': [
+                'turbulence_intensity', 'turbulent_kinetic_energy',
+                'kolmogorov_length_scale', 'kolmogorov_time_scale', 'kolmogorov_velocity_scale',
+                'eddy_viscosity_mixing_length', 'reynolds_stress_uv',
+                'viscous_sublayer_thickness', 'friction_velocity', 'logarithmic_law',
+            ],
+        },
+        '21_cfd_basics': {
+            'name': 'CFD Fundamentals',
+            'name_zh': '计算流体力学基础',
+            'formulas': [
+                'cfl_condition', 'grid_reynolds_number', 'peclet_number',
+                'courant_number_wave', 'numerical_diffusion_coeff',
+                'mesh_reynolds_requirement', 'taylor_microscale',
+                'turbulent_viscosity_ratio', 'dissipation_rate_estimate', 'y_plus_estimate',
+            ],
+        },
         '16_cavitation': {
             'name': 'Cavitation', 'icon': 'bolt', 'count': 8,
             'desc': 'Cavitation number, NPSH, bubble dynamics, erosion',
@@ -1293,9 +1361,9 @@ def compute_formula(formula_id, inputs):
         elif formula_id == 'cf_turbulent':
             result['results']['C_f'] = skin_friction_coef_turbulent(float(inputs.get('Re_L', 5000000))) or 0
         elif formula_id == 'drag_force':
-            result['results']['F_D'] = drag_force(float(inputs.get('C_d', 0.5)), float(inputs.get('rho', 1.2)), float(inputs.get('V', 20)), float(inputs.get('A_ref', 2)))
+            result['results']['F_D'] = drag_force(float(inputs.get('CD', float(inputs.get('C_d', 0.03)))), float(inputs.get('rho', 1.225)), float(inputs.get('V', 50)), float(inputs.get('A', float(inputs.get('A_ref', 20)))))
         elif formula_id == 'lift_force':
-            result['results']['F_L'] = lift_force(float(inputs.get('C_l', 1.5)), float(inputs.get('rho', 1.2)), float(inputs.get('V', 50)), float(inputs.get('A', 30)))
+            result['results']['F_L'] = lift_force(float(inputs.get('CL', float(inputs.get('C_l', 1.2)))), float(inputs.get('rho', 1.225)), float(inputs.get('V', 50)), float(inputs.get('A', 20)))
         elif formula_id == 'stokes_drag':
             result['results']['F_d'] = drag_force_stokes(float(inputs.get('mu', 0.001)), float(inputs.get('R', 0.001)), float(inputs.get('V', 0.01)))
         elif formula_id == 'cd_sphere':
@@ -1442,8 +1510,8 @@ def compute_formula(formula_id, inputs):
             result['results']['sigma_c'] = cavitation_number(float(inputs.get('P_ref', 101325)), float(inputs.get('P_v', 2340)), float(inputs.get('rho', 998)), float(inputs.get('V', 10))) or 0
         elif formula_id == 'thoma_param':
             result['results']['sigma_T'] = thoma_cavitation_parameter(float(inputs.get('H_atm', 10.33)), float(inputs.get('H_v', 0.24)), float(inputs.get('H_s', 3))) or 0
-        elif formula_id == 'npsh_a':
-            result['results']['NPSH_a'] = npsh_available(float(inputs.get('P_atm', 101325)), float(inputs.get('P_v', 2340)), float(inputs.get('h_s', 2)), float(inputs.get('h_f', 0.5)), float(inputs.get('rho', 998))) or 0
+        elif formula_id == 'npsh_available':
+            result['results']['NPSHa'] = npsh_available(float(inputs.get('P_atm', 101325)), float(inputs.get('P_v', 2339)), float(inputs.get('h_s', 2)), float(inputs.get('h_f', 1.5)), float(inputs.get('rho', 998)))
         elif formula_id == 'npsh_r':
             result['results']['NPSH_r'] = npsh_required_by_suction_specific_speed(float(inputs.get('N', 1750)), float(inputs.get('Q', 0.1)), float(inputs.get('S', 8000))) or 0
         elif formula_id == 'rayleigh_plesset':
@@ -1452,6 +1520,96 @@ def compute_formula(formula_id, inputs):
             result['results']['f_n'] = bubble_natural_frequency(float(inputs.get('P_inf', 101325)), float(inputs.get('rho', 998)), float(inputs.get('R0', 1e-5)), float(inputs.get('k', 1.4))) or 0
         elif formula_id == 'cav_erosion':
             result['results']['P_eros'] = cavitation_erosion_power(float(inputs.get('rho', 998)), float(inputs.get('V', 30)), float(inputs.get('A', 0.01)), float(inputs.get('sigma_f', 0.1))) or 0
+        elif formula_id == 'pump_hydraulic_power':
+            result['results']['P_h'] = pump_hydraulic_power(float(inputs.get('Q', 0.01)), float(inputs.get('rho', 998)), float(inputs.get('H', 20)))
+        elif formula_id == 'pump_shaft_power':
+            result['results']['P_s'] = pump_shaft_power(float(inputs.get('P_h', 1960)), float(inputs.get('eta', 0.75)))
+        elif formula_id == 'pump_efficiency':
+            result['results']['eta'] = pump_efficiency(float(inputs.get('P_h', 1960)), float(inputs.get('P_s', 2613)))
+        elif formula_id == 'specific_speed_metric':
+            result['results']['N_s'] = specific_speed_metric(float(inputs.get('Q', 0.01)), float(inputs.get('H', 20)), float(inputs.get('N', 2900)))
+        elif formula_id == 'specific_speed_imperial':
+            result['results']['N_s_us'] = specific_speed_imperial(float(inputs.get('Q_gpm', 100)), float(inputs.get('H_ft', 50)), float(inputs.get('N_rpm', 3500)))
+        elif formula_id == 'affinity_law_Q':
+            result['results']['Q_ratio'] = affinity_law_Q(float(inputs.get('D1', 0.2)), float(inputs.get('D2', 0.25)), float(inputs.get('N1', 2900)), float(inputs.get('N2', 2900)))
+        elif formula_id == 'affinity_law_H':
+            result['results']['H_ratio'] = affinity_law_H(float(inputs.get('D1', 0.2)), float(inputs.get('D2', 0.25)), float(inputs.get('N1', 2900)), float(inputs.get('N2', 2900)))
+        elif formula_id == 'suction_specific_speed':
+            result['results']['N_ss'] = suction_specific_speed(float(inputs.get('Q', 0.01)), float(inputs.get('NPSHr', 3)), float(inputs.get('N', 2900)))
+        elif formula_id == 'venturi_flow_rate':
+            result['results']['Q'] = venturi_flow_rate(float(inputs.get('Cd', 0.98)), float(inputs.get('A2', 0.0003)), float(inputs.get('rho', 998)), float(inputs.get('dp', 10000)), float(inputs.get('beta', 0.5)))
+        elif formula_id == 'venturi_mass_flow':
+            result['results']['m_dot'] = venturi_mass_flow(float(inputs.get('Cd', 0.98)), float(inputs.get('A2', 0.0003)), float(inputs.get('rho', 998)), float(inputs.get('dp', 10000)), float(inputs.get('beta', 0.5)))
+        elif formula_id == 'orifice_flow_rate':
+            result['results']['Q'] = orifice_flow_rate(float(inputs.get('Cd', 0.61)), float(inputs.get('A0', 0.0002)), float(inputs.get('rho', 998)), float(inputs.get('dp', 10000)), float(inputs.get('beta', 0.5)))
+        elif formula_id == 'pitot_velocity':
+            result['results']['V'] = pitot_velocity(float(inputs.get('dp', 1000)), float(inputs.get('rho', 1.225)))
+        elif formula_id == 'weir_rectangular':
+            result['results']['Q'] = weir_rectangular(float(inputs.get('Cd', 0.62)), float(inputs.get('b', 2)), float(inputs.get('H', 0.3)))
+        elif formula_id == 'weir_vnotch':
+            result['results']['Q'] = weir_vnotch(float(inputs.get('Cd', 0.58)), float(inputs.get('theta_deg', 90)), float(inputs.get('H', 0.3)))
+        elif formula_id == 'nozzle_flow_rate':
+            result['results']['Q'] = nozzle_flow_rate(float(inputs.get('Cd', 0.96)), float(inputs.get('A_n', 0.0001)), float(inputs.get('rho', 998)), float(inputs.get('dp', 10000)))
+        elif formula_id == 'rotameter_flow':
+            result['results']['Q'] = rotameter_flow(float(inputs.get('Cd', 0.98)), float(inputs.get('A_annulus', 0.0001)), float(inputs.get('V_float', 2e-5)), float(inputs.get('rho_f', 7800)), float(inputs.get('rho', 998)))
+        elif formula_id == 'lift_force':
+            result['results']['F_L'] = lift_force(float(inputs.get('CL', 1.2)), float(inputs.get('rho', 1.225)), float(inputs.get('V', 50)), float(inputs.get('A', 20)))
+        elif formula_id == 'drag_force':
+            result['results']['F_D'] = drag_force(float(inputs.get('CD', 0.03)), float(inputs.get('rho', 1.225)), float(inputs.get('V', 50)), float(inputs.get('A', 20)))
+        elif formula_id == 'lift_drag_ratio':
+            result['results']['LD'] = lift_drag_ratio(float(inputs.get('CL', 1.2)), float(inputs.get('CD', 0.03)))
+        elif formula_id == 'induced_drag':
+            result['results']['CDi'] = induced_drag(float(inputs.get('CL', 1.2)), float(inputs.get('AR', 8)), float(inputs.get('e', 0.8)))
+        elif formula_id == 'skin_friction_drag':
+            result['results']['F_Df'] = skin_friction_drag(float(inputs.get('Cf', 0.003)), float(inputs.get('rho', 1.225)), float(inputs.get('V', 50)), float(inputs.get('A_wet', 40)))
+        elif formula_id == 'wave_drag':
+            result['results']['Cdw'] = wave_drag(float(inputs.get('M', 0.95)), float(inputs.get('t_c', 0.12)))
+        elif formula_id == 'bluff_body_drag':
+            result['results']['F_D'] = bluff_body_drag(float(inputs.get('CD', 1.2)), float(inputs.get('rho', 1.225)), float(inputs.get('V', 30)), float(inputs.get('A_front', 2)))
+        elif formula_id == 'stall_speed':
+            result['results']['V_stall'] = stall_speed(float(inputs.get('W', 50000)), float(inputs.get('rho', 1.225)), float(inputs.get('S', 25)), float(inputs.get('CL_max', 1.5)))
+        elif formula_id == 'aspect_ratio_fx':
+            result['results']['AR'] = aspect_ratio_fx(float(inputs.get('b', 12)), float(inputs.get('S', 24)))
+        elif formula_id == 'turbulence_intensity':
+            result['results']['Tu'] = turbulence_intensity(float(inputs.get('u_rms', 2)), float(inputs.get('U_mean', 20)))
+        elif formula_id == 'turbulent_kinetic_energy':
+            result['results']['k'] = turbulent_kinetic_energy(float(inputs.get('u_rms', 2)), float(inputs.get('v_rms', 1.5)), float(inputs.get('w_rms', 1)))
+        elif formula_id == 'kolmogorov_length_scale':
+            result['results']['eta'] = kolmogorov_length_scale(float(inputs.get('epsilon', 0.01)), float(inputs.get('nu', 1e-6)))
+        elif formula_id == 'kolmogorov_time_scale':
+            result['results']['tau_eta'] = kolmogorov_time_scale(float(inputs.get('epsilon', 0.01)), float(inputs.get('nu', 1e-6)))
+        elif formula_id == 'kolmogorov_velocity_scale':
+            result['results']['u_eta'] = kolmogorov_velocity_scale(float(inputs.get('epsilon', 0.01)), float(inputs.get('nu', 1e-6)))
+        elif formula_id == 'eddy_viscosity_mixing_length':
+            result['results']['nu_t'] = eddy_viscosity_mixing_length(float(inputs.get('l_m', 0.01)), float(inputs.get('dU_dy', 500)))
+        elif formula_id == 'reynolds_stress_uv':
+            result['results']['tau_t'] = reynolds_stress_uv(float(inputs.get('rho', 998)), float(inputs.get('nu_t', 0.05)), float(inputs.get('dU_dy', 500)))
+        elif formula_id == 'viscous_sublayer_thickness':
+            result['results']['y_vs'] = viscous_sublayer_thickness(float(inputs.get('nu', 1e-6)), float(inputs.get('u_tau', 0.5)))
+        elif formula_id == 'friction_velocity':
+            result['results']['u_tau'] = friction_velocity(float(inputs.get('tau_w', 10)), float(inputs.get('rho', 998)))
+        elif formula_id == 'logarithmic_law':
+            result['results']['u_plus'] = logarithmic_law(float(inputs.get('y_plus', 100)))
+        elif formula_id == 'cfl_condition':
+            result['results']['CFL'] = cfl_condition(float(inputs.get('U', 10)), float(inputs.get('dt', 0.001)), float(inputs.get('dx', 0.02)))
+        elif formula_id == 'grid_reynolds_number':
+            result['results']['Re_dx'] = grid_reynolds_number(float(inputs.get('U', 1)), float(inputs.get('dx', 0.01)), float(inputs.get('nu', 1e-6)))
+        elif formula_id == 'peclet_number':
+            result['results']['Pe'] = peclet_number(float(inputs.get('U', 1)), float(inputs.get('L', 1)), float(inputs.get('alpha', 1.5e-5)))
+        elif formula_id == 'courant_number_wave':
+            result['results']['Co'] = courant_number_wave(float(inputs.get('c', 340)), float(inputs.get('dt', 0.001)), float(inputs.get('dx', 0.1)))
+        elif formula_id == 'numerical_diffusion_coeff':
+            result['results']['D_num'] = numerical_diffusion_coeff(float(inputs.get('U', 1)), float(inputs.get('dx', 0.01)), float(inputs.get('scheme_order', 1)))
+        elif formula_id == 'mesh_reynolds_requirement':
+            result['results']['dx_max'] = mesh_reynolds_requirement(float(inputs.get('U', 1)), float(inputs.get('nu', 1e-6)))
+        elif formula_id == 'taylor_microscale':
+            result['results']['lambda_mu'] = taylor_microscale(float(inputs.get('lambda_g', 0.05)), float(inputs.get('U', 10)), float(inputs.get('nu', 1e-5)))
+        elif formula_id == 'turbulent_viscosity_ratio':
+            result['results']['nu_t_ratio'] = turbulent_viscosity_ratio(float(inputs.get('nu_t', 0.001)), float(inputs.get('nu', 1e-6)))
+        elif formula_id == 'dissipation_rate_estimate':
+            result['results']['epsilon'] = dissipation_rate_estimate(float(inputs.get('k', 0.1)), float(inputs.get('L_integral', 0.5)))
+        elif formula_id == 'y_plus_estimate':
+            result['results']['y_plus'] = y_plus_estimate(float(inputs.get('y', 0.001)), float(inputs.get('u_tau', 0.5)), float(inputs.get('nu', 1e-6)))
         elif formula_id == 'crit_cav_factor':
             result['results']['sigma_cr'] = critical_cavitation_factor(float(inputs.get('V', 10)), float(inputs.get('D', 0.1)), float(inputs.get('sigma_st', 0.073)), float(inputs.get('rho', 998))) or 0
 
