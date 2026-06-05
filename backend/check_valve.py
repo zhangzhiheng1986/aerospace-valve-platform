@@ -333,14 +333,34 @@ def _clean(v):
 
 def run_check_valve_design(data):
     """Main API entry: accept dict, return dict"""
-    medium_key = data.get("medium", "hydraulic_oil")
+    # Fill all required fields with defaults to prevent KeyError
+    defaults = {
+        "medium": "hydraulic_oil",
+        "spring_material": "inconel_x750",
+        "valve_type": "poppet_conical",
+        "seal_type": "metal_to_metal",
+        "safety_factor_yield": 1.5,
+        "safety_factor_fatigue": 1.5,
+        "nominal_flow_rate": 50,
+        "max_flow_rate": 75,
+        "max_pressure_drop": 0.5,
+        "inlet_port_diameter": 25,
+        "cracking_pressure": 0.3,
+        "max_envelope_diameter": 80,
+        "max_envelope_length": 120,
+        "operating_pressure": 21,
+    }
+    for k, v in defaults.items():
+        if k not in data:
+            data[k] = v
+    medium_key = data["medium"]
     medium = MEDIUM_DB.get(medium_key, MEDIUM_DB["hydraulic_oil"])
-    spring_mat_key = data.get("spring_material", "inconel_x750")
-    spring_mat = SPRING_MAT_DB[spring_mat_key]
-    valve_type = data.get("valve_type", "poppet_conical")
-    seal_type = data.get("seal_type", "metal_to_metal")
-    sf_yield = data.get("safety_factor_yield", 1.5)
-    sf_fatigue = data.get("safety_factor_fatigue", 1.5)
+    spring_mat_key = data["spring_material"]
+    spring_mat = SPRING_MAT_DB.get(spring_mat_key, SPRING_MAT_DB.get("inconel_x750", list(SPRING_MAT_DB.values())[0] if SPRING_MAT_DB else {"E":200e9,"G":79e9,"sigma_y":1000e6,"tau_y":550e6}))
+    valve_type = data["valve_type"]
+    seal_type = data["seal_type"]
+    sf_yield = data["safety_factor_yield"]
+    sf_fatigue = data["safety_factor_fatigue"]
 
     # Auto-select body material
     max_temp = data.get("max_temperature", 135)

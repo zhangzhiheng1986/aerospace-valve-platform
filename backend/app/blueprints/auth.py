@@ -77,17 +77,21 @@ def logout():
     return resp
 
 
-@auth_bp.route('/verify', methods=['GET'])
+@auth_bp.route('/verify', methods=['GET', 'POST'])
 def verify():
-    token = request.headers.get('Authorization', '').replace('Bearer ', '') or \
-            request.cookies.get('auth_token', '')
+    token = request.args.get('token', '') or \
+            request.headers.get('Authorization', '').replace('Bearer ', '') or \
+            request.cookies.get('auth_token', '') or \
+            (request.get_json(silent=True) or {}).get('token', '')
     if not token:
         return error_response('No token', 401)
 
     auth = _get_auth()
     is_valid, user = auth.verify_session(token)
     if is_valid:
-        return success_response({
+        return jsonify({
+            'success': True,
+            'valid': True,
             'username': user.get('username', ''),
             'role': user.get('role', '')
         })

@@ -33,7 +33,8 @@ def stats():
     return jsonify(prepare_json(tlib.get_template_stats()))
 
 
-@templates_bp.route('/api/templates', methods=['GET'])
+@templates_bp.route('/api/templates', methods=['GET'], strict_slashes=False)
+@templates_bp.route('/api/templates/list', methods=['GET'], strict_slashes=False)
 def list_templates():
     import template_library as tlib
     cat = request.args.get('category', '')

@@ -523,6 +523,15 @@ class PressureReducingValveDesigner:
 
 def run_design(input_data):
     """API entry point: accepts dict, returns dict"""
+    # Input validation: guard against non-physical values
+    inlet_p = float(input_data.get('inlet_pressure', 0))
+    outlet_p = float(input_data.get('outlet_pressure', 0))
+    if inlet_p <= 0:
+        return {'error': f'Inlet pressure must be positive, got {inlet_p}'}
+    if outlet_p <= 0:
+        return {'error': f'Outlet pressure must be positive, got {outlet_p}'}
+    if inlet_p <= outlet_p:
+        return {'error': f'Inlet pressure must exceed outlet pressure (in={inlet_p}, out={outlet_p})'}
     params = ValveInputParams()
     for key, value in input_data.items():
         if hasattr(params, key):

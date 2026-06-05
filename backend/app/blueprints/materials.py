@@ -28,10 +28,23 @@ def list_materials():
 @materials_bp.route('/api/materials/detail')
 def detail():
     material_name = request.args.get('name', '') or request.args.get('id', '')
-    from materials_database import get_material_detail
+    from materials_database import get_material_detail, get_all_materials
     if not material_name:
         return jsonify({'error': 'Missing material name'}), 400
+    # Try exact match first
     result = get_material_detail(material_name)
+    if not result:
+        # Fallback: fuzzy search by name/designation
+        all_mats = get_all_materials()
+        mat_list = all_mats if isinstance(all_mats, list) else list(all_mats.values())
+        mln = material_name.lower()
+        for m in mat_list:
+            mn = m.get('name', '') if isinstance(m, dict) else getattr(m, 'name', '')
+            cat = m.get('category', '') if isinstance(m, dict) else getattr(m, 'category', '')
+            std = m.get('standard', '') if isinstance(m, dict) else getattr(m, 'standard', '')
+            if mln in mn.lower() or mln in str(cat).lower() or mln in str(std).lower():
+                result = get_material_detail(mn)
+                break
     if result:
         return jsonify(prepare_json(result))
     return jsonify({'error': 'Material not found'}), 404

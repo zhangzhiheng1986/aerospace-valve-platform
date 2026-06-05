@@ -353,8 +353,21 @@ def calculate_seal_design(params: dict) -> dict:
     Returns JSON-ready result dict.
     """
     # --- Parse inputs ---
-    mat_seat = MATERIALS[params["seat_material"]]
-    mat_seal = MATERIALS[params["seal_material"]]
+    # Material alias resolution (common shorthand names)
+    MAT_ALIASES = {
+        "TC4": "TI_6AL4V", "tc4": "TI_6AL4V",
+        "316L": "316L_SS", "316l": "316L_SS",
+        "IN718": "INCONEL_718", "in718": "INCONEL_718",
+        "17-4": "17_4PH", "17-4PH": "17_4PH",
+    }
+    seat_mat_key = MAT_ALIASES.get(params.get("seat_material", ""), params.get("seat_material", "316L_SS"))
+    seal_mat_key = MAT_ALIASES.get(params.get("seal_material", ""), params.get("seal_material", "PTFE"))
+    if seat_mat_key not in MATERIALS:
+        seat_mat_key = "316L_SS"
+    if seal_mat_key not in MATERIALS:
+        seal_mat_key = "PTFE"
+    mat_seat = MATERIALS[seat_mat_key]
+    mat_seal = MATERIALS[seal_mat_key]
     gas = GASES.get(params.get("gas", "N2"), GASES["N2"])
     contact_type = params.get("contact_type", "sphere_on_cone")
 
