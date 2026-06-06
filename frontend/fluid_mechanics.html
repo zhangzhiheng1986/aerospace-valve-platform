@@ -386,7 +386,7 @@ body {
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h2><span>&#x1F4A7;</span> <span id="sidebar-title">Fluid Mechanics</span></h2>
-    <div class="sub" id="sidebar-sub">Super Calculator &mdash; 121 Formulas</div>
+    <div class="sub" id="sidebar-sub">Super Calculator &mdash; </div>
     <div class="lang-switch">
       <button class="lang-btn active" id="btn-zh" onclick="setLang('zh')">&#x4E2D;&#x6587;</button>
       <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
@@ -494,7 +494,8 @@ function setLang(l) {
   document.getElementById('btn-zh').classList.toggle('active', l==='zh');
   document.getElementById('btn-en').classList.toggle('active', l==='en');
   document.getElementById('sidebar-title').textContent = l==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8BA1\u7B97\u5668' : 'Fluid Mechanics';
-  document.getElementById('sidebar-sub').innerHTML = l==='zh' ? '\u8D85\u7EA7\u8BA1\u7B97\u5668 &mdash; 121 \u4E2A\u516C\u5F0F' : 'Super Calculator &mdash; 121 Formulas';
+  const totalCount = Object.values(catalog).reduce((s,c)=>s+(c.count||0),0);
+  document.getElementById('sidebar-sub').innerHTML = l==='zh' ? '\u8D85\u7EA7\u8BA1\u7B97\u5668 &mdash; '+totalCount+' \u4E2A\u516C\u5F0F' : 'Super Calculator &mdash; '+totalCount+' Formulas';
   document.getElementById('page-title').textContent = l==='zh' ? '\u6D41\u4F53\u529B\u5B66\u8D85\u7EA7\u8BA1\u7B97\u5668' : 'Fluid Mechanics Super Calculator';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = getI18n(el.dataset.i18n);
@@ -571,6 +572,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ===== SIDEBAR RENDER =====
 function renderSidebar() {
   const nav = document.getElementById('sidebar-nav');
+  // Update sidebar-sub with actual formula count
+  const totalCount = Object.values(catalog).reduce((s,c)=>s+(c.count||0),0);
+  document.getElementById('sidebar-sub').innerHTML = lang==='zh' ? '\u8D85\u7EA7\u8BA1\u7B97\u5668 &mdash; '+totalCount+' \u4E2A\u516C\u5F0F' : 'Super Calculator &mdash; '+totalCount+' Formulas';
   const icons = {
     'flask':'\ud83e\uddea','water':'\ud83d\udca7','chart-line':'\ud83d\udcc8','pipe':'\ud83d\udd27',
     'river':'\ud83c\udf0a','rocket':'\ud83d\ude80','valve':'\u2699\ufe0f','wave':'\ud83c\udf0a',
