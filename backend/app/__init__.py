@@ -76,6 +76,9 @@ def create_app(config_name=None):
     from app.blueprints.fluid_mechanics import fm_bp
     app.register_blueprint(fm_bp)
 
+    from app.blueprints.ai_agent import ai_agent_bp
+    app.register_blueprint(ai_agent_bp)
+
     # Auto-import any new news markdown files on startup
     _auto_import_news(app)
 
@@ -122,6 +125,10 @@ def _register_page_routes(app):
     @app.route('/docs')
     def docs_page():
         return render_template('docs.html')
+
+    @app.route('/ai-agent')
+    def ai_agent_page():
+        return render_template('ai_agent.html')
 
     # Legacy analysis APIs (non-module-specific)
     from app.middleware.auth import require_auth

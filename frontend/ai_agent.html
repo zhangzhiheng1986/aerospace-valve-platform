@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Co-Pilot — Aerospace Valve R&D</title>
+<style>
+:root {
+  --bg-primary: #0f1923; --bg-secondary: #1a2736; --bg-card: #1e2d3d;
+  --accent: #00b4d8; --accent-glow: rgba(0,180,216,0.15); --accent2: #48cae4;
+  --text-primary: #e0e6ed; --text-secondary: #8899aa; --text-muted: #5a6a7a;
+  --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
+  --radius: 8px; --radius-sm: 5px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+  height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* Header */
+.header {
+  background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+  padding: 8px 16px; display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0; z-index: 10;
+}
+.header .logo { font-size: 1.4em; }
+.header h1 { font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+.header .status { font-size: 0.75em; color: var(--success); margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.header .status-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.header .back-link { color: var(--text-secondary); text-decoration: none; font-size: 0.85em; margin-left: 12px; }
+.header .back-link:hover { color: var(--accent); }
+
+/* Chat container */
+.chat-container {
+  flex:1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  scroll-behavior: smooth;
+}
+
+/* Messages */
+.message { display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.message.agent { align-self: flex-start; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.9em;
+}
+.message.agent .avatar { background: var(--accent-glow); border: 1px solid var(--accent); }
+.message.user .avatar { background: rgba(81,207,102,0.15); border: 1px solid var(--success); }
+.bubble {
+  padding: 10px 14px; border-radius: var(--radius); font-size: 0.92em; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word;
+}
+.message.agent .bubble { background: var(--bg-card); border: 1px solid var(--border); border-top-left-radius: 2px; }
+.message.user .bubble { background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.2); border-top-right-radius: 2px; }
+.message.agent .bubble strong { color: var(--accent2); }
+
+/* Result cards inside agent bubbles */
+.agent-card {
+  margin-top: 10px; padding: 12px; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 0.88em;
+}
+.agent-card .card-title {
+  font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 0.92em;
+}
+.agent-card table { width:100%; border-collapse:collapse; margin: 6px 0; }
+.agent-card td { padding: 4px 8px; border-bottom: 1px solid var(--border); font-size: 0.85em; }
+.agent-card td:first-child { color: var(--text-secondary); width: 40%; }
+.agent-card td:last-child { font-weight: 500; }
+.agent-card .pass { color: var(--success); }
+.agent-card .fail { color: var(--danger); }
+
+/* Suggested prompts (chips) */
+.suggestions {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+}
+.suggestions button {
+  padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border);
+  background: var(--bg-secondary); color: var(--text-secondary);
+  font-size: 0.8em; cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.suggestions button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+/* Input area */
+.input-area {
+  padding: 10px 16px calc(10px + var(--safe-bottom));
+  border-top: 1px solid var(--border); background: var(--bg-secondary);
+  flex-shrink: 0; display: flex; gap: 8px; align-items: flex-end;
+}
+.input-area textarea {
+  flex:1; padding: 10px 14px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-primary);
+  color: var(--text-primary); font-size: 0.9em; resize: none;
+  font-family: inherit; min-height: 42px; max-height: 120px; outline: none;
+  line-height: 1.45;
+}
+.input-area textarea:focus { border-color: var(--accent); }
+.input-area textarea::placeholder { color: var(--text-muted); }
+.send-btn {
+  width: 42px; height: 42px; border-radius: 50%; border: none;
+  background: var(--accent); color: #fff; font-size: 1.2em;
+  cursor: pointer; flex-shrink: 0; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+}
+.send-btn:hover { background: var(--accent2); transform: scale(1.05); }
+.send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+/* Typing indicator */
+.typing { display: flex; gap: 4px; padding: 8px 0; }
+.typing span {
+  width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* Info bar */
+.info-bar {
+  text-align: center; padding: 4px; font-size: 0.72em; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+
+/* Quick start */
+.quick-start {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;
+  padding: 0 16px 8px;
+}
+.quick-start button {
+  padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-primary); font-size: 0.82em;
+  cursor: pointer; transition: all 0.15s; text-align: left; display: flex; align-items: center; gap: 8px;
+}
+.quick-start button:hover { border-color: var(--accent); background: var(--accent-glow); }
+.quick-start button .qs-icon { font-size: 1.1em; }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .message { max-width: 92%; }
+  .header h1 { font-size: 0.9em; }
+  .chat-container { padding: 10px; gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <span class="logo">&#x1F916;</span>
+  <h1>AI Co-Pilot</h1>
+  <span class="status"><span class="status-dot"></span>active</span>
+  <a href="/" class="back-link">&larr; Platform</a>
+</div>
+
+<!-- Quick start cards -->
+<div class="info-bar">Suggest a question or describe your engineering task</div>
+<div class="quick-start" id="quick-start">
+  <button onclick="sendQuick('帮我设计一个21MPa工作压力的电磁阀')"><span class="qs-icon">&#x2699;</span>设计电磁阀</button>
+  <button onclick="sendQuick('查询TC4钛合金的性能参数')"><span class="qs-icon">&#x1F4CA;</span>查询TC4材料</button>
+  <button onclick="sendQuick('QJ 20156标准的鉴定要求是什么')"><span class="qs-icon">&#x1F4DC;</span>标准合规</button>
+  <button onclick="sendQuick('帮我设计一个活塞密封O形圈，压力30MPa')"><span class="qs-icon">&#x26ED;</span>O形圈设计</button>
+  <button onclick="sendQuick('氮气管道DN10、流速20m/s的雷诺数是多少')"><span class="qs-icon">&#x1F4CF;</span>雷诺数计算</button>
+  <button onclick="sendQuick('对比TC4和GH4169在阀门弹簧中的应用')"><span class="qs-icon">&#x2696;</span>材料对比</button>
+</div>
+
+<!-- Chat -->
+<div class="chat-container" id="chat-container">
+  <!-- Messages injected here -->
+</div>
+
+<!-- Input -->
+<div class="input-area">
+  <textarea id="user-input" placeholder="描述你的工程设计问题..." rows="1" onkeydown="onInputKey(event)"></textarea>
+  <button class="send-btn" id="send-btn" onclick="sendMessage()">&#x2191;</button>
+</div>
+
+<script>
+// ===== State =====
+let sessionId = null;
+let isProcessing = false;
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', () => {
+  createSession();
+  autoResize(document.getElementById('user-input'));
+});
+
+async function createSession() {
+  try {
+    const res = await fetch('/api/agent/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await res.json();
+    if (data.success) {
+      sessionId = data.session_id;
+      addMessage('agent', data.greeting, null);
+    }
+  } catch (e) {
+    console.error('Session creation failed:', e);
+  }
+}
+
+// ===== Send =====
+function sendQuick(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function onInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const msg = input.value.trim();
+  if (!msg || isProcessing || !sessionId) return;
+
+  input.value = '';
+  autoResize(input);
+  document.getElementById('quick-start').style.display = 'none';
+  addMessage('user', msg, null);
+
+  isProcessing = true;
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  showTyping();
+
+  try {
+    const res = await fetch('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, message: msg })
+    });
+    const data = await res.json();
+    hideTyping();
+
+    if (data.success && data.response) {
+      addMessage('agent', data.response.text, data.response);
+      if (data.response.tool_results) {
+        addToolCard(data.response);
+      }
+      if (data.response.suggestions && data.response.suggestions.length > 0) {
+        addSuggestions(data.response.suggestions);
+      }
+    } else {
+      addMessage('agent', 'Sorry, I encountered an error processing your request. Please try again.', null);
+    }
+  } catch (e) {
+    hideTyping();
+    addMessage('agent', 'Network error. Please check your connection and try again.', null);
+  }
+
+  isProcessing = false;
+  btn.disabled = false;
+  input.focus();
+}
+
+// ===== Message rendering =====
+function addMessage(role, text, response) {
+  const container = document.getElementById('chat-container');
+  const div = document.createElement('div');
+  div.className = 'message ' + role;
+
+  if (role === 'agent') {
+    div.innerHTML = '<div class="avatar">&#x1F916;</div><div class="bubble">' + formatText(text) + '</div>';
+  } else {
+    div.innerHTML = '<div class="avatar">&#x1F464;</div><div class="bubble">' + escapeHtml(text) + '</div>';
+  }
+
+  container.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+function addToolCard(response) {
+  const last = document.querySelector('.message.agent:last-of-type .bubble');
+  if (!last || !response.tool_results) return;
+
+  let html = '';
+  const data = response.tool_results;
+
+  if (response.intent === 'compliance' && data && typeof data === 'object') {
+    html = '<div class="agent-card"><div class="card-title">QJ 20156 Compliance Check</div><table>';
+    for (const [k, v] of Object.entries(data)) {
+      html += '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
+    }
+    html += '</table></div>';
+  } else if (response.intent === 'material' && data) {
+    html = '<div class="agent-card"><div class="card-title">Material Properties</div><table>';
+    for (const [k, v] of Object.entries(data)) {
+      html += '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
+    }
+    html += '</table></div>';
+  }
+
+  if (html) last.innerHTML += html;
+}
+
+function addSuggestions(suggestions) {
+  const container = document.getElementById('chat-container');
+  const div = document.createElement('div');
+  div.className = 'message agent';
+  div.innerHTML = '<div class="avatar" style="visibility:hidden"></div><div class="bubble"><div class="suggestions">'
+    + suggestions.map(s => '<button onclick="sendQuick(\'' + escapeHtml(s) + '\')">' + escapeHtml(s) + '</button>').join('')
+    + '</div></div>';
+  container.appendChild(div);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const container = document.getElementById('chat-container');
+  const div = document.createElement('div');
+  div.className = 'message agent';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="avatar">&#x1F916;</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  container.appendChild(div);
+  scrollToBottom();
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function scrollToBottom() {
+  const c = document.getElementById('chat-container');
+  requestAnimationFrame(() => { c.scrollTop = c.scrollHeight; });
+}
+
+// ===== Formatting =====
+function formatText(text) {
+  let html = escapeHtml(text);
+  // Bold markers
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Links
+  html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:var(--accent)">$1</a>');
+  return html;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'user-input') autoResize(e.target);
+});
+</script>
+</body>
+</html>

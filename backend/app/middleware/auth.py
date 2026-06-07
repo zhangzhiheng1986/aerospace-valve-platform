@@ -14,7 +14,7 @@ def _get_auth():
     global _auth
     if _auth is None:
         import auth_system as _auth_mod
-        _auth = _auth_mod
+        _auth = _auth_mod.auth
     return _auth
 
 
