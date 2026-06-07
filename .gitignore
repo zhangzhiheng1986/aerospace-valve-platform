@@ -26,3 +26,6 @@ backend/test_api*.py
 
 # Large PDF (optional)
 QJ20156-2012.pdf
+# Backups
+backups/
+
