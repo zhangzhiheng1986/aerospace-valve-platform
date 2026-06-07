@@ -128,7 +128,17 @@ def _register_page_routes(app):
 
     @app.route('/ai-agent')
     def ai_agent_page():
-        return render_template('ai_agent.html')
+        from app.middleware.auth import login_required_page
+        from flask import request, redirect
+        from auth_system import auth
+        # Check cookie-based auth
+        token = request.cookies.get('auth_token', '')
+        if not token:
+            return redirect('/login?redirect=/ai-agent')
+        is_valid, user = auth.verify_session(token)
+        if not is_valid:
+            return redirect('/login?redirect=/ai-agent')
+        return render_template('ai_agent.html', auth_token=token, user_name=user.get('username', 'Engineer'))
 
     # Legacy analysis APIs (non-module-specific)
     from app.middleware.auth import require_auth

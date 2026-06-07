@@ -181,9 +181,23 @@ body {
 </div>
 
 <script>
-// ===== State =====
+// ===== Auth & State =====
+const AUTH_TOKEN = '{{ auth_token }}';
 let sessionId = null;
 let isProcessing = false;
+
+// API helper with auth header
+async function apiCall(url, method, body) {
+  const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN };
+  const opts = { method, headers };
+  if (body !== undefined && body !== null) opts.body = typeof body === 'string' ? body : JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    window.location.href = '/login?redirect=/ai-agent';
+    throw new Error('Auth expired');
+  }
+  return res.json();
+}
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -193,8 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function createSession() {
   try {
-    const res = await fetch('/api/agent/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-    const data = await res.json();
+    const data = await apiCall('/api/agent/sessions', 'POST', {});
     if (data.success) {
       sessionId = data.session_id;
       addMessage('agent', data.greeting, null);
@@ -233,12 +246,7 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const res = await fetch('/api/agent/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, message: msg })
-    });
-    const data = await res.json();
+    const data = await apiCall('/api/agent/chat', 'POST', { session_id: sessionId, message: msg });
     hideTyping();
 
     if (data.success && data.response) {
