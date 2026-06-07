@@ -487,9 +487,10 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // 保存token和用户信息
-                    localStorage.setItem('token', data.user.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
+                    // API returns {data: {token, username, role}}
+                    const payload = data.data || data;
+                    localStorage.setItem('token', payload.token);
+                    localStorage.setItem('user', JSON.stringify(payload));
 
                     showToast('登录成功！', 'success');
 
