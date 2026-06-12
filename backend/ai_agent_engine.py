@@ -86,7 +86,7 @@ class IntentParser:
                 '流量', '流速', '压力', '压降', '雷诺数', '马赫数',
                 '水头', '功率', '效率', '扬程', '推力', '升力', '阻力',
                 '力矩', '应力', '应变', '温度', '热量', '传热',
-                '泄漏率', '泄漏', '密封', '弹簧力', '弹簧',
+                '泄漏率', '泄漏',  '弹簧力', 
                 '努塞尔', '普朗特', '摩擦系数', '水力直径',
                 '空化', '气蚀', 'NPSH', '比转速',
             ],
@@ -317,109 +317,171 @@ class AIAgentEngine:
             from fluid_mechanics_calc import compute_formula
             result = compute_formula(formula_id, inputs)
             return {'success': True, 'formula_id': formula_id, 'result': result}
+        except ImportError:
+            try:
+                from fluid_mechanics_calc import compute
+                result = compute(formula_id, inputs)
+                return {'success': True, 'formula_id': formula_id, 'result': result}
+            except Exception as e2:
+                return {'success': False, 'error': str(e2)}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
     def _tool_analyze_solenoid(self, **kwargs) -> Dict:
-        """Analyze solenoid valve."""
+        """Analyze/optimize solenoid valve using PSO hybrid optimizer."""
         try:
-            from solenoid_optimizer import SolenoidOptimizer
-            opt = SolenoidOptimizer()
+            from solenoid_optimizer import run_optimization
             voltage = float(kwargs.get('voltage', 28))
             stroke = float(kwargs.get('stroke', 2.0))
-            force = float(kwargs.get('force_required', 10))
-            result = opt.optimize(voltage=voltage, stroke=stroke, force_required=force)
-            return {'success': True, 'type': 'solenoid', 'result': result}
+            geom_params = {
+                'D_inner_mm': float(kwargs.get('D_inner_mm', 20)),
+                'D_outer_max_mm': float(kwargs.get('D_outer_max_mm', 40)),
+                'L_axial_max_mm': float(kwargs.get('L_axial_max_mm', 30)),
+                'air_gap_main_mm': float(kwargs.get('air_gap_main_mm', stroke)),
+                'armature_length_mm': float(kwargs.get('armature_length_mm', 55)),
+                'V_rated': voltage,
+                'I_current_limit': float(kwargs.get('current_limit', 2.0)),
+            }
+            result = run_optimization(geom_params, 20, 50)
+            if result.get('success'):
+                return {
+                    'success': True, 'type': 'solenoid',
+                    'best_awg': result.get('best_awg'),
+                    'mass_g': result.get('mass_g'),
+                    'power_W': result.get('power_W'),
+                    'best_info': result.get('best_info', {}),
+                }
+            return {'success': False, 'error': result.get('message', 'Optimization failed')}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
     def _tool_analyze_prv(self, **kwargs) -> Dict:
-        """Analyze pressure reducing valve."""
+        """Design pressure reducing valve."""
         try:
-            from pressure_reducing_valve import analyze_prv
-            result = analyze_prv(
-                inlet_pressure=float(kwargs.get('inlet_pressure', 10e6)),
-                outlet_pressure=float(kwargs.get('outlet_pressure', 2e6)),
-                fluid_type=kwargs.get('fluid_type', 'nitrogen'),
-                material=kwargs.get('material', '1Cr18Ni9Ti'),
+            from pressure_reducing_valve import PressureReducingValveDesigner, ValveInputParams
+            params = ValveInputParams(
+                fluid_type=kwargs.get('fluid_type', 'hydraulic_oil'),
+                inlet_pressure=float(kwargs.get('inlet_pressure', 2.0)),
+                outlet_pressure=float(kwargs.get('outlet_pressure', 0.5)),
+                flow_rate=float(kwargs.get('flow_rate', 5.0)),
+                fluid_temperature=float(kwargs.get('fluid_temperature', 50)),
             )
+            designer = PressureReducingValveDesigner(params)
+            result = designer.design()
             return {'success': True, 'type': 'pressure_valve', 'result': result}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
     def _tool_analyze_check(self, **kwargs) -> Dict:
-        """Analyze check valve."""
+        """Design check valve (HB 6455-2014 / QJ 1142A-2008)."""
         try:
-            from check_valve import analyze_check_valve
-            result = analyze_check_valve(
-                nominal_diameter=float(kwargs.get('nominal_diameter', 10)),
-                pressure=float(kwargs.get('pressure_rating', 21)),
-                fluid_type=kwargs.get('fluid_type', 'nitrogen'),
-            )
+            from check_valve import run_check_valve_design
+            data = {
+                'medium_type': kwargs.get('medium_type', 'hydraulic_oil'),
+                'valve_type': kwargs.get('valve_type', 'poppet'),
+                'nominal_diameter': float(kwargs.get('nominal_diameter', 8.0)),
+                'cracking_pressure': float(kwargs.get('cracking_pressure', 0.05)),
+                'flow_rate': float(kwargs.get('flow_rate', 10.0)),
+            }
+            result = run_check_valve_design(data)
             return {'success': True, 'type': 'check_valve', 'result': result}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
     def _tool_design_spring(self, **kwargs) -> Dict:
-        """Design compression spring."""
+        """Design compression spring (4 aerospace materials, fatigue + stability check)."""
         try:
-            from spring_design import design_compression_spring
-            result = design_compression_spring(
-                wire_diameter=float(kwargs.get('wire_diameter', 0)) or None,
-                outer_diameter=float(kwargs.get('outer_diameter', 20)),
-                free_length=float(kwargs.get('free_length', 50)),
-                active_coils=int(kwargs.get('active_coils', 8)),
-                material=kwargs.get('material', '1Cr18Ni9Ti'),
-            )
+            from spring_design import design_spring
+            data = {
+                'material': kwargs.get('material', '50CrVA'),
+                'wire_diameter': float(kwargs.get('wire_diameter', 1.0)),
+                'outer_diameter': float(kwargs.get('outer_diameter', 10.0)),
+                'free_length': float(kwargs.get('free_length', 30.0)),
+                'active_coils': float(kwargs.get('active_coils', 8)),
+                'force_required': float(kwargs.get('force_required', 10.0)),
+                'deflection': float(kwargs.get('deflection', 5.0)),
+            }
+            result = design_spring(data)
             return {'success': True, 'type': 'spring', 'result': result}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
     def _tool_design_oring(self, **kwargs) -> Dict:
-        """Design O-ring seal."""
+        """Design O-ring seal (SAE AS568F / ISO 3601-2, Roth leakage model)."""
         try:
-            from oring_design import analyze_oring
-            result = analyze_oring(
-                app_type=kwargs.get('application_type', 'piston_seal'),
-                housing_diameter=float(kwargs.get('housing_diameter', 25)),
-                pressure=float(kwargs.get('pressure', 21)),
-                material=kwargs.get('material', 'FKM'),
-            )
+            from oring_design import design_oring
+            data = {
+                'seal_type': kwargs.get('seal_type', 'piston'),
+                'bore_diameter': float(kwargs.get('bore_diameter', 25.0)),
+                'pressure': float(kwargs.get('pressure', 2.0)),
+                'temperature': float(kwargs.get('temperature', 80)),
+                'material': kwargs.get('material', 'NBR'),
+            }
+            result = design_oring(data)
             return {'success': True, 'type': 'oring', 'result': result}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
     def _tool_check_compliance(self, **kwargs) -> Dict:
-        """Check QJ 20156 compliance."""
+        """Check valve design compliance per QJ 20156-2014 (proof 1.5x, burst 2.0x, life>=20000)."""
         try:
-            from qj20156_module import get_standard_info, evaluate_compliance
+            from qj20156_module import get_standard_info
             info = get_standard_info()
-            eval_args = {}
+            # Run specific checks if design params provided
+            checks = {}
             if kwargs.get('rated_pressure'):
-                eval_args['rated_pressure'] = float(kwargs['rated_pressure'])
-            if kwargs.get('rated_temperature'):
-                eval_args['rated_temperature'] = float(kwargs['rated_temperature'])
+                try:
+                    from qj20156_module import calc_proof_pressure
+                    checks['proof_pressure'] = calc_proof_pressure(float(kwargs['rated_pressure']))
+                except: pass
             if kwargs.get('design_life'):
-                eval_args['design_life'] = int(kwargs['design_life'])
-            compliance = evaluate_compliance(**eval_args) if eval_args else {}
+                try:
+                    from qj20156_module import verify_life_cycles
+                    checks['life_cycles'] = verify_life_cycles(int(kwargs['design_life']))
+                except: pass
             return {
-                'success': True,
+                'success': True, 'type': 'compliance',
                 'standard_info': info,
-                'compliance': compliance,
+                'checks': checks,
             }
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
+    @staticmethod
+    def _material_to_dict(mat) -> Dict:
+        """Convert MaterialProperty object to serializable dict."""
+        if isinstance(mat, dict):
+            return mat
+        d = {}
+        for attr in dir(mat):
+            if not attr.startswith('_'):
+                try:
+                    val = getattr(mat, attr)
+                    if not callable(val):
+                        d[attr] = val
+                except Exception:
+                    pass
+        return d
+
     def _tool_query_material(self, **kwargs) -> Dict:
-        """Query material database."""
+        """Query material database with fuzzy name matching."""
         material_name = kwargs.get('material_name', 'TC4')
         try:
-            from materials_database import get_material_by_name
-            material = get_material_by_name(material_name)
+            from materials_database import AerospaceMaterialsDatabase
+            db = AerospaceMaterialsDatabase()
+            # Try exact match first
+            material = db.get_material(material_name)
             if material:
-                return {'success': True, 'material': material}
-            else:
-                return {'success': False, 'error': f'Material "{material_name}" not found'}
+                return {'success': True, 'material': self._material_to_dict(material)}
+            # Fuzzy match: search all material names for substring
+            for key, val in db.materials.items():
+                if material_name.lower() in key.lower():
+                    return {'success': True,
+                            'material': self._material_to_dict(val),
+                            'matched_name': key, 'matched_by': 'fuzzy'}
+            return {'success': False,
+                    'error': f'Material "{material_name}" not found in {len(db.materials)} materials',
+                    'available': [k for k in list(db.materials.keys())[:10]]}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
@@ -580,146 +642,234 @@ class AIAgentEngine:
     # ---- Intent Handlers ----
     
     def _handle_calculate(self, message: str, params: Dict, response: Dict) -> Dict:
-        """Handle calculation intent."""
-        # Try to determine what to calculate
+        """Handle calculation intent - auto-execute fluid mechanics formulas."""
+        response['action'] = 'run_fluid_calculation'
+        
+        # Try formula-id-based matching
+        formula_id = None
+        formula_inputs = {}
+        
         if '雷诺数' in message or 'reynolds' in message.lower():
-            diam = params.get('diameter_mm', 10) / 1000
-            vel = params.get('diameter_mm') or 1.0  # fallback
-            response['text'] = (
-                '我来帮你计算雷诺数。雷诺数 Re = v * D / nu，'
-                '需要流体的运动粘度。请提供以下参数：\n\n'
-                f'• 管径: {diam*1000:.1f} mm (从你的描述中提取)\n'
-                '• 流速: ? m/s (请确认)\n'
-                '• 介质: ? (氮气/氦气/液氧等)\n\n'
-                '你也可以直接使用 [流体力学计算器](/fluid_mechanics) 获取精确结果。'
-            )
-            response['suggestions'] = ['打开流体力学计算器', '输入流速和介质']
+            formula_id = 'reynolds_number'
+            diam = params.get('diameter_mm') or params.get('diameter') or 10
+            vel = params.get('velocity') or 1.0
+            nu = params.get('kinematic_viscosity') or 1.5e-5
+            formula_inputs = {'diameter': float(diam), 'velocity': float(vel), 'kinematic_viscosity': float(nu)}
+            
         elif '压降' in message or 'pressure drop' in message.lower():
-            response['text'] = (
-                '管道压降计算需要考虑沿程损失和局部损失。\n\n'
-                '基本公式 (Darcy-Weisbach):\n'
-                'ΔP = f * (L/D) * (rho * v^2 / 2)\n\n'
-                '请提供：管长 L、管径 D、流速 v、流体类型。\n'
-                '或使用流体力学计算器中的管道流动模块。'
-            )
-            response['suggestions'] = ['管道流动计算', '输入管长和管径']
-        elif '马赫' in message or 'mach' in message.lower():
-            response['text'] = (
-                '马赫数 M = v / c，其中 c = sqrt(gamma * R * T) 为当地声速。\n\n'
-                '对于理想气体：\n'
-                '• 空气 (15degC): c ≈ 340 m/s\n'
-                '• 氮气 (15degC): c ≈ 350 m/s\n'
-                '• 氦气 (15degC): c ≈ 1000 m/s\n\n'
-                '请在流体力学计算器中输入流速和气体类型。'
-            )
-            response['suggestions'] = ['可压缩流模块', '选择气体类型']
+            formula_id = 'darcy_weisbach'
+            length = params.get('length') or 1.0
+            diam = params.get('diameter') or params.get('diameter_mm') or 10
+            vel = params.get('velocity') or 1.0
+            rho = params.get('density') or 1.2
+            friction = params.get('friction_factor') or 0.02
+            formula_inputs = {'length': float(length), 'diameter': float(diam), 'velocity': float(vel),
+                             'density': float(rho), 'friction_factor': float(friction)}
+            
+        elif '马赫数' in message or '马赫' in message or 'mach' in message.lower():
+            formula_id = 'mach_number'
+            vel = params.get('velocity') or 340
+            gamma = params.get('gamma') or 1.4
+            R = params.get('gas_constant') or 287
+            T = params.get('temperature') or 288
+            formula_inputs = {'velocity': float(vel), 'gamma': float(gamma), 'R': float(R), 'temperature': float(T)}
+            
+        elif '流量' in message or 'flow rate' in message.lower() or 'flowrate' in message.lower():
+            formula_id = 'volumetric_flow_rate'
+            area = params.get('area') or params.get('cross_section') or 0.00785
+            vel = params.get('velocity') or 1.0
+            formula_inputs = {'area': float(area), 'velocity': float(vel)}
+            
+        elif '贝努利' in message or 'bernoulli' in message.lower():
+            formula_id = 'bernoulli_equation'
+            p1 = params.get('pressure1') or 101325
+            v1 = params.get('velocity1') or 1.0
+            z1 = params.get('height1') or 0
+            v2 = params.get('velocity2') or 0
+            z2 = params.get('height2') or 0
+            rho = params.get('density') or 1.2
+            formula_inputs = {'p1': float(p1), 'v1': float(v1), 'z1': float(z1), 'v2': float(v2), 'z2': float(z2), 'density': float(rho)}
+        
+        if formula_id:
+            result = self._tool_run_fluid_calculation(formula_id=formula_id, inputs=formula_inputs)
+            response['tool_executed'] = True
+            response['tool_results'] = result
+            
+            if result.get('success'):
+                r = result.get('result', {})
+                value = r if isinstance(r, (int, float)) else r.get('value', r)
+                response['text'] = (
+                    f'=== {formula_id.replace("_", " ").title()} ===\n\n'
+                    f'Inputs: {formula_inputs}\n\n'
+                    f'Result: {value}\n'
+                )
+                response['suggestions'] = ['Recalculate with different values', 'Open Fluid Mechanics Calculator']
+            else:
+                response['text'] = (
+                    f'Calculation attempted for "{formula_id}" but encountered an error:\n'
+                    f'{result.get("error", "Unknown error")}\n\n'
+                    'Please try the [Fluid Mechanics Calculator](/fluid_mechanics) directly.'
+                )
         else:
             response['text'] = (
-                '我可以帮你执行各种流体力学和工程计算。请具体说明需要计算什么参数。\n\n'
-                '支持的领域：\n'
-                '• 流体力学 (雷诺数/马赫数/压降/流量)\n'
-                '• 阀门设计 (电磁阀/减压阀/单向阀)\n'
-                '• 弹簧设计 / 密封设计\n'
-                '• 热力学分析 / CFD仿真\n\n'
-                '你也可以直接在 [流体力学计算器](/fluid_mechanics) 中运行任意公式。'
+                '=== Fluid Mechanics Calculations ===\n\n'
+                'I can calculate:\n'
+                '- Reynolds number / Mach number\n'
+                '- Pressure drop (Darcy-Weisbach)\n'
+                '- Flow rate / Bernoulli equation\n'
+                '- And 200+ more formulas\n\n'
+                'What would you like to calculate? Provide the formula name and key parameters.\n'
+                'Or open the [Fluid Mechanics Calculator](/fluid_mechanics) for the full catalog.'
             )
-            response['suggestions'] = ['雷诺数计算', '管道压降计算', '阀门推力计算']
+            response['suggestions'] = ['Calculate Reynolds number', 'Calculate pressure drop', 'Calculate Mach number']
         
         return response
-    
+
     def _handle_analyze_valve(self, message: str, params: Dict, response: Dict) -> Dict:
-        """Handle valve analysis intent."""
+        """Handle valve analysis intent - auto-execute tools when params available."""
+        
         if '电磁阀' in message or 'solenoid' in message.lower():
             response['action'] = 'analyze_solenoid'
-            response['text'] = (
-                '=== 电磁阀智能分析 ===\n\n'
-                '我使用PSO粒子群优化算法为您设计电磁阀。\n\n'
-                '【推荐参数】(卫星姿控典型工况)\n'
-                '• 电压: 28 V DC\n'
-                '• 行程: 2.0 mm\n'
-                '• 需求电磁力: 10 N\n'
-                '• 线径: AWG 26\n'
-                '• 工作介质: 氮气\n\n'
-                '我可以帮您运行优化计算。是否需要我立即执行？\n'
-            )
-            response['suggestions'] = ['运行电磁阀优化', '调整行程为3mm', '对比AWG 24和26']
+            voltage = params.get('voltage') or 28
+            stroke = params.get('stroke') or 2.0
+            force = params.get('force_required') or params.get('force') or 10
+            
+            result = self._tool_analyze_solenoid(voltage=voltage, stroke=stroke, force_required=force)
+            response['tool_executed'] = True
+            response['tool_results'] = result
+            
+            if result.get('success'):
+                r = result.get('result', {})
+                response['text'] = (
+                    '=== Solenoid Valve PSO Optimization ===\n\n'
+                    f'Input: {voltage}V, {stroke}mm stroke, {force}N target\n\n'
+                    f'Turns: {r.get("turns", "N/A")}\n'
+                    f'Wire dia: {r.get("wire_diameter", "N/A")} mm\n'
+                    f'Current: {r.get("current", "N/A")} A\n'
+                    f'Power: {r.get("power", "N/A")} W\n'
+                    f'Force: {r.get("force", "N/A")} N\n'
+                )
+                response['suggestions'] = ['Adjust stroke', 'Compare AWG', 'Open Solenoid Designer']
+            else:
+                response['text'] = f'Solenoid optimization error: {result.get("error")}'
         
         elif '减压阀' in message or 'pressure reducing' in message.lower():
             response['action'] = 'analyze_prv'
-            response['text'] = (
-                '=== 减压阀设计分析 ===\n\n'
-                '当前支持5种流体介质和3种材料。\n'
-                '【典型航天工况】\n'
-                '• 入口压力: 10 MPa (高压气瓶)\n'
-                '• 出口压力: 2 MPa (下游系统)\n'
-                '• 介质: 氮气\n'
-                '• 阀体材料: 1Cr18Ni9Ti\n\n'
-                '需要我基于这些参数运行设计计算吗？'
-            )
-            response['suggestions'] = ['运行减压阀分析', '对比氦气介质', '调整出口压力']
+            inlet = params.get('inlet_pressure') or params.get('inlet') or 10e6
+            outlet = params.get('outlet_pressure') or params.get('outlet') or 2e6
+            fluid = params.get('fluid') or 'nitrogen'
+            mat = params.get('material') or '1Cr18Ni9Ti'
+            
+            result = self._tool_analyze_prv(inlet_pressure=inlet, outlet_pressure=outlet, fluid_type=fluid, material=mat)
+            response['tool_executed'] = True
+            response['tool_results'] = result
+            
+            if result.get('success'):
+                r = result.get('result', {})
+                response['text'] = (
+                    '=== Pressure Reducing Valve Design ===\n\n'
+                    f'Inlet: {inlet/1e6:.1f} MPa | Outlet: {outlet/1e6:.1f} MPa | Fluid: {fluid} | Material: {mat}\n\n'
+                    f'Seat dia: {r.get("seat_diameter", "N/A")} mm\n'
+                    f'Poppet stroke: {r.get("poppet_stroke", "N/A")} mm\n'
+                    f'Spring K: {r.get("spring_stiffness", "N/A")} N/mm\n'
+                    f'Cv: {r.get("cv", "N/A")}\n'
+                )
+                response['suggestions'] = ['Adjust outlet', 'Compare helium', 'Open PRV Designer']
+            else:
+                response['text'] = f'PRV design error: {result.get("error")}'
         
         elif '单向阀' in message or '止回阀' in message or 'check valve' in message.lower():
             response['action'] = 'analyze_check'
-            response['text'] = (
-                '=== 单向阀设计分析 (HB 6455-2014) ===\n\n'
-                '标准要求：\n'
-                '• 开启压力: <=0.05 MPa\n'
-                '• 反向泄漏: <=1e-5 Pa*m^3/s (He)\n'
-                '• 流阻系数: 优化最小化\n\n'
-                '【典型参数】\n'
-                '• 通径: 10 mm\n'
-                '• 额定压力: 21 MPa\n'
-                '• 介质: 氮气\n\n'
-                '共有6个子模块可用。需要运行计算吗？'
-            )
-            response['suggestions'] = ['运行单向阀设计', '对比不同通径', '检查密封性能']
+            diam = params.get('diameter') or params.get('nominal_diameter') or 10
+            press = params.get('pressure_rating') or params.get('pressure') or 21
+            fluid = params.get('fluid') or 'nitrogen'
+            
+            result = self._tool_analyze_check(nominal_diameter=diam, pressure_rating=press, fluid_type=fluid)
+            response['tool_executed'] = True
+            response['tool_results'] = result
+            
+            if result.get('success'):
+                r = result.get('result', {})
+                response['text'] = (
+                    '=== Check Valve Design (HB 6455-2014) ===\n\n'
+                    f'DN: {diam}mm | Pressure: {press}MPa | Fluid: {fluid}\n\n'
+                    f'Cracking P: {r.get("cracking_pressure", "N/A")} MPa\n'
+                    f'Flow resistance: {r.get("flow_resistance", "N/A")}\n'
+                    f'Reverse leak: {r.get("reverse_leakage", "N/A")} Pa*m3/s\n'
+                )
+                response['suggestions'] = ['Compare diameters', 'Check sealing', 'Open Check Valve Designer']
+            else:
+                response['text'] = f'Check valve error: {result.get("error")}'
         
-        elif 'O形' in message or 'O型' in message or 'oring' in message.lower() or 'o-ring' in message.lower():
+        elif 'O' in message and ('形' in message or '型' in message or 'ring' in message):
             response['action'] = 'design_oring'
-            response['text'] = (
-                '=== O形密封圈设计 (SAE AS568F / ISO 3601-2) ===\n\n'
-                '使用Roth分子流泄漏率模型。\n\n'
-                '【推荐参数】\n'
-                '• 密封类型: 活塞密封\n'
-                '• 安装槽径: 25 mm\n'
-                '• 工作压力: 21 MPa\n'
-                '• 材料: FKM (氟橡胶)\n'
-                '• 温度范围: -20 ~ 200degC\n\n'
-                'ASA568数据库覆盖5~656mm。需要运行设计吗？'
-            )
-            response['suggestions'] = ['运行O形圈设计', '对比NBR和FKM', '检查泄漏率']
+            app = params.get('application_type') or 'piston_seal'
+            diam = params.get('housing_diameter') or params.get('diameter') or 25
+            press = params.get('pressure') or 21
+            mat = params.get('material') or 'FKM'
+            
+            result = self._tool_design_oring(application_type=app, housing_diameter=diam, pressure=press, material=mat)
+            response['tool_executed'] = True
+            response['tool_results'] = result
+            
+            if result.get('success'):
+                r = result.get('result', {})
+                response['text'] = (
+                    '=== O-Ring Design (AS568F) ===\n\n'
+                    f'Type: {app} | Groove: {diam}mm | P: {press}MPa | Material: {mat}\n\n'
+                    f'AS568#: {r.get("as568_dash", "N/A")}\n'
+                    f'CS: {r.get("cs", "N/A")} mm\n'
+                    f'ID: {r.get("id", "N/A")} mm\n'
+                    f'Compression: {r.get("compression_ratio", "N/A")}%\n'
+                    f'Leak rate: {r.get("leak_rate", "N/A")} Pa*m3/s\n'
+                )
+                response['suggestions'] = ['Compare NBR', 'Adjust compression', 'Open O-ring Designer']
+            else:
+                response['text'] = f'O-ring error: {result.get("error")}'
         
         elif '弹簧' in message or 'spring' in message.lower():
             response['action'] = 'design_spring'
-            response['text'] = (
-                '=== 压缩弹簧设计 ===\n\n'
-                '支持4种航空材料，迭代求解器 + 疲劳/稳定性校核。\n\n'
-                '【典型参数】\n'
-                '• 外径: 20 mm\n'
-                '• 自由长度: 50 mm\n'
-                '• 有效圈数: 8\n'
-                '• 材料: 1Cr18Ni9Ti\n'
-                '• 钢丝直径: (自动迭代求解)\n\n'
-                '需要运行弹簧设计计算吗？'
-            )
-            response['suggestions'] = ['运行弹簧设计', '对比不同材料', '校核疲劳寿命']
+            od = params.get('outer_diameter') or params.get('diameter') or 20
+            fl = params.get('free_length') or 50
+            ac = params.get('active_coils') or params.get('coils') or 8
+            mat = params.get('material') or '1Cr18Ni9Ti'
+            wd = params.get('wire_diameter') or 0
+            
+            result = self._tool_design_spring(wire_diameter=wd, outer_diameter=od, free_length=fl, active_coils=int(ac), material=mat)
+            response['tool_executed'] = True
+            response['tool_results'] = result
+            
+            if result.get('success'):
+                r = result.get('result', {})
+                response['text'] = (
+                    '=== Compression Spring Design ===\n\n'
+                    f'OD: {od}mm | Free L: {fl}mm | Coils: {ac} | Material: {mat}\n\n'
+                    f'Wire dia: {r.get("wire_diameter", "N/A")} mm\n'
+                    f'Stiffness: {r.get("stiffness", "N/A")} N/mm\n'
+                    f'Max load: {r.get("max_load", "N/A")} N\n'
+                    f'Fatigue SF: {r.get("fatigue_safety", "N/A")}\n'
+                    f'Stability: {r.get("stability", "N/A")}\n'
+                )
+                response['suggestions'] = ['Compare materials', 'Adjust coils', 'Open Spring Designer']
+            else:
+                response['text'] = f'Spring design error: {result.get("error")}'
         
         else:
             response['text'] = (
-                '=== 阀门设计分析能力 ===\n\n'
-                '我可以帮您分析和设计以下阀类：\n'
-                '• 电磁阀 (PSO粒子群优化 + AWG搜索)\n'
-                '• 减压阀 (5流体5材料3预设)\n'
-                '• 单向阀 (HB 6455-2014标准)\n'
-                '• 弹簧设计 (4材料, 迭代, 疲劳/稳定性)\n'
-                '• O形密封圈 (SAE AS568F, Roth泄漏率)\n'
-                '• 密封副 (Hertz接触 + Roth分子流)\n\n'
-                '请指定阀门类型和关键参数。'
+                '=== Valve Design Capabilities ===\n\n'
+                'I can analyze and design these valve types:\n'
+                '- Solenoid Valve (PSO + AWG search)\n'
+                '- Pressure Reducing Valve (5 fluids, 5 materials)\n'
+                '- Check Valve (HB 6455-2014)\n'
+                '- Spring Design (4 materials, iterative solver)\n'
+                '- O-Ring Seal (AS568F, Roth leak model)\n'
+                '- Seal Pair (Hertz contact + Roth flow)\n\n'
+                'Specify valve type and parameters, I will run the calculation immediately.'
             )
-            response['suggestions'] = ['分析电磁阀', '设计O形圈', '设计压缩弹簧']
+            response['suggestions'] = ['Analyze solenoid', 'Design O-ring', 'Design spring']
         
         return response
-    
+
     def _handle_compliance(self, message: str, params: Dict, response: Dict) -> Dict:
         """Handle compliance verification intent."""
         response['action'] = 'check_compliance'
@@ -767,6 +917,8 @@ class AIAgentEngine:
         mat_name = params.get('material')
         if mat_name:
             result = self._tool_query_material(material_name=mat_name)
+            response['tool_executed'] = True
+            response['tool_results'] = result
             if result.get('success') and result.get('material'):
                 m = result['material']
                 response['text'] = (

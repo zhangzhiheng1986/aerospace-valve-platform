@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AI Co-Pilot — Aerospace Valve R&D</title>
+<title>AI Co-Pilot — Multi-Agent Orchestration</title>
 <style>
 :root {
   --bg-primary: #0f1923; --bg-secondary: #1a2736; --bg-card: #1e2d3d;
   --accent: #00b4d8; --accent-glow: rgba(0,180,216,0.15); --accent2: #48cae4;
   --text-primary: #e0e6ed; --text-secondary: #8899aa; --text-muted: #5a6a7a;
   --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
+  --design-color: #00b4d8; --compliance-color: #a78bfa;
   --radius: 8px; --radius-sm: 5px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -20,28 +21,24 @@ body {
   height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
 }
 
-/* Header */
 .header {
   background: var(--bg-secondary); border-bottom: 1px solid var(--border);
-  padding: 8px 16px; display: flex; align-items: center; gap: 12px;
-  flex-shrink: 0; z-index: 10;
+  padding: 8px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; z-index: 10;
 }
 .header .logo { font-size: 1.4em; }
 .header h1 { font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+.header .badge { font-size: 0.7em; padding: 2px 8px; border-radius: 10px; background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent); }
 .header .status { font-size: 0.75em; color: var(--success); margin-left: auto; display: flex; align-items: center; gap: 5px; }
 .header .status-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.header .back-link { color: var(--text-secondary); text-decoration: none; font-size: 0.85em; margin-left: 12px; }
+.header .back-link { color: var(--text-secondary); text-decoration: none; font-size: 0.85em; margin-left: 8px; }
 .header .back-link:hover { color: var(--accent); }
 
-/* Chat container */
 .chat-container {
   flex:1; overflow-y: auto; padding: 16px;
-  display: flex; flex-direction: column; gap: 14px;
-  scroll-behavior: smooth;
+  display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth;
 }
 
-/* Messages */
 .message { display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 .message.user { align-self: flex-end; flex-direction: row-reverse; }
@@ -60,15 +57,85 @@ body {
 .message.user .bubble { background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.2); border-top-right-radius: 2px; }
 .message.agent .bubble strong { color: var(--accent2); }
 
-/* Result cards inside agent bubbles */
+/* === Pipeline Card === */
+.pipeline-card {
+  margin-top: 10px; background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.pipeline-header {
+  padding: 10px 14px; background: rgba(0,180,216,0.08);
+  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+}
+.pipeline-header .ph-icon { font-size: 1.1em; }
+.pipeline-header .ph-title { font-weight: 600; font-size: 0.88em; color: var(--accent); }
+.pipeline-header .ph-meta { margin-left: auto; font-size: 0.75em; color: var(--text-muted); display: flex; gap: 10px; }
+.pipeline-tasks { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+.task-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 0.82em; transition: all 0.2s;
+}
+.task-row.status-completed { border-color: rgba(81,207,102,0.3); background: rgba(81,207,102,0.05); }
+.task-row.status-failed { border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.05); }
+.task-row.status-pending { opacity: 0.5; }
+
+.task-badge {
+  padding: 3px 8px; border-radius: 4px; font-size: 0.72em; font-weight: 600;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.task-badge.design { background: rgba(0,180,216,0.2); color: var(--design-color); }
+.task-badge.compliance { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
+
+.task-icon { font-size: 0.85em; width: 18px; text-align: center; flex-shrink: 0; }
+.task-icon.ok { color: var(--success); }
+.task-icon.fail { color: var(--danger); }
+.task-icon.wait { color: var(--text-muted); }
+
+.task-name { flex:1; font-weight: 500; }
+.task-time { font-size: 0.78em; color: var(--text-muted); }
+
+.task-result-body {
+  margin-top: 6px; padding: 8px 10px; background: var(--bg-primary);
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  font-size: 0.8em; max-height: 180px; overflow-y: auto; display: none;
+}
+.task-result-body.open { display: block; }
+.task-result-body table { width:100%; border-collapse:collapse; }
+.task-result-body td { padding: 3px 6px; border-bottom: 1px solid var(--border); font-size: 0.85em; }
+.task-result-body td:first-child { color: var(--text-secondary); width: 38%; }
+.task-expand {
+  cursor: pointer; font-size: 0.75em; color: var(--text-muted);
+  padding: 2px 6px; border: 1px solid var(--border); border-radius: 3px; background: transparent;
+}
+.task-expand:hover { color: var(--accent); border-color: var(--accent); }
+
+.task-error {
+  margin-top: 4px; padding: 6px 10px; background: rgba(255,107,107,0.08);
+  border: 1px solid rgba(255,107,107,0.2); border-radius: var(--radius-sm);
+  font-size: 0.8em; color: var(--danger);
+}
+
+/* === PAOR Step Cards === */
+.paor-steps { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.paor-step {
+  display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.8em;
+}
+.paor-step .step-badge {
+  width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.65em; font-weight: 700; flex-shrink: 0;
+}
+.paor-step .step-badge.P { background: rgba(0,180,216,0.2); color: var(--accent); }
+.paor-step .step-badge.A { background: rgba(81,207,102,0.2); color: var(--success); }
+.paor-step .step-badge.O { background: rgba(255,212,59,0.2); color: var(--warning); }
+.paor-step .step-badge.R { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
+
+/* Agent result card (legacy from PAOR) */
 .agent-card {
   margin-top: 10px; padding: 12px; background: var(--bg-secondary);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 0.88em;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88em;
 }
-.agent-card .card-title {
-  font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 0.92em;
-}
+.agent-card .card-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 0.92em; }
 .agent-card table { width:100%; border-collapse:collapse; margin: 6px 0; }
 .agent-card td { padding: 4px 8px; border-bottom: 1px solid var(--border); font-size: 0.85em; }
 .agent-card td:first-child { color: var(--text-secondary); width: 40%; }
@@ -76,19 +143,16 @@ body {
 .agent-card .pass { color: var(--success); }
 .agent-card .fail { color: var(--danger); }
 
-/* Suggested prompts (chips) */
 .suggestions {
   display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
 }
 .suggestions button {
   padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border);
   background: var(--bg-secondary); color: var(--text-secondary);
-  font-size: 0.8em; cursor: pointer; transition: all 0.15s;
-  white-space: nowrap;
+  font-size: 0.8em; cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
 .suggestions button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
 
-/* Input area */
 .input-area {
   padding: 10px 16px calc(10px + var(--safe-bottom));
   border-top: 1px solid var(--border); background: var(--bg-secondary);
@@ -98,8 +162,7 @@ body {
   flex:1; padding: 10px 14px; border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--bg-primary);
   color: var(--text-primary); font-size: 0.9em; resize: none;
-  font-family: inherit; min-height: 42px; max-height: 120px; outline: none;
-  line-height: 1.45;
+  font-family: inherit; min-height: 42px; max-height: 120px; outline: none; line-height: 1.45;
 }
 .input-area textarea:focus { border-color: var(--accent); }
 .input-area textarea::placeholder { color: var(--text-muted); }
@@ -111,23 +174,17 @@ body {
 .send-btn:hover { background: var(--accent2); transform: scale(1.05); }
 .send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
 
-/* Typing indicator */
 .typing { display: flex; gap: 4px; padding: 8px 0; }
-.typing span {
-  width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%;
-  animation: bounce 1.2s infinite;
-}
+.typing span { width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
 
-/* Info bar */
 .info-bar {
   text-align: center; padding: 4px; font-size: 0.72em; color: var(--text-muted);
   border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
 
-/* Quick start */
 .quick-start {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;
   padding: 0 16px 8px;
@@ -139,44 +196,65 @@ body {
 }
 .quick-start button:hover { border-color: var(--accent); background: var(--accent-glow); }
 .quick-start button .qs-icon { font-size: 1.1em; }
+.quick-start button .qs-badge {
+  font-size: 0.65em; padding: 1px 6px; border-radius: 8px;
+  margin-left: auto; white-space: nowrap;
+}
+.qs-badge.multi { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
+.qs-badge.single { background: rgba(0,180,216,0.15); color: var(--accent2); }
 
-/* Mobile */
+/* Reflection block */
+.reflection-block {
+  margin-top: 8px; padding: 8px 12px; background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.2); border-radius: var(--radius-sm);
+  font-size: 0.82em; color: var(--text-secondary);
+}
+.reflection-block .ref-label { font-weight: 600; color: var(--compliance-color); margin-bottom: 3px; }
+
 @media (max-width: 600px) {
   .message { max-width: 92%; }
   .header h1 { font-size: 0.9em; }
   .chat-container { padding: 10px; gap: 10px; }
+  .task-row { flex-wrap: wrap; }
 }
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
   <span class="logo">&#x1F916;</span>
   <h1>AI Co-Pilot</h1>
+  <span class="badge">Multi-Agent</span>
   <span class="status"><span class="status-dot"></span>active</span>
   <a href="/" class="back-link">&larr; Platform</a>
 </div>
 
-<!-- Quick start cards -->
-<div class="info-bar">Suggest a question or describe your engineering task</div>
+<div class="info-bar">Describe your engineering task — I will orchestrate the right agents</div>
 <div class="quick-start" id="quick-start">
-  <button onclick="sendQuick('帮我设计一个21MPa工作压力的电磁阀')"><span class="qs-icon">&#x2699;</span>设计电磁阀</button>
-  <button onclick="sendQuick('查询TC4钛合金的性能参数')"><span class="qs-icon">&#x1F4CA;</span>查询TC4材料</button>
-  <button onclick="sendQuick('QJ 20156标准的鉴定要求是什么')"><span class="qs-icon">&#x1F4DC;</span>标准合规</button>
-  <button onclick="sendQuick('帮我设计一个活塞密封O形圈，压力30MPa')"><span class="qs-icon">&#x26ED;</span>O形圈设计</button>
-  <button onclick="sendQuick('氮气管道DN10、流速20m/s的雷诺数是多少')"><span class="qs-icon">&#x1F4CF;</span>雷诺数计算</button>
-  <button onclick="sendQuick('对比TC4和GH4169在阀门弹簧中的应用')"><span class="qs-icon">&#x2696;</span>材料对比</button>
+  <button onclick="sendQuick('帮我设计一个21MPa工作压力的电磁阀系统')">
+    <span class="qs-icon">&#x2699;</span>设计电磁阀<span class="qs-badge multi">3 Agents</span>
+  </button>
+  <button onclick="sendQuick('设计一个火箭煤油减压阀，入口15MPa出口8MPa，流量5kg/s')">
+    <span class="qs-icon">&#x1F4A1;</span>设计减压阀<span class="qs-badge multi">3 Agents</span>
+  </button>
+  <button onclick="sendQuick('查询TC4钛合金的性能参数')">
+    <span class="qs-icon">&#x1F4CA;</span>查询TC4材料<span class="qs-badge single">PAOR</span>
+  </button>
+  <button onclick="sendQuick('帮我设计一个活塞密封O形圈，压力30MPa，轴径100mm')">
+    <span class="qs-icon">&#x26ED;</span>O形圈设计<span class="qs-badge multi">3 Agents</span>
+  </button>
+  <button onclick="sendQuick('氮气管道DN10流速20m/s的雷诺数是多少')">
+    <span class="qs-icon">&#x1F4CF;</span>雷诺数计算<span class="qs-badge single">PAOR</span>
+  </button>
+  <button onclick="sendQuick('审查弹簧设计：材料50CrVA，线径3mm，中径20mm，圈数8')">
+    <span class="qs-icon">&#x1F50D;</span>设计审查<span class="qs-badge multi">3 Agents</span>
+  </button>
 </div>
 
-<!-- Chat -->
-<div class="chat-container" id="chat-container">
-  <!-- Messages injected here -->
-</div>
+<div class="chat-container" id="chat-container"></div>
 
-<!-- Input -->
 <div class="input-area">
-  <textarea id="user-input" placeholder="描述你的工程设计问题..." rows="1" onkeydown="onInputKey(event)"></textarea>
+  <textarea id="user-input" placeholder="Describe your engineering design task..." rows="1" onkeydown="onInputKey(event)"></textarea>
   <button class="send-btn" id="send-btn" onclick="sendMessage()">&#x2191;</button>
 </div>
 
@@ -186,17 +264,15 @@ const AUTH_TOKEN = '{{ auth_token }}';
 let sessionId = null;
 let isProcessing = false;
 
-// API helper with auth header
 async function apiCall(url, method, body) {
   const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN };
   const opts = { method, headers };
   if (body !== undefined && body !== null) opts.body = typeof body === 'string' ? body : JSON.stringify(body);
   const res = await fetch(url, opts);
-  if (res.status === 401) {
-    window.location.href = '/login?redirect=/ai-agent';
-    throw new Error('Auth expired');
-  }
-  return res.json();
+  if (res.status === 401) { window.location.href = '/login?redirect=/ai-agent'; throw new Error('Auth expired'); }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
 }
 
 // ===== Init =====
@@ -210,7 +286,12 @@ async function createSession() {
     const data = await apiCall('/api/agent/sessions', 'POST', {});
     if (data.success) {
       sessionId = data.session_id;
-      addMessage('agent', data.greeting, null);
+      addMessage('agent', data.greeting ||
+        'Welcome! I am the multi-agent orchestration engine. ' +
+        'I can decompose complex design tasks, delegate to specialized agents, ' +
+        'and synthesize results with cross-validation. ' +
+        'Try a design task or ask a simple question!',
+        null);
     }
   } catch (e) {
     console.error('Session creation failed:', e);
@@ -224,16 +305,13 @@ function sendQuick(text) {
 }
 
 function onInputKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
 async function sendMessage() {
   const input = document.getElementById('user-input');
   const msg = input.value.trim();
-  if (!msg || isProcessing || !sessionId) return;
+  if (!msg || isProcessing) return;
 
   input.value = '';
   autoResize(input);
@@ -246,23 +324,19 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const data = await apiCall('/api/agent/chat', 'POST', { session_id: sessionId, message: msg });
+    const data = await apiCall('/api/agent/orchestrate', 'POST', { session_id: sessionId, message: msg });
     hideTyping();
 
-    if (data.success && data.response) {
-      addMessage('agent', data.response.text, data.response);
-      if (data.response.tool_results) {
-        addToolCard(data.response);
-      }
-      if (data.response.suggestions && data.response.suggestions.length > 0) {
-        addSuggestions(data.response.suggestions);
-      }
-    } else {
-      addMessage('agent', 'Sorry, I encountered an error processing your request. Please try again.', null);
+    if (!data.success) {
+      addMessage('agent', 'Error: ' + (data.error || 'Unknown'), null);
+    } else if (data.orchestrated) {
+      renderOrchestration(data.synthesis);
+    } else if (data.response) {
+      renderPAOR(data.response);
     }
   } catch (e) {
     hideTyping();
-    addMessage('agent', 'Network error. Please check your connection and try again.', null);
+    addMessage('agent', 'Network error: ' + (e.message || 'Please check your connection'), null);
   }
 
   isProcessing = false;
@@ -270,56 +344,189 @@ async function sendMessage() {
   input.focus();
 }
 
-// ===== Message rendering =====
+// ===== Render: Orchestration Pipeline =====
+function renderOrchestration(synth) {
+  const container = document.getElementById('chat-container');
+
+  // Build the synthesis text message first
+  let text = synth.message || '';
+  if (!text && synth.intent) {
+    const intentLabels = {
+      design_solenoid_system: 'Solenoid valve design',
+      design_pressure_valve_system: 'Pressure reducing valve design',
+      design_review: 'Design review',
+      validate_design: 'Compliance validation',
+      material_analysis: 'Material analysis',
+    };
+    text = (intentLabels[synth.intent] || synth.intent) + ' — ' +
+      synth.completed + '/' + synth.total_subtasks + ' tasks completed (' +
+      (synth.total_duration_ms || 0) + 'ms)';
+  }
+
+  const bubble = addMessage('agent', text, null);
+
+  // Add pipeline card
+  if (synth.task_results && synth.task_results.length > 0) {
+    let html = '<div class="pipeline-card">';
+    html += '<div class="pipeline-header">';
+    html += '<span class="ph-icon">&#x1F3D7;</span>';
+    html += '<span class="ph-title">Multi-Agent Pipeline</span>';
+    html += '<span class="ph-meta">';
+    html += '<span>' + synth.completed + ' ok</span>';
+    if (synth.failed > 0) html += '<span style="color:var(--danger)">' + synth.failed + ' failed</span>';
+    html += '<span>' + (synth.total_duration_ms || 0) + 'ms</span>';
+    html += '</span></div>';
+    html += '<div class="pipeline-tasks">';
+
+    for (const t of synth.task_results) {
+      const cls = t.status === 'completed'
+        ? (t.success ? 'status-completed' : 'status-failed')
+        : 'status-pending';
+      const icon = t.status === 'completed'
+        ? (t.success ? '<span class="task-icon ok">&#x2714;</span>' : '<span class="task-icon fail">&#x2717;</span>')
+        : '<span class="task-icon wait">&#x23F3;</span>';
+      const badgeCls = t.role === 'compliance' ? 'compliance' : 'design';
+      const toolLabel = toolLabels[t.tool] || t.tool;
+      const timeStr = t.elapsed_ms != null ? t.elapsed_ms + 'ms' : '';
+
+      html += '<div class="task-row ' + cls + '">';
+      html += '<span class="task-badge ' + badgeCls + '">' + t.role + '</span>';
+      html += icon;
+      html += '<span class="task-name">' + escapeHtml(toolLabel) + '</span>';
+      html += '<span class="task-time">' + timeStr + '</span>';
+
+      // Expandable result
+      if (t.result && typeof t.result === 'object') {
+        const tid = 'tr_' + Math.random().toString(36).slice(2,8);
+        html += '<button class="task-expand" onclick="toggleResult(\'' + tid + '\')">details</button>';
+        html += '<div class="task-result-body" id="' + tid + '">';
+        html += resultToTable(t.result);
+        html += '</div>';
+      }
+
+      // Error display
+      if (t.error) {
+        html += '<div class="task-error">' + escapeHtml(String(t.error)) + '</div>';
+      }
+
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+    bubble.querySelector('.bubble').innerHTML += html;
+  }
+
+  // Add agent category summary
+  if (synth.categories) {
+    let catText = '';
+    for (const [role, tools] of Object.entries(synth.categories)) {
+      catText += role + ': ' + tools.join(', ') + '  ';
+    }
+    const catDiv = document.createElement('div');
+    catDiv.className = 'reflection-block';
+    catDiv.innerHTML = '<div class="ref-label">Agent Deployment</div>' + escapeHtml(catText.trim());
+    bubble.querySelector('.bubble').appendChild(catDiv);
+  }
+
+  scrollToBottom();
+}
+
+// ===== Render: PAOR Response =====
+function renderPAOR(response) {
+  const text = response.text || '';
+  const bubble = addMessage('agent', text, null);
+
+  // PAOR trace visualization
+  if (response.paor_trace && response.paor_trace.length > 0) {
+    let html = '<div class="paor-steps">';
+    for (const step of response.paor_trace) {
+      const phases = { 'understand': 'P', 'act': 'A', 'observe': 'O', 'reflect': 'R' };
+      const phase = phases[step.phase] || '?';
+      html += '<div class="paor-step">';
+      html += '<span class="step-badge ' + phase + '">' + phase + '</span>';
+      html += '<span>' + escapeHtml(step.tool || step.description || 'Step ' + step.step) + '</span>';
+      html += '<span style="font-size:0.75em;color:var(--text-muted)">' + (step.time_ms || 0) + 'ms</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    bubble.querySelector('.bubble').innerHTML += html;
+  }
+
+  // Reflection summary
+  if (response.reflection && response.reflection.summary) {
+    const refDiv = document.createElement('div');
+    refDiv.className = 'reflection-block';
+    refDiv.innerHTML = '<div class="ref-label">Reflection</div>' + escapeHtml(response.reflection.summary);
+    if (response.reflection.key_findings && response.reflection.key_findings.length > 0) {
+      refDiv.innerHTML += '<br>' + response.reflection.key_findings.map(function(f) { return '- ' + escapeHtml(f); }).join('<br>');
+    }
+    bubble.querySelector('.bubble').appendChild(refDiv);
+  }
+
+  scrollToBottom();
+}
+
+// ===== Helpers =====
+const toolLabels = {
+  query_material: 'Query Material Database',
+  analyze_solenoid_valve: 'Analyze Solenoid Valve',
+  analyze_pressure_valve: 'Analyze Pressure Reducing Valve',
+  design_spring: 'Design Spring',
+  design_oring: 'Design O-ring',
+  run_fluid_calculation: 'Run Fluid Calculation',
+  identify_formula: 'Identify Formula',
+  check_compliance: 'Check QJ 20156 Compliance',
+  verify_leak: 'Verify Leak Tightness',
+  verify_rated: 'Verify Rated Proof',
+  verify_life: 'Verify Life Cycle',
+};
+
+function resultToTable(result) {
+  if (!result || typeof result !== 'object') return escapeHtml(String(result));
+  // Handle material
+  if (result.material) {
+    let html = '<table>';
+    for (const [k, v] of Object.entries(result.material)) {
+      if (typeof v === 'object' && v !== null) {
+        html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(JSON.stringify(v).slice(0, 120)) + '</td></tr>';
+      } else {
+        html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(String(v)) + '</td></tr>';
+      }
+    }
+    html += '</table>';
+    return html;
+  }
+  // Handle flat dict
+  if (Object.keys(result).length <= 12) {
+    let html = '<table>';
+    for (const [k, v] of Object.entries(result)) {
+      let val = v;
+      if (typeof v === 'object' && v !== null) val = JSON.stringify(v).slice(0, 150);
+      html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(String(val)) + '</td></tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+  return '<pre style="font-size:0.75em;white-space:pre-wrap">' + escapeHtml(JSON.stringify(result, null, 2).slice(0, 500)) + '</pre>';
+}
+
+function toggleResult(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
 function addMessage(role, text, response) {
   const container = document.getElementById('chat-container');
   const div = document.createElement('div');
   div.className = 'message ' + role;
-
   if (role === 'agent') {
     div.innerHTML = '<div class="avatar">&#x1F916;</div><div class="bubble">' + formatText(text) + '</div>';
   } else {
     div.innerHTML = '<div class="avatar">&#x1F464;</div><div class="bubble">' + escapeHtml(text) + '</div>';
   }
-
   container.appendChild(div);
   scrollToBottom();
   return div;
-}
-
-function addToolCard(response) {
-  const last = document.querySelector('.message.agent:last-of-type .bubble');
-  if (!last || !response.tool_results) return;
-
-  let html = '';
-  const data = response.tool_results;
-
-  if (response.intent === 'compliance' && data && typeof data === 'object') {
-    html = '<div class="agent-card"><div class="card-title">QJ 20156 Compliance Check</div><table>';
-    for (const [k, v] of Object.entries(data)) {
-      html += '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
-    }
-    html += '</table></div>';
-  } else if (response.intent === 'material' && data) {
-    html = '<div class="agent-card"><div class="card-title">Material Properties</div><table>';
-    for (const [k, v] of Object.entries(data)) {
-      html += '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
-    }
-    html += '</table></div>';
-  }
-
-  if (html) last.innerHTML += html;
-}
-
-function addSuggestions(suggestions) {
-  const container = document.getElementById('chat-container');
-  const div = document.createElement('div');
-  div.className = 'message agent';
-  div.innerHTML = '<div class="avatar" style="visibility:hidden"></div><div class="bubble"><div class="suggestions">'
-    + suggestions.map(s => '<button onclick="sendQuick(\'' + escapeHtml(s) + '\')">' + escapeHtml(s) + '</button>').join('')
-    + '</div></div>';
-  container.appendChild(div);
-  scrollToBottom();
 }
 
 function showTyping() {
@@ -339,21 +546,18 @@ function hideTyping() {
 
 function scrollToBottom() {
   const c = document.getElementById('chat-container');
-  requestAnimationFrame(() => { c.scrollTop = c.scrollHeight; });
+  requestAnimationFrame(function() { c.scrollTop = c.scrollHeight; });
 }
 
-// ===== Formatting =====
 function formatText(text) {
-  let html = escapeHtml(text);
-  // Bold markers
+  var html = escapeHtml(text);
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // Links
   html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:var(--accent)">$1</a>');
   return html;
 }
 
 function escapeHtml(text) {
-  const d = document.createElement('div');
+  var d = document.createElement('div');
   d.textContent = text;
   return d.innerHTML;
 }
@@ -363,7 +567,7 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-document.addEventListener('input', e => {
+document.addEventListener('input', function(e) {
   if (e.target.id === 'user-input') autoResize(e.target);
 });
 </script>
