@@ -1,6 +1,8 @@
 # 航空航天阀门研发平台 — 长期项目路线图
 
 > 创建: 2026-05-22 | 版本: v1.3-dev | 维护者: QClaw + 张小贤
+> 
+> 📋 **AI 原生架构 v2.0**: 详见 [.project/AI_AGENT_ARCHITECTURE.md](./AI_AGENT_ARCHITECTURE.md) — 融合 OpenClaw + Hermes + ACP 三大架构思想的 7-Agent 自进化协作平台
 
 ---
 
