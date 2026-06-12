@@ -4,13 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI Co-Pilot — Multi-Agent Orchestration</title>
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']] }, svg: { fontCache: 'global' } };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 <style>
 :root {
   --bg-primary: #0f1923; --bg-secondary: #1a2736; --bg-card: #1e2d3d;
   --accent: #00b4d8; --accent-glow: rgba(0,180,216,0.15); --accent2: #48cae4;
   --text-primary: #e0e6ed; --text-secondary: #8899aa; --text-muted: #5a6a7a;
   --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
-  --design-color: #00b4d8; --compliance-color: #a78bfa;
+  --design-color: #00b4d8; --compliance-color: #a78bfa; --knowledge-color: #f59e0b;
   --radius: 8px; --radius-sm: 5px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -21,249 +25,476 @@ body {
   height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
 }
 
+/* ===== Header ===== */
 .header {
   background: var(--bg-secondary); border-bottom: 1px solid var(--border);
-  padding: 8px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; z-index: 10;
+  padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; z-index: 20;
 }
-.header .logo { font-size: 1.4em; }
-.header h1 { font-size: 1.05em; font-weight: 600; white-space: nowrap; }
+.header .logo { font-size: 1.3em; }
+.header h1 { font-size: 1em; font-weight: 600; white-space: nowrap; }
 .header .badge { font-size: 0.7em; padding: 2px 8px; border-radius: 10px; background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent); }
-.header .status { font-size: 0.75em; color: var(--success); margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.header .status { font-size: 0.75em; color: var(--success); margin-left: auto; display: flex; align-items: center; gap: 5px; cursor: pointer; }
 .header .status-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.header .back-link { color: var(--text-secondary); text-decoration: none; font-size: 0.85em; margin-left: 8px; }
-.header .back-link:hover { color: var(--accent); }
+.header .back-link { color: var(--text-secondary); text-decoration: none; font-size: 0.82em; padding: 4px 8px; border-radius: var(--radius-sm); }
+.header .back-link:hover { color: var(--accent); background: var(--accent-glow); }
 
+.header .nav-btn {
+  background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-secondary); cursor: pointer; padding: 4px 8px; font-size: 0.82em;
+  display: flex; align-items: center; gap: 4px; transition: all 0.15s;
+}
+.header .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.header .nav-btn .count { font-size: 0.7em; padding: 1px 5px; border-radius: 8px; background: var(--accent-glow); color: var(--accent); }
+
+/* ===== Main Layout ===== */
+.main-wrap {
+  flex:1; display: flex; overflow: hidden; position: relative;
+}
+.chat-col {
+  flex:1; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+}
+.knowledge-col {
+  width: 340px; flex-shrink: 0; background: var(--bg-secondary);
+  border-left: 1px solid var(--border); display: flex; flex-direction: column;
+  overflow: hidden; transition: width 0.25s ease;
+}
+.knowledge-col.collapsed { width: 0; border-left: none; overflow: hidden; }
+
+/* ===== Info Bar ===== */
+.info-bar {
+  text-align: center; padding: 3px 10px; font-size: 0.7em; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.info-bar .kb-toggle {
+  background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.9em;
+  padding: 1px 6px; border-radius: 3px;
+}
+.info-bar .kb-toggle:hover { background: var(--accent-glow); }
+
+/* ===== Quick Start ===== */
+.quick-start {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px;
+  padding: 6px 14px 8px; flex-shrink: 0; border-bottom: 1px solid var(--border);
+}
+.quick-start button {
+  padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-primary); font-size: 0.78em;
+  cursor: pointer; transition: all 0.15s; text-align: left;
+  display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap;
+}
+.quick-start button:hover { border-color: var(--accent); background: var(--accent-glow); }
+.quick-start button .qs-icon { font-size: 1em; flex-shrink: 0; }
+.quick-start button .qs-label { overflow: hidden; text-overflow: ellipsis; flex:1; }
+.quick-start button .qs-badge { font-size: 0.62em; padding: 1px 6px; border-radius: 8px; margin-left: auto; white-space: nowrap; }
+.qs-badge.multi { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
+.qs-badge.single { background: rgba(0,180,216,0.15); color: var(--accent2); }
+
+/* ===== Chat ===== */
 .chat-container {
-  flex:1; overflow-y: auto; padding: 16px;
-  display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth;
+  flex:1; overflow-y: auto; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;
 }
 
-.message { display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.25s ease; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.message { display: flex; gap: 8px; max-width: 88%; animation: msgIn 0.2s ease; }
+@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 .message.user { align-self: flex-end; flex-direction: row-reverse; }
 .message.agent { align-self: flex-start; }
 .avatar {
-  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; font-size: 0.9em;
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85em;
 }
 .message.agent .avatar { background: var(--accent-glow); border: 1px solid var(--accent); }
 .message.user .avatar { background: rgba(81,207,102,0.15); border: 1px solid var(--success); }
 .bubble {
-  padding: 10px 14px; border-radius: var(--radius); font-size: 0.92em; line-height: 1.55;
-  white-space: pre-wrap; word-break: break-word;
+  padding: 9px 12px; border-radius: var(--radius); font-size: 0.88em; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word; position: relative;
 }
 .message.agent .bubble { background: var(--bg-card); border: 1px solid var(--border); border-top-left-radius: 2px; }
 .message.user .bubble { background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.2); border-top-right-radius: 2px; }
 .message.agent .bubble strong { color: var(--accent2); }
 
-/* === Pipeline Card === */
+.bubble-actions {
+  position: absolute; top: 6px; right: 8px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s;
+}
+.bubble:hover .bubble-actions { opacity: 1; }
+.bubble-actions button {
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 3px;
+  color: var(--text-secondary); font-size: 0.7em; cursor: pointer; padding: 2px 6px;
+}
+.bubble-actions button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ===== Input Area ===== */
+.input-area {
+  padding: 8px 14px calc(8px + var(--safe-bottom));
+  border-top: 1px solid var(--border); background: var(--bg-secondary);
+  flex-shrink: 0; display: flex; gap: 8px; align-items: flex-end;
+}
+.input-area textarea {
+  flex:1; padding: 9px 12px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-primary);
+  color: var(--text-primary); font-size: 0.88em; resize: none;
+  font-family: inherit; min-height: 40px; max-height: 100px; outline: none; line-height: 1.4;
+}
+.input-area textarea:focus { border-color: var(--accent); }
+.input-area textarea::placeholder { color: var(--text-muted); }
+.send-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: var(--accent); color: #fff; font-size: 1.1em;
+  cursor: pointer; flex-shrink: 0; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+}
+.send-btn:hover { background: var(--accent2); transform: scale(1.05); }
+.send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+/* ===== Progress Indicator ===== */
+.progress-bar {
+  padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+  font-size: 0.78em; color: var(--text-secondary);
+}
+.progress-bar .prog-step {
+  display: flex; align-items: center; gap: 4px;
+}
+.progress-bar .prog-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.progress-bar .prog-dot.active { background: var(--accent); animation: pulse 1.5s infinite; }
+.progress-bar .prog-dot.done { background: var(--success); }
+
+/* ===== Pipeline Card ===== */
 .pipeline-card {
-  margin-top: 10px; background: var(--bg-secondary); border: 1px solid var(--border);
+  margin-top: 8px; background: var(--bg-secondary); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden;
 }
 .pipeline-header {
-  padding: 10px 14px; background: rgba(0,180,216,0.08);
+  padding: 8px 12px; background: rgba(0,180,216,0.08);
   border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
 }
-.pipeline-header .ph-icon { font-size: 1.1em; }
-.pipeline-header .ph-title { font-weight: 600; font-size: 0.88em; color: var(--accent); }
-.pipeline-header .ph-meta { margin-left: auto; font-size: 0.75em; color: var(--text-muted); display: flex; gap: 10px; }
-.pipeline-tasks { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.pipeline-header .ph-title { font-weight: 600; font-size: 0.84em; color: var(--accent); }
+.pipeline-header .ph-meta { margin-left: auto; font-size: 0.72em; color: var(--text-muted); display: flex; gap: 10px; }
+.pipeline-tasks { padding: 6px; display: flex; flex-direction: column; gap: 4px; }
 
 .task-row {
-  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px;
   border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border);
-  font-size: 0.82em; transition: all 0.2s;
+  font-size: 0.78em; transition: all 0.2s;
 }
 .task-row.status-completed { border-color: rgba(81,207,102,0.3); background: rgba(81,207,102,0.05); }
 .task-row.status-failed { border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.05); }
 .task-row.status-pending { opacity: 0.5; }
-
 .task-badge {
-  padding: 3px 8px; border-radius: 4px; font-size: 0.72em; font-weight: 600;
+  padding: 2px 6px; border-radius: 3px; font-size: 0.7em; font-weight: 600;
   white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px;
 }
 .task-badge.design { background: rgba(0,180,216,0.2); color: var(--design-color); }
 .task-badge.compliance { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
-
-.task-icon { font-size: 0.85em; width: 18px; text-align: center; flex-shrink: 0; }
+.task-badge.knowledge { background: rgba(245,158,11,0.2); color: var(--knowledge-color); }
+.task-icon { font-size: 0.8em; width: 16px; text-align: center; flex-shrink: 0; }
 .task-icon.ok { color: var(--success); }
 .task-icon.fail { color: var(--danger); }
 .task-icon.wait { color: var(--text-muted); }
-
 .task-name { flex:1; font-weight: 500; }
-.task-time { font-size: 0.78em; color: var(--text-muted); }
+.task-time { font-size: 0.73em; color: var(--text-muted); }
 
 .task-result-body {
-  margin-top: 6px; padding: 8px 10px; background: var(--bg-primary);
+  margin-top: 4px; padding: 6px 8px; background: var(--bg-primary);
   border-radius: var(--radius-sm); border: 1px solid var(--border);
-  font-size: 0.8em; max-height: 180px; overflow-y: auto; display: none;
+  font-size: 0.76em; max-height: 160px; overflow-y: auto; display: none;
 }
 .task-result-body.open { display: block; }
 .task-result-body table { width:100%; border-collapse:collapse; }
-.task-result-body td { padding: 3px 6px; border-bottom: 1px solid var(--border); font-size: 0.85em; }
+.task-result-body td { padding: 2px 5px; border-bottom: 1px solid var(--border); font-size: 0.82em; }
 .task-result-body td:first-child { color: var(--text-secondary); width: 38%; }
 .task-expand {
-  cursor: pointer; font-size: 0.75em; color: var(--text-muted);
-  padding: 2px 6px; border: 1px solid var(--border); border-radius: 3px; background: transparent;
+  cursor: pointer; font-size: 0.7em; color: var(--text-muted);
+  padding: 1px 5px; border: 1px solid var(--border); border-radius: 3px; background: transparent;
 }
 .task-expand:hover { color: var(--accent); border-color: var(--accent); }
-
 .task-error {
-  margin-top: 4px; padding: 6px 10px; background: rgba(255,107,107,0.08);
+  margin-top: 3px; padding: 4px 8px; background: rgba(255,107,107,0.08);
   border: 1px solid rgba(255,107,107,0.2); border-radius: var(--radius-sm);
-  font-size: 0.8em; color: var(--danger);
+  font-size: 0.76em; color: var(--danger);
 }
 
-/* === PAOR Step Cards === */
-.paor-steps { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+/* ===== Material Card ===== */
+.material-card {
+  margin-top: 6px; padding: 10px 12px; background: var(--bg-secondary);
+  border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm);
+  font-size: 0.82em;
+}
+.material-card .mc-header {
+  font-weight: 600; color: var(--knowledge-color); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.material-card table { width:100%; border-collapse:collapse; margin-top: 4px; }
+.material-card td { padding: 2px 4px; border-bottom: 1px solid var(--border); font-size: 0.78em; }
+.material-card td:first-child { color: var(--text-secondary); width: 45%; }
+
+/* ===== Formula Card ===== */
+.formula-card {
+  margin-top: 6px; padding: 10px 12px; background: var(--bg-secondary);
+  border: 1px solid rgba(0,180,216,0.2); border-radius: var(--radius-sm);
+  font-size: 0.82em;
+}
+.formula-card .fc-header { font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+.formula-card .fc-eq { padding: 6px 8px; background: var(--bg-primary); border-radius: var(--radius-sm); margin: 4px 0; }
+.formula-card .fc-desc { color: var(--text-secondary); font-size: 0.85em; margin-top: 4px; }
+.formula-card .fc-app { color: var(--text-muted); font-size: 0.78em; margin-top: 2px; font-style: italic; }
+
+/* ===== Rich Response Card ===== */
+.rich-card {
+  margin-top: 6px; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); font-size: 0.82em;
+}
+.rich-card.design { border-color: rgba(0,180,216,0.3); background: rgba(0,180,216,0.04); }
+.rich-card.compliance { border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.04); }
+.rich-card .rc-header { font-weight: 600; margin-bottom: 4px; }
+.rich-card.design .rc-header { color: var(--design-color); }
+.rich-card.compliance .rc-header { color: var(--compliance-color); }
+.rich-card .rc-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px; margin-top: 4px; }
+.rich-card .rc-metric {
+  padding: 4px 8px; background: var(--bg-primary); border-radius: 3px;
+  display: flex; justify-content: space-between; font-size: 0.82em;
+}
+.rich-card .rc-metric .rc-label { color: var(--text-muted); }
+.rich-card .rc-metric .rc-val { font-weight: 600; }
+
+/* ===== PAOR Steps ===== */
+.paor-steps { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
 .paor-step {
-  display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.8em;
+  display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 0.78em;
 }
 .paor-step .step-badge {
-  width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 0.65em; font-weight: 700; flex-shrink: 0;
+  width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.6em; font-weight: 700; flex-shrink: 0;
 }
 .paor-step .step-badge.P { background: rgba(0,180,216,0.2); color: var(--accent); }
 .paor-step .step-badge.A { background: rgba(81,207,102,0.2); color: var(--success); }
 .paor-step .step-badge.O { background: rgba(255,212,59,0.2); color: var(--warning); }
 .paor-step .step-badge.R { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
 
-/* Agent result card (legacy from PAOR) */
-.agent-card {
-  margin-top: 10px; padding: 12px; background: var(--bg-secondary);
-  border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.88em;
+/* ===== Reflection Block ===== */
+.reflection-block {
+  margin-top: 6px; padding: 6px 10px; background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.2); border-radius: var(--radius-sm);
+  font-size: 0.8em; color: var(--text-secondary);
 }
-.agent-card .card-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 0.92em; }
-.agent-card table { width:100%; border-collapse:collapse; margin: 6px 0; }
-.agent-card td { padding: 4px 8px; border-bottom: 1px solid var(--border); font-size: 0.85em; }
-.agent-card td:first-child { color: var(--text-secondary); width: 40%; }
-.agent-card td:last-child { font-weight: 500; }
-.agent-card .pass { color: var(--success); }
-.agent-card .fail { color: var(--danger); }
+.reflection-block .ref-label { font-weight: 600; color: var(--compliance-color); margin-bottom: 2px; }
 
-.suggestions {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+/* ===== Knowledge Panel (Right) ===== */
+.knowledge-col .kp-header {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  font-size: 0.82em; font-weight: 600; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
 }
-.suggestions button {
-  padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border);
-  background: var(--bg-secondary); color: var(--text-secondary);
-  font-size: 0.8em; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+.knowledge-col .kp-header .kp-close {
+  margin-left: auto; background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 1em; padding: 2px 4px;
 }
-.suggestions button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+.knowledge-col .kp-header .kp-close:hover { color: var(--danger); }
+.knowledge-col .kp-body {
+  flex:1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.knowledge-col .kp-section {
+  border-bottom: 1px solid var(--border); padding-bottom: 8px;
+}
+.knowledge-col .kp-section:last-child { border-bottom: none; }
+.knowledge-col .kp-section-title {
+  font-size: 0.72em; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px;
+}
 
-.input-area {
-  padding: 10px 16px calc(10px + var(--safe-bottom));
-  border-top: 1px solid var(--border); background: var(--bg-secondary);
-  flex-shrink: 0; display: flex; gap: 8px; align-items: flex-end;
+/* ===== Knowledge Items ===== */
+.kb-item {
+  padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 0.8em; transition: all 0.15s; border: 1px solid transparent;
 }
-.input-area textarea {
-  flex:1; padding: 10px 14px; border-radius: var(--radius);
-  border: 1px solid var(--border); background: var(--bg-primary);
-  color: var(--text-primary); font-size: 0.9em; resize: none;
-  font-family: inherit; min-height: 42px; max-height: 120px; outline: none; line-height: 1.45;
+.kb-item:hover { background: var(--bg-card); border-color: var(--border); }
+.kb-item .kb-label { font-weight: 500; }
+.kb-item .kb-type {
+  font-size: 0.72em; padding: 1px 5px; border-radius: 3px; margin-right: 4px;
+  font-weight: 600; text-transform: uppercase;
 }
-.input-area textarea:focus { border-color: var(--accent); }
-.input-area textarea::placeholder { color: var(--text-muted); }
-.send-btn {
-  width: 42px; height: 42px; border-radius: 50%; border: none;
-  background: var(--accent); color: #fff; font-size: 1.2em;
-  cursor: pointer; flex-shrink: 0; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
-}
-.send-btn:hover { background: var(--accent2); transform: scale(1.05); }
-.send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+.kb-item .kb-type.formula { background: rgba(0,180,216,0.15); color: var(--accent); }
+.kb-item .kb-type.material { background: rgba(245,158,11,0.15); color: var(--knowledge-color); }
+.kb-item .kb-type.chapter { background: rgba(81,207,102,0.15); color: var(--success); }
+.kb-item .kb-type.module { background: rgba(167,139,250,0.15); color: var(--compliance-color); }
+.kb-item .kb-meta { font-size: 0.72em; color: var(--text-muted); margin-top: 2px; }
+.kb-item .kb-relevance { font-size: 0.65em; color: var(--accent); float: right; }
 
-.typing { display: flex; gap: 4px; padding: 8px 0; }
-.typing span { width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+/* ===== Graph Mini ===== */
+.graph-mini {
+  padding: 6px 8px; background: var(--bg-primary); border-radius: var(--radius-sm);
+  font-size: 0.78em;
+}
+.graph-mini .gm-node {
+  display: inline-block; padding: 2px 6px; margin: 2px; border-radius: 3px;
+  font-size: 0.82em; cursor: pointer; transition: all 0.15s;
+}
+.graph-mini .gm-node.formula { background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.2); color: var(--accent); }
+.graph-mini .gm-node.material { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.2); color: var(--knowledge-color); }
+.graph-mini .gm-node:hover { filter: brightness(1.3); }
+
+/* ===== Session Overlay ===== */
+.session-overlay {
+  position: fixed; top: 42px; right: 16px; width: 320px; max-height: 400px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 30; display: none;
+  flex-direction: column; overflow: hidden;
+}
+.session-overlay.open { display: flex; }
+.session-overlay .so-header {
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: 0.8em; font-weight: 600; display: flex; align-items: center; gap: 6px;
+}
+.session-overlay .so-header .so-close {
+  margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer;
+}
+.session-overlay .so-body { flex:1; overflow-y: auto; padding: 6px; }
+.session-overlay .so-item {
+  padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 0.8em; transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+}
+.session-overlay .so-item:hover { background: var(--bg-secondary); }
+.session-overlay .so-item.active { background: var(--accent-glow); border: 1px solid var(--accent); }
+.session-overlay .so-id { font-family: monospace; font-size: 0.78em; color: var(--accent); }
+.session-overlay .so-time { font-size: 0.7em; color: var(--text-muted); margin-left: auto; }
+.session-overlay .so-msg { font-size: 0.72em; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+
+/* ===== Typing ===== */
+.typing { display: flex; gap: 3px; padding: 6px 0; }
+.typing span { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
-.info-bar {
-  text-align: center; padding: 4px; font-size: 0.72em; color: var(--text-muted);
-  border-bottom: 1px solid var(--border); flex-shrink: 0;
+/* ===== Toast ===== */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  padding: 6px 16px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 0.8em; color: var(--text-secondary); z-index: 50;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards; pointer-events: none;
 }
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+@keyframes toastOut { from{opacity:1} to{opacity:0} }
 
-.quick-start {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;
-  padding: 0 16px 8px;
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .knowledge-col { position: fixed; top: 42px; right: 0; bottom: 0; width: 320px; z-index: 25; }
+  .knowledge-col.collapsed { width: 0; }
+  .quick-start { grid-template-columns: repeat(2, 1fr); }
 }
-.quick-start button {
-  padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border);
-  background: var(--bg-card); color: var(--text-primary); font-size: 0.82em;
-  cursor: pointer; transition: all 0.15s; text-align: left; display: flex; align-items: center; gap: 8px;
-}
-.quick-start button:hover { border-color: var(--accent); background: var(--accent-glow); }
-.quick-start button .qs-icon { font-size: 1.1em; }
-.quick-start button .qs-badge {
-  font-size: 0.65em; padding: 1px 6px; border-radius: 8px;
-  margin-left: auto; white-space: nowrap;
-}
-.qs-badge.multi { background: rgba(167,139,250,0.2); color: var(--compliance-color); }
-.qs-badge.single { background: rgba(0,180,216,0.15); color: var(--accent2); }
-
-/* Reflection block */
-.reflection-block {
-  margin-top: 8px; padding: 8px 12px; background: rgba(167,139,250,0.06);
-  border: 1px solid rgba(167,139,250,0.2); border-radius: var(--radius-sm);
-  font-size: 0.82em; color: var(--text-secondary);
-}
-.reflection-block .ref-label { font-weight: 600; color: var(--compliance-color); margin-bottom: 3px; }
-
 @media (max-width: 600px) {
-  .message { max-width: 92%; }
-  .header h1 { font-size: 0.9em; }
-  .chat-container { padding: 10px; gap: 10px; }
+  .message { max-width: 94%; }
+  .header h1 { font-size: 0.85em; }
+  .chat-container { padding: 8px; gap: 8px; }
+  .quick-start { grid-template-columns: 1fr; padding: 4px 8px 6px; }
+  .quick-start button { font-size: 0.75em; padding: 6px 8px; }
   .task-row { flex-wrap: wrap; }
+  .knowledge-col { width: 280px; }
+  .session-overlay { width: 280px; right: 4px; }
 }
 </style>
 </head>
 <body>
 
+<!-- Header -->
 <div class="header">
   <span class="logo">&#x1F916;</span>
   <h1>AI Co-Pilot</h1>
-  <span class="badge">Multi-Agent</span>
-  <span class="status"><span class="status-dot"></span>active</span>
+  <span class="badge">v3</span>
+  <button class="nav-btn" onclick="toggleKnowledge()" id="kb-btn" title="Knowledge Panel">
+    &#x1F4DA; <span>Knowledge</span>
+  </button>
+  <span class="status" onclick="toggleSessions()" title="Sessions">
+    <span class="status-dot"></span>active
+  </span>
   <a href="/" class="back-link">&larr; Platform</a>
 </div>
 
-<div class="info-bar">Describe your engineering task — I will orchestrate the right agents</div>
-<div class="quick-start" id="quick-start">
-  <button onclick="sendQuick('帮我设计一个21MPa工作压力的电磁阀系统')">
-    <span class="qs-icon">&#x2699;</span>设计电磁阀<span class="qs-badge multi">3 Agents</span>
-  </button>
-  <button onclick="sendQuick('设计一个火箭煤油减压阀，入口15MPa出口8MPa，流量5kg/s')">
-    <span class="qs-icon">&#x1F4A1;</span>设计减压阀<span class="qs-badge multi">3 Agents</span>
-  </button>
-  <button onclick="sendQuick('查询TC4钛合金的性能参数')">
-    <span class="qs-icon">&#x1F4CA;</span>查询TC4材料<span class="qs-badge single">PAOR</span>
-  </button>
-  <button onclick="sendQuick('帮我设计一个活塞密封O形圈，压力30MPa，轴径100mm')">
-    <span class="qs-icon">&#x26ED;</span>O形圈设计<span class="qs-badge multi">3 Agents</span>
-  </button>
-  <button onclick="sendQuick('氮气管道DN10流速20m/s的雷诺数是多少')">
-    <span class="qs-icon">&#x1F4CF;</span>雷诺数计算<span class="qs-badge single">PAOR</span>
-  </button>
-  <button onclick="sendQuick('审查弹簧设计：材料50CrVA，线径3mm，中径20mm，圈数8')">
-    <span class="qs-icon">&#x1F50D;</span>设计审查<span class="qs-badge multi">3 Agents</span>
-  </button>
+<!-- Main Layout -->
+<div class="main-wrap">
+  <!-- Chat Column -->
+  <div class="chat-col">
+    <div class="info-bar">
+      Describe your engineering task &mdash; I orchestrate design + compliance agents
+      <button class="kb-toggle" onclick="toggleKnowledge()" id="kb-toggle-inline">&#x2B9E; Panel</button>
+    </div>
+
+    <div class="quick-start" id="quick-start">
+      <button onclick="sendQuick('设计一个21MPa工作压力的电磁阀系统')">
+        <span class="qs-icon">&#x2699;</span><span class="qs-label">设计电磁阀</span><span class="qs-badge multi">3 Agents</span>
+      </button>
+      <button onclick="sendQuick('查一下雷诺数怎么计算')">
+        <span class="qs-icon">&#x1F4CF;</span><span class="qs-label">雷诺数计算</span><span class="qs-badge single">PAOR</span>
+      </button>
+      <button onclick="sendQuick('查询TC4钛合金的性能参数')">
+        <span class="qs-icon">&#x1F4CA;</span><span class="qs-label">TC4材料查询</span><span class="qs-badge single">PAOR</span>
+      </button>
+      <button onclick="sendQuick('设计活塞密封O形圈，压力30MPa，轴径100mm')">
+        <span class="qs-icon">&#x26ED;</span><span class="qs-label">O形圈设计</span><span class="qs-badge multi">3 Agents</span>
+      </button>
+      <button onclick="sendQuick('审查弹簧设计：材料50CrVA，线径3mm，中径20mm，圈数8')">
+        <span class="qs-icon">&#x1F50D;</span><span class="qs-label">设计审查</span><span class="qs-badge multi">3 Agents</span>
+      </button>
+      <button onclick="sendQuick('氮气管道DN10流速20m/s的雷诺数是多少')">
+        <span class="qs-icon">&#x1F30A;</span><span class="qs-label">流体计算</span><span class="qs-badge single">PAOR</span>
+      </button>
+    </div>
+
+    <!-- Agent Progress Bar (hidden by default) -->
+    <div class="progress-bar" id="progress-bar" style="display:none">
+      <span>&#x2699;</span>
+      <span class="prog-step"><span class="prog-dot active" id="prog-intent"></span> Intent</span>
+      <span class="prog-step"><span class="prog-dot" id="prog-plan"></span> Plan</span>
+      <span class="prog-step"><span class="prog-dot" id="prog-exec"></span> Execute</span>
+      <span class="prog-step"><span class="prog-dot" id="prog-done"></span> Done</span>
+    </div>
+
+    <div class="chat-container" id="chat-container"></div>
+
+    <div class="input-area">
+      <textarea id="user-input" placeholder="Describe your engineering design task..." rows="1" onkeydown="onInputKey(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">&#x2191;</button>
+    </div>
+  </div>
+
+  <!-- Knowledge Panel (Right) -->
+  <div class="knowledge-col collapsed" id="knowledge-col">
+    <div class="kp-header">
+      &#x1F4DA; Related Knowledge
+      <button class="kp-close" onclick="toggleKnowledge()">&times;</button>
+    </div>
+    <div class="kp-body" id="kp-body">
+      <div style="text-align:center;color:var(--text-muted);padding:20px 0;font-size:0.82em">
+        Send a message to see related<br>knowledge, formulas, and materials
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="chat-container" id="chat-container"></div>
-
-<div class="input-area">
-  <textarea id="user-input" placeholder="Describe your engineering design task..." rows="1" onkeydown="onInputKey(event)"></textarea>
-  <button class="send-btn" id="send-btn" onclick="sendMessage()">&#x2191;</button>
+<!-- Session Overlay -->
+<div class="session-overlay" id="session-overlay">
+  <div class="so-header">
+    &#x1F4CB; Sessions
+    <button class="so-close" onclick="toggleSessions()">&times;</button>
+    <button style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.75em" onclick="createSession()">+ New</button>
+  </div>
+  <div class="so-body" id="so-body">
+    <div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.8em">Loading sessions...</div>
+  </div>
 </div>
 
 <script>
-// ===== Auth & State =====
+// ============================================
+// Core State
+// ============================================
 const AUTH_TOKEN = '{{ auth_token }}';
 let sessionId = null;
 let isProcessing = false;
+let knowledgeVisible = false;
 
+// ============================================
+// API Client
+// ============================================
 async function apiCall(url, method, body) {
   const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN };
   const opts = { method, headers };
@@ -271,34 +502,34 @@ async function apiCall(url, method, body) {
   const res = await fetch(url, opts);
   if (res.status === 401) { window.location.href = '/login?redirect=/ai-agent'; throw new Error('Auth expired'); }
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ')');
   return data;
 }
 
-// ===== Init =====
-document.addEventListener('DOMContentLoaded', () => {
+// ============================================
+// Init
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
   createSession();
   autoResize(document.getElementById('user-input'));
 });
 
 async function createSession() {
   try {
-    const data = await apiCall('/api/agent/sessions', 'POST', {});
+    var data = await apiCall('/api/agent/sessions', 'POST', {});
     if (data.success) {
       sessionId = data.session_id;
       addMessage('agent', data.greeting ||
-        'Welcome! I am the multi-agent orchestration engine. ' +
-        'I can decompose complex design tasks, delegate to specialized agents, ' +
-        'and synthesize results with cross-validation. ' +
-        'Try a design task or ask a simple question!',
-        null);
+        'I am the multi-agent orchestration engine. I decompose complex design tasks, delegate to specialized agents, and synthesize results with cross-validation. Try a design task or ask a question!');
     }
   } catch (e) {
     console.error('Session creation failed:', e);
   }
 }
 
-// ===== Send =====
+// ============================================
+// Send Message
+// ============================================
 function sendQuick(text) {
   document.getElementById('user-input').value = text;
   sendMessage();
@@ -309,34 +540,40 @@ function onInputKey(e) {
 }
 
 async function sendMessage() {
-  const input = document.getElementById('user-input');
-  const msg = input.value.trim();
+  var input = document.getElementById('user-input');
+  var msg = input.value.trim();
   if (!msg || isProcessing) return;
 
   input.value = '';
   autoResize(input);
   document.getElementById('quick-start').style.display = 'none';
-  addMessage('user', msg, null);
+  addMessage('user', msg);
 
   isProcessing = true;
-  const btn = document.getElementById('send-btn');
+  var btn = document.getElementById('send-btn');
   btn.disabled = true;
+  showProgress();
   showTyping();
 
   try {
-    const data = await apiCall('/api/agent/orchestrate', 'POST', { session_id: sessionId, message: msg });
+    var data = await apiCall('/api/agent/orchestrate', 'POST', { session_id: sessionId, message: msg });
     hideTyping();
+    hideProgress();
 
     if (!data.success) {
-      addMessage('agent', 'Error: ' + (data.error || 'Unknown'), null);
+      addMessage('agent', 'Error: ' + (data.error || 'Unknown'));
     } else if (data.orchestrated) {
       renderOrchestration(data.synthesis);
     } else if (data.response) {
       renderPAOR(data.response);
     }
+
+    // Load related knowledge for this message
+    loadRelatedKnowledge(msg);
   } catch (e) {
     hideTyping();
-    addMessage('agent', 'Network error: ' + (e.message || 'Please check your connection'), null);
+    hideProgress();
+    addMessage('agent', 'Error: ' + (e.message || 'Request failed. Please check your connection.'));
   }
 
   isProcessing = false;
@@ -344,33 +581,46 @@ async function sendMessage() {
   input.focus();
 }
 
-// ===== Render: Orchestration Pipeline =====
-function renderOrchestration(synth) {
-  const container = document.getElementById('chat-container');
+// ============================================
+// Progress UI
+// ============================================
+function showProgress() {
+  var bar = document.getElementById('progress-bar');
+  bar.style.display = 'flex';
+  var dots = bar.querySelectorAll('.prog-dot');
+  dots.forEach(function(d) { d.classList.remove('active','done'); });
+  document.getElementById('prog-intent').classList.add('active');
+}
 
-  // Build the synthesis text message first
-  let text = synth.message || '';
+function hideProgress() {
+  document.getElementById('progress-bar').style.display = 'none';
+}
+
+// ============================================
+// Render: Orchestration Pipeline
+// ============================================
+function renderOrchestration(synth) {
+  var text = synth.message || '';
   if (!text && synth.intent) {
-    const intentLabels = {
-      design_solenoid_system: 'Solenoid valve design',
-      design_pressure_valve_system: 'Pressure reducing valve design',
-      design_review: 'Design review',
-      validate_design: 'Compliance validation',
-      material_analysis: 'Material analysis',
+    var labels = {
+      design_solenoid_system: 'Solenoid Valve Design',
+      design_pressure_valve_system: 'PRV Design',
+      design_review: 'Design Review',
+      validate_design: 'Compliance Validation',
+      material_analysis: 'Material Analysis',
     };
-    text = (intentLabels[synth.intent] || synth.intent) + ' — ' +
+    text = (labels[synth.intent] || synth.intent) + ' \u2014 ' +
       synth.completed + '/' + synth.total_subtasks + ' tasks completed (' +
       (synth.total_duration_ms || 0) + 'ms)';
   }
 
-  const bubble = addMessage('agent', text, null);
+  var bubble = addMessage('agent', text);
 
-  // Add pipeline card
+  // Pipeline card
   if (synth.task_results && synth.task_results.length > 0) {
-    let html = '<div class="pipeline-card">';
+    var html = '<div class="pipeline-card">';
     html += '<div class="pipeline-header">';
-    html += '<span class="ph-icon">&#x1F3D7;</span>';
-    html += '<span class="ph-title">Multi-Agent Pipeline</span>';
+    html += '<span class="ph-title">&#x1F3D7; Multi-Agent Pipeline</span>';
     html += '<span class="ph-meta">';
     html += '<span>' + synth.completed + ' ok</span>';
     if (synth.failed > 0) html += '<span style="color:var(--danger)">' + synth.failed + ' failed</span>';
@@ -378,16 +628,17 @@ function renderOrchestration(synth) {
     html += '</span></div>';
     html += '<div class="pipeline-tasks">';
 
-    for (const t of synth.task_results) {
-      const cls = t.status === 'completed'
+    for (var i = 0; i < synth.task_results.length; i++) {
+      var t = synth.task_results[i];
+      var cls = t.status === 'completed'
         ? (t.success ? 'status-completed' : 'status-failed')
         : 'status-pending';
-      const icon = t.status === 'completed'
+      var icon = t.status === 'completed'
         ? (t.success ? '<span class="task-icon ok">&#x2714;</span>' : '<span class="task-icon fail">&#x2717;</span>')
         : '<span class="task-icon wait">&#x23F3;</span>';
-      const badgeCls = t.role === 'compliance' ? 'compliance' : 'design';
-      const toolLabel = toolLabels[t.tool] || t.tool;
-      const timeStr = t.elapsed_ms != null ? t.elapsed_ms + 'ms' : '';
+      var badgeCls = t.role === 'compliance' ? 'compliance' : (t.role === 'knowledge' ? 'knowledge' : 'design');
+      var toolLabel = TOOL_LABELS[t.tool] || t.tool;
+      var timeStr = t.elapsed_ms != null ? t.elapsed_ms + 'ms' : '';
 
       html += '<div class="task-row ' + cls + '">';
       html += '<span class="task-badge ' + badgeCls + '">' + t.role + '</span>';
@@ -395,34 +646,31 @@ function renderOrchestration(synth) {
       html += '<span class="task-name">' + escapeHtml(toolLabel) + '</span>';
       html += '<span class="task-time">' + timeStr + '</span>';
 
-      // Expandable result
       if (t.result && typeof t.result === 'object') {
-        const tid = 'tr_' + Math.random().toString(36).slice(2,8);
+        var tid = 'tr_' + Math.random().toString(36).slice(2,8);
         html += '<button class="task-expand" onclick="toggleResult(\'' + tid + '\')">details</button>';
         html += '<div class="task-result-body" id="' + tid + '">';
         html += resultToTable(t.result);
         html += '</div>';
       }
-
-      // Error display
       if (t.error) {
         html += '<div class="task-error">' + escapeHtml(String(t.error)) + '</div>';
       }
-
       html += '</div>';
     }
-
     html += '</div></div>';
     bubble.querySelector('.bubble').innerHTML += html;
   }
 
-  // Add agent category summary
+  // Agent deployment summary
   if (synth.categories) {
-    let catText = '';
-    for (const [role, tools] of Object.entries(synth.categories)) {
-      catText += role + ': ' + tools.join(', ') + '  ';
+    var catText = '';
+    for (var role in synth.categories) {
+      if (synth.categories.hasOwnProperty(role)) {
+        catText += role + ': ' + synth.categories[role].join(', ') + '  ';
+      }
     }
-    const catDiv = document.createElement('div');
+    var catDiv = document.createElement('div');
     catDiv.className = 'reflection-block';
     catDiv.innerHTML = '<div class="ref-label">Agent Deployment</div>' + escapeHtml(catText.trim());
     bubble.querySelector('.bubble').appendChild(catDiv);
@@ -431,21 +679,37 @@ function renderOrchestration(synth) {
   scrollToBottom();
 }
 
-// ===== Render: PAOR Response =====
+// ============================================
+// Render: PAOR Response
+// ============================================
 function renderPAOR(response) {
-  const text = response.text || '';
-  const bubble = addMessage('agent', text, null);
+  var text = response.text || '';
+  var bubble = addMessage('agent', text);
+
+  // Detect rich results and render them
+  if (response.tool_results) {
+    for (var i = 0; i < response.tool_results.length; i++) {
+      var tr = response.tool_results[i];
+      if (tr.tool === 'query_material' && tr.result && tr.result.material) {
+        renderMaterialCard(bubble, tr.result.material);
+      }
+      if ((tr.tool === 'identify_formula' || tr.tool === 'run_fluid_calculation') && tr.result) {
+        renderFormulaResult(bubble, tr.result);
+      }
+    }
+  }
 
   // PAOR trace visualization
   if (response.paor_trace && response.paor_trace.length > 0) {
-    let html = '<div class="paor-steps">';
-    for (const step of response.paor_trace) {
-      const phases = { 'understand': 'P', 'act': 'A', 'observe': 'O', 'reflect': 'R' };
-      const phase = phases[step.phase] || '?';
+    var html = '<div class="paor-steps">';
+    for (var i = 0; i < response.paor_trace.length; i++) {
+      var step = response.paor_trace[i];
+      var phases = { 'understand': 'P', 'act': 'A', 'observe': 'O', 'reflect': 'R' };
+      var phase = phases[step.phase] || '?';
       html += '<div class="paor-step">';
       html += '<span class="step-badge ' + phase + '">' + phase + '</span>';
       html += '<span>' + escapeHtml(step.tool || step.description || 'Step ' + step.step) + '</span>';
-      html += '<span style="font-size:0.75em;color:var(--text-muted)">' + (step.time_ms || 0) + 'ms</span>';
+      html += '<span style="font-size:0.72em;color:var(--text-muted)">' + (step.time_ms || 0) + 'ms</span>';
       html += '</div>';
     }
     html += '</div>';
@@ -454,7 +718,7 @@ function renderPAOR(response) {
 
   // Reflection summary
   if (response.reflection && response.reflection.summary) {
-    const refDiv = document.createElement('div');
+    var refDiv = document.createElement('div');
     refDiv.className = 'reflection-block';
     refDiv.innerHTML = '<div class="ref-label">Reflection</div>' + escapeHtml(response.reflection.summary);
     if (response.reflection.key_findings && response.reflection.key_findings.length > 0) {
@@ -463,14 +727,394 @@ function renderPAOR(response) {
     bubble.querySelector('.bubble').appendChild(refDiv);
   }
 
+  // Design result metrics
+  if (response.reflection && response.reflection.metrics && typeof response.reflection.metrics === 'object') {
+    var rcDiv = document.createElement('div');
+    rcDiv.className = 'rich-card design';
+    rcDiv.innerHTML = '<div class="rc-header">&#x1F4CA; Key Metrics</div><div class="rc-metrics">';
+    for (var key in response.reflection.metrics) {
+      if (response.reflection.metrics.hasOwnProperty(key)) {
+        rcDiv.innerHTML += '<div class="rc-metric"><span class="rc-label">' + escapeHtml(key) + '</span><span class="rc-val">' + escapeHtml(String(response.reflection.metrics[key])) + '</span></div>';
+      }
+    }
+    rcDiv.innerHTML += '</div>';
+    bubble.querySelector('.bubble').appendChild(rcDiv);
+  }
+
   scrollToBottom();
 }
 
-// ===== Helpers =====
-const toolLabels = {
+// ============================================
+// Rich Result Cards
+// ============================================
+function renderMaterialCard(bubble, mat) {
+  var html = '<div class="material-card">';
+  html += '<div class="mc-header">&#x1F4CA; Material: ' + escapeHtml(mat.name || mat.id || '') + '</div>';
+  html += '<table>';
+  var keys = ['density', 'tensile_strength', 'yield_strength', 'elastic_modulus', 'thermal_expansion', 'thermal_conductivity', 'max_service_temp', 'corrosion_resistance', 'category', 'standard'];
+  for (var i = 0; i < keys.length; i++) {
+    var v = mat[keys[i]];
+    if (v !== undefined && v !== null) {
+      html += '<tr><td>' + escapeHtml(keys[i]) + '</td><td>' + escapeHtml(String(v)) + '</td></tr>';
+    }
+  }
+  html += '</table></div>';
+  bubble.querySelector('.bubble').innerHTML += html;
+}
+
+function renderFormulaResult(bubble, result) {
+  var html = '<div class="formula-card">';
+  html += '<div class="fc-header">&#x1D6C3; Formula</div>';
+  if (result.name_en) html += '<div>' + escapeHtml(result.name_en) + '</div>';
+  if (result.equation) html += '<div class="fc-eq">$$' + result.equation + '$$</div>';
+  if (result.description) html += '<div class="fc-desc">' + escapeHtml(result.description) + '</div>';
+  if (result.application) html += '<div class="fc-app">Application: ' + escapeHtml(result.application) + '</div>';
+  if (result.result !== undefined && result.result !== null) {
+    html += '<div class="rc-metric" style="margin-top:4px"><span class="rc-label">Result</span><span class="rc-val">' + escapeHtml(prettyNum(result.result)) + '</span></div>';
+  }
+  if (result.inputs && typeof result.inputs === 'object') {
+    html += '<div style="margin-top:4px;font-size:0.8em;color:var(--text-muted)">';
+    for (var k in result.inputs) {
+      if (result.inputs.hasOwnProperty(k)) {
+        html += k + ': ' + prettyNum(result.inputs[k]) + '  ';
+      }
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  bubble.querySelector('.bubble').innerHTML += html;
+  // Re-render MathJax
+  if (window.MathJax) {
+    MathJax.typesetClear();
+    MathJax.typesetPromise();
+  }
+}
+
+function prettyNum(v) {
+  if (typeof v === 'number') {
+    if (Math.abs(v) < 0.001 || Math.abs(v) > 1e6) return v.toExponential(3);
+    return v.toPrecision(5);
+  }
+  return String(v);
+}
+
+// ============================================
+// Knowledge Panel (Right Side)
+// ============================================
+async function loadRelatedKnowledge(query) {
+  if (!knowledgeVisible) return; // Don't load if panel is hidden
+
+  var kpBody = document.getElementById('kp-body');
+  kpBody.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:10px">Searching...</div>';
+
+  try {
+    // Parallel: vector search + graph search
+    var results = [];
+    try {
+      var vs = await apiCall('/api/search/semantic?q=' + encodeURIComponent(query) + '&limit=5', 'GET');
+      if (vs.results) results = results.concat(vs.results.map(function(r) {
+        r._source = 'vector'; return r;
+      }));
+    } catch(e) { console.warn('Vector search failed:', e); }
+
+    try {
+      var gs = await apiCall('/api/graph/search?q=' + encodeURIComponent(query.split(' ')[0]) + '&limit=5', 'GET');
+      if (gs.results) results = results.concat(gs.results.map(function(r) {
+        r._source = 'graph'; return r;
+      }));
+    } catch(e) { console.warn('Graph search failed:', e); }
+
+    if (results.length === 0) {
+      kpBody.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:0.82em">No related knowledge found</div>';
+      return;
+    }
+
+    // Deduplicate by ID
+    var seen = {};
+    var unique = [];
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      var id = r.id || r.entity_id || r._source + '_' + i;
+      if (!seen[id]) { seen[id] = true; unique.push(r); }
+    }
+    unique = unique.slice(0, 10);
+
+    // Categorize
+    var formulas = [], materials = [], modules = [], chapters = [];
+    for (var i = 0; i < unique.length; i++) {
+      var r = unique[i];
+      var t = (r.type || '').toLowerCase();
+      if (t === 'formula') formulas.push(r);
+      else if (t === 'material') materials.push(r);
+      else if (t === 'design_module') modules.push(r);
+      else if (t === 'knowledge_chapter') chapters.push(r);
+      else if (r._source === 'graph') {
+        var etype = (r.entity_type || '').toLowerCase();
+        if (etype === 'formula') formulas.push(r);
+        else if (etype === 'material') materials.push(r);
+      }
+    }
+
+    var html = '';
+
+    // Formulas section
+    if (formulas.length > 0) {
+      html += '<div class="kp-section"><div class="kp-section-title">Formulas (' + formulas.length + ')</div>';
+      for (var i = 0; i < formulas.length; i++) {
+        var f = formulas[i];
+        html += '<div class="kb-item" onclick="showFormulaDetail(\'' + escapeAttr(f.id || f.entity_id || '') + '\')">';
+        html += '<span class="kb-type formula">F</span>';
+        html += '<span class="kb-label">' + escapeHtml(f.label || f.name_en || f.name || '') + '</span>';
+        if (f.equation) html += '<div class="kb-meta">' + escapeHtml(f.equation.slice(0, 60)) + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Materials section
+    if (materials.length > 0) {
+      html += '<div class="kp-section"><div class="kp-section-title">Materials (' + materials.length + ')</div>';
+      for (var i = 0; i < materials.length; i++) {
+        var m = materials[i];
+        html += '<div class="kb-item" onclick="showMaterialDetail(\'' + escapeAttr(m.id || m.entity_id || '') + '\')">';
+        html += '<span class="kb-type material">M</span>';
+        html += '<span class="kb-label">' + escapeHtml(m.label || m.name || '') + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Modules section
+    if (modules.length > 0) {
+      html += '<div class="kp-section"><div class="kp-section-title">Design Modules (' + modules.length + ')</div>';
+      for (var i = 0; i < modules.length; i++) {
+        var dm = modules[i];
+        html += '<div class="kb-item" onclick="showNeighbors(\'' + escapeAttr(dm.id || dm.entity_id || '') + '\')">';
+        html += '<span class="kb-type module">DM</span>';
+        html += '<span class="kb-label">' + escapeHtml(dm.label || dm.name || '') + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Chapters section
+    if (chapters.length > 0) {
+      html += '<div class="kp-section"><div class="kp-section-title">Knowledge Chapters (' + chapters.length + ')</div>';
+      for (var i = 0; i < chapters.length; i++) {
+        var ch = chapters[i];
+        html += '<div class="kb-item">';
+        html += '<span class="kb-type chapter">Ch</span>';
+        html += '<span class="kb-label">' + escapeHtml(ch.label || ch.name || '') + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    kpBody.innerHTML = html || '<div style="text-align:center;color:var(--text-muted);padding:20px">No categorized results</div>';
+  } catch (e) {
+    console.error('Knowledge panel error:', e);
+    kpBody.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">Knowledge panel unavailable</div>';
+  }
+}
+
+async function showFormulaDetail(formulaId) {
+  if (!formulaId) return;
+  try {
+    var data = await apiCall('/api/graph/entity/' + encodeURIComponent(formulaId), 'GET');
+    if (data.success && data.entity) {
+      addMessage('agent', '**' + escapeHtml(data.entity.label || formulaId) + '**\n' +
+        (data.entity.properties ? JSON.stringify(data.entity.properties, null, 2).slice(0, 500) : 'No details'));
+    }
+  } catch(e) {
+    showToast('Could not load formula details');
+  }
+}
+
+async function showMaterialDetail(materialId) {
+  if (!materialId) return;
+  try {
+    var data = await apiCall('/api/graph/entity/' + encodeURIComponent(materialId), 'GET');
+    if (data.success && data.entity) {
+      var bubble = addMessage('agent', 'Material lookup: **' + escapeHtml(data.entity.label || materialId) + '**');
+      if (data.entity.properties) {
+        renderMaterialCard(bubble, data.entity.properties);
+      }
+    }
+  } catch(e) {
+    showToast('Could not load material details');
+  }
+}
+
+async function showNeighbors(entityId) {
+  if (!entityId) return;
+  try {
+    var data = await apiCall('/api/graph/neighbors/' + encodeURIComponent(entityId) + '?dir=out&limit=10', 'GET');
+    if (data.success && data.neighbors && data.neighbors.length > 0) {
+      var html = '<div class="graph-mini">Connected entities:<br>';
+      for (var i = 0; i < data.neighbors.length; i++) {
+        var n = data.neighbors[i];
+        var etype = (n.entity.type || '').toLowerCase();
+        html += '<span class="gm-node ' + etype + '">' + escapeHtml(n.entity.label || n.entity_id) + '</span>';
+      }
+      html += '</div>';
+      var bubble = addMessage('agent', 'Related entities for **' + escapeHtml(entityId) + '**');
+      bubble.querySelector('.bubble').innerHTML += html;
+    }
+  } catch(e) {
+    showToast('Could not load neighbors');
+  }
+}
+
+// ============================================
+// Knowledge Panel Toggle
+// ============================================
+function toggleKnowledge() {
+  var col = document.getElementById('knowledge-col');
+  knowledgeVisible = !knowledgeVisible;
+  if (knowledgeVisible) {
+    col.classList.remove('collapsed');
+  } else {
+    col.classList.add('collapsed');
+  }
+  // If opening and no content loaded, trigger load for last message
+  if (knowledgeVisible) {
+    var chat = document.getElementById('chat-container');
+    var lastUser = null;
+    for (var i = chat.children.length - 1; i >= 0; i--) {
+      if (chat.children[i].classList.contains('user')) {
+        lastUser = chat.children[i].querySelector('.bubble').textContent;
+        break;
+      }
+    }
+    if (lastUser) loadRelatedKnowledge(lastUser);
+  }
+}
+
+// ============================================
+// Session Overlay
+// ============================================
+function toggleSessions() {
+  var overlay = document.getElementById('session-overlay');
+  overlay.classList.toggle('open');
+  if (overlay.classList.contains('open')) {
+    loadSessions();
+  }
+}
+
+async function loadSessions() {
+  // We track sessions in local state since the API doesn't have a list endpoint
+  var soBody = document.getElementById('so-body');
+  if (!sessionId) {
+    soBody.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.8em">No active session</div>';
+    return;
+  }
+
+  try {
+    var data = await apiCall('/api/agent/sessions/' + sessionId, 'GET');
+    if (data.success && data.messages) {
+      var html = '';
+      var sessions = [sessionId]; // Current session only (API limitation)
+      for (var i = 0; i < sessions.length; i++) {
+        var sid = sessions[i];
+        var lastMsg = data.messages.length > 0 ? data.messages[data.messages.length-1].content.slice(0, 40) : '';
+        html += '<div class="so-item active" onclick="switchSession(\'' + sid + '\')">';
+        html += '<span class="so-id">' + sid.slice(0,8) + '...</span>';
+        html += '<span class="so-msg">' + escapeHtml(lastMsg) + '</span>';
+        html += '<span class="so-time">now</span>';
+        html += '</div>';
+      }
+      soBody.innerHTML = html;
+    } else {
+      soBody.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.8em">Session: ' + sessionId.slice(0,12) + '...</div>';
+    }
+  } catch(e) {
+    soBody.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:12px;font-size:0.8em">Session unavailable</div>';
+  }
+}
+
+async function switchSession(sid) {
+  sessionId = sid;
+  document.getElementById('session-overlay').classList.remove('open');
+  document.getElementById('chat-container').innerHTML = '';
+  try {
+    var data = await apiCall('/api/agent/sessions/' + sessionId, 'GET');
+    if (data.success && data.messages) {
+      for (var i = 0; i < data.messages.length; i++) {
+        var m = data.messages[i];
+        addMessage(m.role || 'agent', m.content);
+      }
+    }
+  } catch(e) {
+    addMessage('agent', 'Session loaded. Ready.');
+  }
+}
+
+// ============================================
+// Message Helpers
+// ============================================
+function addMessage(role, text) {
+  var container = document.getElementById('chat-container');
+  var div = document.createElement('div');
+  div.className = 'message ' + role;
+  var formatted = role === 'agent' ? formatText(text) : escapeHtml(text);
+
+  if (role === 'agent') {
+    div.innerHTML = '<div class="avatar">&#x1F916;</div>' +
+      '<div class="bubble">' + formatted +
+      '<div class="bubble-actions">' +
+      '<button onclick="copyBubble(this)" title="Copy">&#x1F4CB;</button>' +
+      '</div></div>';
+  } else {
+    div.innerHTML = '<div class="avatar">&#x1F464;</div><div class="bubble">' + formatted + '</div>';
+  }
+  container.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+function copyBubble(btn) {
+  var bubble = btn.closest('.bubble');
+  var text = bubble.textContent || bubble.innerText;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() { showToast('Copied!'); });
+  }
+}
+
+function showTyping() {
+  var container = document.getElementById('chat-container');
+  var div = document.createElement('div');
+  div.className = 'message agent';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="avatar">&#x1F916;</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  container.appendChild(div);
+  scrollToBottom();
+}
+
+function hideTyping() {
+  var el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function showToast(msg) {
+  var toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 2500);
+}
+
+function scrollToBottom() {
+  var c = document.getElementById('chat-container');
+  requestAnimationFrame(function() { c.scrollTop = c.scrollHeight; });
+}
+
+// ============================================
+// Result Helpers
+// ============================================
+var TOOL_LABELS = {
   query_material: 'Query Material Database',
   analyze_solenoid_valve: 'Analyze Solenoid Valve',
-  analyze_pressure_valve: 'Analyze Pressure Reducing Valve',
+  analyze_pressure_valve: 'Analyze Pressure Valve',
   design_spring: 'Design Spring',
   design_oring: 'Design O-ring',
   run_fluid_calculation: 'Run Fluid Calculation',
@@ -483,76 +1127,43 @@ const toolLabels = {
 
 function resultToTable(result) {
   if (!result || typeof result !== 'object') return escapeHtml(String(result));
-  // Handle material
   if (result.material) {
-    let html = '<table>';
-    for (const [k, v] of Object.entries(result.material)) {
-      if (typeof v === 'object' && v !== null) {
-        html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(JSON.stringify(v).slice(0, 120)) + '</td></tr>';
-      } else {
-        html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(String(v)) + '</td></tr>';
+    var html = '<table>';
+    for (var k in result.material) {
+      if (result.material.hasOwnProperty(k)) {
+        var v = result.material[k];
+        html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(String(v).slice(0, 200)) + '</td></tr>';
       }
     }
     html += '</table>';
     return html;
   }
-  // Handle flat dict
-  if (Object.keys(result).length <= 12) {
-    let html = '<table>';
-    for (const [k, v] of Object.entries(result)) {
-      let val = v;
-      if (typeof v === 'object' && v !== null) val = JSON.stringify(v).slice(0, 150);
-      html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(String(val)) + '</td></tr>';
+  var keys = Object.keys(result);
+  if (keys.length <= 15) {
+    var html = '<table>';
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i], v = result[k];
+      if (typeof v === 'object' && v !== null) v = JSON.stringify(v).slice(0, 200);
+      html += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(String(v)) + '</td></tr>';
     }
     html += '</table>';
     return html;
   }
-  return '<pre style="font-size:0.75em;white-space:pre-wrap">' + escapeHtml(JSON.stringify(result, null, 2).slice(0, 500)) + '</pre>';
+  return '<pre style="font-size:0.72em;white-space:pre-wrap">' + escapeHtml(JSON.stringify(result, null, 2).slice(0, 500)) + '</pre>';
 }
 
 function toggleResult(id) {
-  const el = document.getElementById(id);
+  var el = document.getElementById(id);
   if (el) el.classList.toggle('open');
 }
 
-function addMessage(role, text, response) {
-  const container = document.getElementById('chat-container');
-  const div = document.createElement('div');
-  div.className = 'message ' + role;
-  if (role === 'agent') {
-    div.innerHTML = '<div class="avatar">&#x1F916;</div><div class="bubble">' + formatText(text) + '</div>';
-  } else {
-    div.innerHTML = '<div class="avatar">&#x1F464;</div><div class="bubble">' + escapeHtml(text) + '</div>';
-  }
-  container.appendChild(div);
-  scrollToBottom();
-  return div;
-}
-
-function showTyping() {
-  const container = document.getElementById('chat-container');
-  const div = document.createElement('div');
-  div.className = 'message agent';
-  div.id = 'typing-indicator';
-  div.innerHTML = '<div class="avatar">&#x1F916;</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
-  container.appendChild(div);
-  scrollToBottom();
-}
-
-function hideTyping() {
-  const el = document.getElementById('typing-indicator');
-  if (el) el.remove();
-}
-
-function scrollToBottom() {
-  const c = document.getElementById('chat-container');
-  requestAnimationFrame(function() { c.scrollTop = c.scrollHeight; });
-}
-
+// ============================================
+// Text Helpers
+// ============================================
 function formatText(text) {
   var html = escapeHtml(text);
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:var(--accent)">$1</a>');
+  html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:var(--accent)" target="_blank">$1</a>');
   return html;
 }
 
@@ -562,13 +1173,25 @@ function escapeHtml(text) {
   return d.innerHTML;
 }
 
+function escapeAttr(text) {
+  return String(text).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function autoResize(el) {
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
 }
 
 document.addEventListener('input', function(e) {
   if (e.target.id === 'user-input') autoResize(e.target);
+});
+
+// Click outside to close overlays
+document.addEventListener('click', function(e) {
+  var overlay = document.getElementById('session-overlay');
+  if (overlay.classList.contains('open') && !e.target.closest('.session-overlay') && !e.target.closest('.status')) {
+    overlay.classList.remove('open');
+  }
 });
 </script>
 </body>
