@@ -448,6 +448,38 @@ class PAORPlanner:
                     val = float(pm.group(1))
                     inputs['P1'] = val * 1e5 if pm.group(2) == 'bar' else val * 1e6
                 return fid, inputs
+        # If no keyword match, try vector semantic search
+        try:
+            from vector_store import get_indexer
+            idx = get_indexer()
+            if "formulas" not in idx.stores:
+                idx.build_formula_store()
+            hits = idx.stores["formulas"].search(message, top_k=1, min_score=0.1)
+            if hits:
+                fid = hits[0].get("formula_id")
+                # Map common formula_id to known defaults
+                known_defaults = {
+                    'reynolds_number': {'rho': 1.2, 'V': 1.0, 'D': 0.01, 'mu': 1.8e-5},
+                    'mach_number': {'V': 340, 'c': 340},
+                    'darcy_weisbach': {'f': 0.02, 'L': 1.0, 'D': 0.01, 'rho': 1.2, 'V': 1.0},
+                    'bernoulli_total_pressure': {'P1': 101325, 'rho': 1.2, 'V1': 1.0, 'z1': 0, 'V2': 0, 'z2': 0},
+                    'volumetric_flow_rate': {'A': 0.00785, 'V': 1.0},
+                    'lift_force': {'rho': 1.2, 'V': 10, 'CL': 1.0, 'A': 0.1},
+                    'drag_force': {'rho': 1.2, 'V': 10, 'CD': 1.0, 'A': 0.1},
+                }
+                inputs = known_defaults.get(fid, {})
+                if inputs:
+                    # Extract user values (same as above)
+                    vm = re.search(r'(\d+\.?\d*)\s*m/s', message)
+                    if vm:
+                        inputs['V'] = float(vm.group(1))
+                    dm = re.search(r'(\d+\.?\d*)\s*mm', message)
+                    if dm:
+                        inputs['D'] = float(dm.group(1)) / 1000.0
+                    return fid, inputs
+                return fid, {}
+        except Exception:
+            pass  # Graceful fallback — vector search is optional
         return None, {}
 
 

@@ -79,6 +79,9 @@ def create_app(config_name=None):
     from app.blueprints.ai_agent import ai_agent_bp
     app.register_blueprint(ai_agent_bp)
 
+    from app.blueprints.search import search_bp
+    app.register_blueprint(search_bp)
+
     # Auto-import any new news markdown files on startup
     _auto_import_news(app)
 

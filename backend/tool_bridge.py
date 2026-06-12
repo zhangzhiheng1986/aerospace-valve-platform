@@ -422,6 +422,31 @@ def _identify_formula(kwargs):
             'formula_id': 'reynolds_number', 'note': 'Default formula for generic query'}
 
 
+def _semantic_search(kwargs):
+    """Semantic search across knowledge base, formulas, and materials."""
+    query = kwargs.get('query', kwargs.get('message', ''))
+    top_k = int(kwargs.get('top_k', 5))
+    source = kwargs.get('source', 'all')
+    try:
+        from vector_store import get_search
+        idx = get_search()
+        if source == 'all':
+            results = idx.unified_search(query, top_k=top_k)
+        elif source in idx.stores:
+            results = idx.stores[source].search(query, top_k=top_k)
+        else:
+            return {'success': False, 'error': f'Unknown source: {source}'}
+        # Clean for JSON
+        clean_results = []
+        for r in results:
+            cr = {k: v for k, v in r.items() if k != 'text'}  # text is large, skip
+            clean_results.append(cr)
+        return {'success': True, '_tool': 'semantic_search', 'query': query,
+                'source': source, 'total': len(clean_results), 'results': clean_results}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'semantic_search'}
+
+
 # ============================================================================
 # Tool registry — maps tool names → handler functions
 # ============================================================================
@@ -442,6 +467,8 @@ TOOL_BRIDGE = {
     'analyze_pressure_valve': _analyze_prv,
     'design_spring': _design_spring,
     'design_oring': _design_oring,
+    # Search
+    'semantic_search': _semantic_search,
 }
 
 
