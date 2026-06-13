@@ -71,6 +71,20 @@ class FluidDatabase:
             'specific_heat_ratio': 1.41, 'vapor_pressure': 1.0e5,
             'critical_pressure': 1.3e6, 'corrosion_factor': 0.8,
             'cn': '\u6db2\u6c22 (LH2)/\u6c14\u6c22 (GH2)'
+        },
+        'water': {
+            'density': 998.0, 'dynamic_viscosity': 1.0e-3,
+            'bulk_modulus': 2.2e9, 'gas_constant': 0,
+            'specific_heat_ratio': 1.0, 'vapor_pressure': 2300,
+            'critical_pressure': 22.1e6, 'corrosion_factor': 0.3,
+            'cn': '水 (H2O)'
+        },
+        'hydraulic_oil': {
+            'density': 870.0, 'dynamic_viscosity': 4.6e-2,
+            'bulk_modulus': 1.7e9, 'gas_constant': 0,
+            'specific_heat_ratio': 1.0, 'vapor_pressure': 100,
+            'critical_pressure': 1.0e6, 'corrosion_factor': 0.8,
+            'cn': '航空液压油 (MIL-H-5606)'
         }
     }
 
@@ -353,8 +367,10 @@ class PressureReducingValveDesigner:
         return round(Cv, 2)
 
     def calculate_natural_frequency(self, spring_stiffness, sensor_diameter):
-        m_estimate = 0.1 * (sensor_diameter / 50)**2
+        m_estimate = max(0.1 * (sensor_diameter / 50)**2, 0.0001)
         k = spring_stiffness * 1000
+        if m_estimate <= 0 or k <= 0:
+            return 0.0
         f_n = 1 / (2 * math.pi) * math.sqrt(k / m_estimate)
         return round(f_n, 1)
 

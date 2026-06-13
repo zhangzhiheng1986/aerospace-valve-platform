@@ -12,6 +12,7 @@ Used by:
 
 import math
 import traceback
+from enum import Enum
 
 # ============================================================================
 # _clean — recursive Infinity/NaN → None
@@ -26,6 +27,8 @@ def _clean(obj):
     if isinstance(obj, float):
         if math.isinf(obj) or math.isnan(obj):
             return None
+    if isinstance(obj, Enum):
+        return obj.value
     return obj
 
 
@@ -65,15 +68,61 @@ def _wrap(func, name, extra_params=None):
 # ============================================================================
 
 def _material_query(kwargs):
-    """Query material database by name or id."""
+    """Query material database by name or id.
+    
+    Sprint 9 enhancement: try multiple lookup strategies:
+    1. Exact key match
+    2. Partial substring match (e.g. "TC4" matches "TC4钛合金")
+    3. Synonym mapping (e.g. "FKM" -> "氟橡胶Viton")
+    """
     try:
-        from materials_database import query_material
+        from materials_database import get_material_detail, db as _mat_db
         name = kwargs.get('material', kwargs.get('name', ''))
         if not name:
             return {'success': False, 'error': 'No material name provided'}
-        result = query_material(name)
+        result = get_material_detail(name)
         if not result:
-            return {'success': False, 'error': f'Material "{name}" not found'}
+            # Substring search across all known keys
+            n = name.strip().lower()
+            best_match = None
+            for key in _mat_db.materials.keys():
+                if n in key.lower() or n.upper() in key.upper():
+                    best_match = key
+                    break
+            # Synonym table for common short codes
+            SYNONYMS = {
+                'fkm': '氟橡胶Viton',
+                'viton': '氟橡胶Viton',
+                'nbr': 'NBR',
+                'ptfe': '聚四氟乙烯PTFE',
+                'teflon': '聚四氟乙烯PTFE',
+                '50crva': '50CrVA',
+                '60si2mn': '60Si2Mn',
+                'gh4169': 'GH4169',
+                'inconel': 'GH4169',
+                'inconel 718': 'GH4169',
+                'tc4': 'TC4',
+                'ti-6al-4v': 'TC4',
+                '2a12': '2A12硬铝合金',
+                '7075': '7075',
+                '1cr18ni9ti': '1Cr18Ni9Ti不锈钢',
+                '17-4ph': '17-4PH',
+                '440c': '440C',
+                'h62': 'H62',
+            }
+            if not best_match and n.lower() in SYNONYMS:
+                result = get_material_detail(SYNONYMS[n.lower()])
+                if result:
+                    best_match = SYNONYMS[n.lower()]
+            if not result and best_match:
+                result = get_material_detail(best_match)
+            if not result:
+                # Last-ditch: list available keys (limited)
+                return {
+                    'success': False,
+                    'error': f'Material "{name}" not found',
+                    'available_keys_sample': list(_mat_db.materials.keys())[:5],
+                }
         cleaned = _clean(result)
         cleaned['success'] = True
         cleaned['_tool'] = 'query_material'
@@ -249,15 +298,24 @@ def _fluid_calculation(kwargs):
 
 def _analyze_solenoid(kwargs):
     """Analyze solenoid valve design parameters.
-    Falls back to mock if the real optimizer cannot be initialized (needs
-    ValveGeometricParams + SolenoidPhysicsEngine).
+    Maps working_pressure to geometric dimensions and runs HybridOptimizer.
+    Falls back to mock if optimizer cannot be initialized.
     """
     try:
         from solenoid_optimizer import HybridOptimizer, ValveGeometricParams, SolenoidPhysicsEngine
+        from solenoid_optimizer import MaterialConstants
         pressure = float(kwargs.get('working_pressure', kwargs.get('pressure', 21)))
-        geom = ValveGeometricParams(pressure=pressure)
-        physics = SolenoidPhysicsEngine(geom)
-        opt = HybridOptimizer(geom, physics, n_particles=kwargs.get('n_particles', 10), n_iterations=30)
+        # Map pressure bracket to approximate geometric dimensions
+        if pressure <= 10:
+            geom = ValveGeometricParams(D_inner_mm=10, D_outer_max_mm=25, L_axial_max_mm=20)
+        elif pressure <= 21:
+            geom = ValveGeometricParams(D_inner_mm=15, D_outer_max_mm=35, L_axial_max_mm=25)
+        elif pressure <= 35:
+            geom = ValveGeometricParams(D_inner_mm=20, D_outer_max_mm=40, L_axial_max_mm=30)
+        else:
+            geom = ValveGeometricParams(D_inner_mm=25, D_outer_max_mm=50, L_axial_max_mm=35)
+        physics = SolenoidPhysicsEngine()
+        opt = HybridOptimizer(geom, physics, n_particles=kwargs.get('n_particles', 20), n_iterations=30)
         best_awg, best_fit, best_info = opt.optimize()
         clean = _clean({'best_awg': best_awg, 'fitness': best_fit, 'design': best_info})
         clean['success'] = True
@@ -265,14 +323,6 @@ def _analyze_solenoid(kwargs):
         return clean
     except (ImportError, TypeError, AttributeError) as ie:
         return _mock_solenoid(kwargs, import_error=str(ie))
-    except Exception as e:
-        return _mock_solenoid(kwargs, import_error=f'Unexpected: {e}')
-        clean = _clean(result)
-        clean['success'] = True
-        clean['_tool'] = 'analyze_solenoid_valve'
-        return clean
-    except ImportError:
-        return _mock_solenoid(kwargs)
     except Exception as e:
         return {'success': False, 'error': str(e), '_tool': 'analyze_solenoid_valve'}
 
@@ -447,6 +497,37 @@ def _semantic_search(kwargs):
         return {'success': False, 'error': str(e), '_tool': 'semantic_search'}
 
 
+def _graph_search(kwargs):
+    """Search knowledge graph entities."""
+    query = kwargs.get('query', kwargs.get('message', ''))
+    entity_type = kwargs.get('entity_type', kwargs.get('type'))
+    limit = int(kwargs.get('limit', 10))
+    try:
+        from knowledge_graph import get_graph_query
+        q = get_graph_query()
+        results = q.search_entity(query, entity_type=entity_type, limit=limit)
+        return {'success': True, '_tool': 'graph_search', 'query': query,
+                'total': len(results), 'results': results}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'graph_search'}
+
+
+def _graph_neighbors(kwargs):
+    """Get neighbors of a graph entity."""
+    entity_id = kwargs.get('entity_id', kwargs.get('id', ''))
+    relation = kwargs.get('relation')
+    direction = kwargs.get('direction', kwargs.get('dir', 'both'))
+    try:
+        from knowledge_graph import get_graph_query
+        q = get_graph_query()
+        neighbors = q.get_neighbors(entity_id, relation=relation, direction=direction)
+        entity = q.get_entity(entity_id)
+        return {'success': True, '_tool': 'graph_neighbors', 
+                'entity': entity, 'neighbors': neighbors, 'total': len(neighbors)}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'graph_neighbors'}
+
+
 # ============================================================================
 # Tool registry — maps tool names → handler functions
 # ============================================================================
@@ -469,6 +550,9 @@ TOOL_BRIDGE = {
     'design_oring': _design_oring,
     # Search
     'semantic_search': _semantic_search,
+    # Knowledge Graph
+    'graph_search': _graph_search,
+    'graph_neighbors': _graph_neighbors,
 }
 
 

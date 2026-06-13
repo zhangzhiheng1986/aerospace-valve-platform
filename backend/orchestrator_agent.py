@@ -292,6 +292,13 @@ class TaskDecomposer:
         if not recipe:
             return None, intent
 
+        # Sprint 9.1: extract structured parameters from natural language
+        # so downstream tools receive typed kwargs, not raw text.
+        try:
+            from parameter_extractor import extract_for_tool
+        except ImportError:
+            extract_for_tool = None  # Fall back to message passthrough
+
         plan_id = f"plan_{uuid.uuid4().hex[:8]}"
         subtasks = []
         for i, (tool_name, role, deps) in enumerate(recipe):
@@ -299,11 +306,17 @@ class TaskDecomposer:
             for dep_idx in deps:
                 dep_ids.append(subtasks[dep_idx].task_id)
 
+            # Build typed inputs for the tool
+            if extract_for_tool:
+                tool_inputs = extract_for_tool(tool_name, message)
+            else:
+                tool_inputs = {"message": message}
+
             st = SubTask(
                 task_id="task_{}_{}".format(i, tool_name),
                 role=role,
                 tool_name=tool_name,
-                inputs={"message": message},  # delegate param extraction to sub-agent
+                inputs=tool_inputs,
                 depends_on=dep_ids,
                 priority=len(recipe) - i,  # earlier tasks higher priority
             )
@@ -424,20 +437,62 @@ class OrchestratorAgent:
             for tid in list(remaining):
                 st = task_map[tid]
                 if all(dep in completed for dep in st.depends_on):
-                    # Also skip if any dependency failed
-                    dep_failed = any(dep in failed for dep in st.depends_on)
-                    if dep_failed:
+                    # Sprint 9 fix: if any dependency failed, mark this task
+                    # as failed-skipped (don't leave it PENDING forever).
+                    # ADVISORY deps (query_material) don't block — they only inform.
+                    blocking_failed_deps = [
+                        d for d in st.depends_on
+                        if d in failed and d.split('_', 2)[-1] not in (
+                            'query_material', 'check_compliance',
+                        )
+                    ]
+                    advisory_failed_deps = [
+                        d for d in st.depends_on
+                        if d in failed and d.split('_', 2)[-1] in (
+                            'query_material', 'check_compliance',
+                        )
+                    ]
+                    if blocking_failed_deps:
+                        st.status = TaskStatus.FAILED
+                        st.error = f"Dependency failed: {blocking_failed_deps}"
+                        st.completed_at = datetime.now().isoformat()
+                        failed[tid] = st.error
+                        completed[tid] = {"success": False, "error": st.error, "skipped": True}
                         remaining.remove(tid)
                         continue
-                    # Check if any dependency result has errors
-                    if any(dep in completed and not completed[dep].get("success", True) for dep in st.depends_on):
+                    # Check if any (non-advisory) dependency result has errors
+                    blocking_errored_deps = [
+                        d for d in st.depends_on
+                        if d in completed and not completed[d].get("success", True)
+                        and d.split('_', 2)[-1] not in (
+                            'query_material', 'check_compliance',
+                        )
+                    ]
+                    if blocking_errored_deps:
+                        st.status = TaskStatus.FAILED
+                        st.error = f"Dependency reported failure: {blocking_errored_deps}"
+                        st.completed_at = datetime.now().isoformat()
+                        failed[tid] = st.error
+                        completed[tid] = {"success": False, "error": st.error, "skipped": True}
+                        remaining.remove(tid)
                         continue
+                    # Attach advisory note to inputs
+                    if advisory_failed_deps:
+                        for dep in advisory_failed_deps:
+                            err = failed.get(dep, 'unknown')
+                            st.inputs['_advisory_warning'] = f'Dep {dep} failed: {err}; using defaults'
                     ready.append(st)
 
             if not ready:
                 # Deadlock or all remaining depend on each other
-                # Try to force-run them anyway
-                ready = [task_map[tid] for tid in remaining]
+                # Sprint 9: mark remaining as failed-deadlock rather than force-running
+                for tid in list(remaining):
+                    st = task_map[tid]
+                    st.status = TaskStatus.FAILED
+                    st.error = "Unresolved dependency chain (deadlock)"
+                    st.completed_at = datetime.now().isoformat()
+                    failed[tid] = st.error
+                    completed[tid] = {"success": False, "error": st.error, "deadlock": True}
                 remaining.clear()
                 break
 
@@ -529,13 +584,24 @@ class OrchestratorAgent:
         }
 
     def _respond_simple(self, message: str, intent: str, session_id: str) -> Dict:
-        """Handle simple queries that don't need orchestration."""
+        """Handle simple queries that don't need orchestration.
+        
+        Sprint 9 fix: Return a complete synthesis dict (not just a note) so
+        downstream callers can iterate over `task_results` uniformly.
+        """
         self._sessions[session_id]["status"] = "simple"
         return {
             "success": True,
             "orchestrated": False,
             "intent": intent,
             "message": message,
+            "plan_id": "",
+            "total_subtasks": 0,
+            "completed": 0,
+            "failed": 0,
+            "total_duration_ms": 0.0,
+            "categories": {},
+            "task_results": [],
             "note": "Simple query — no multi-agent orchestration needed. Route to PAOR directly.",
         }
 

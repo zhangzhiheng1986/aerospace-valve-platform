@@ -555,11 +555,38 @@ def orchestrate(current_user=None):
 
         # Step 2: Simple query — fallback to PAOR reasoning engine
         paor = get_paor_engine(tool_executor=_get_paor_tool_executor())
-        paor_result = paor.execute(message, context={
-            'session_id': session_id,
-            'user': current_user.get('username') if current_user else None,
-        })
-        response_text = _format_paor_response(paor_result)
+        try:
+            paor_result = paor.execute(message, context={
+                'session_id': session_id,
+                'user': current_user.get('username') if current_user else None,
+            })
+        except Exception as paor_err:
+            # Last-resort: respond with the raw user message so the chat UX
+            # at least acknowledges the input.
+            return jsonify({
+                'success': True,
+                'orchestrated': False,
+                'session_id': session_id,
+                'response': {
+                    'text': f'收到: "{message}"。如需工程设计、计算或选材帮助，请告诉我具体问题。',
+                    'intent': 'simple_query',
+                    'paor_trace': [],
+                    'reflection': {'confidence': 0.0, 'summary': 'simple greeting', 'warnings': [], 'suggestions': []},
+                },
+            })
+
+        # Sprint 9 fix: defensive — handle missing/None fields safely
+        if not isinstance(paor_result, dict):
+            paor_result = {'intent': 'unknown', 'trace': [], 'reflection': {}, 'answer': str(paor_result)[:500]}
+        paor_result.setdefault('intent', 'unknown')
+        paor_result.setdefault('trace', [])
+        paor_result.setdefault('reflection', {'confidence': 0.0, 'summary': '', 'warnings': [], 'suggestions': []})
+        paor_result.setdefault('answer', '')
+
+        try:
+            response_text = _format_paor_response(paor_result)
+        except Exception as fmt_err:
+            response_text = paor_result.get('answer') or f"PAOR result: {str(paor_result)[:300]}"
 
         return jsonify({
             'success': True,
@@ -569,7 +596,7 @@ def orchestrate(current_user=None):
                 'text': response_text,
                 'intent': paor_result['intent'],
                 'paor_trace': paor_result['trace'],
-                'reflection': paor_result.get('reflection', {}),
+                'reflection': paor_result['reflection'],
             },
         })
 
