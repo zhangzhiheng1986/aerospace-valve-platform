@@ -63,9 +63,9 @@ chk('Search index >100', c == 200 and cnt > 100, 'code={} cnt={}'.format(c, cnt)
 
 c, r = api('/api/fluid_mechanics/compute', 'POST',
           {'formula_id': 'reynolds', 'inputs': {'rho': 1000, 'v': 10, 'L': 0.01, 'mu': 0.001}})
-chk('Reynolds compute', c == 200 and 'error' not in r, 'code={}'.format(c))
-if 'error' not in r:
-    v = r.get('result', r.get('value', 0))
+chk('Reynolds compute', c == 200 and r.get('error') is None, 'code={}'.format(c))
+if r.get('error') is None:
+    v = r.get('results', {}).get('Re', 0) or r.get('result', r.get('value', 0))
     chk('Re ~ 100000', abs(float(v) - 100000) < 1000, 'got={}'.format(v))
 
 # 5. Design tools

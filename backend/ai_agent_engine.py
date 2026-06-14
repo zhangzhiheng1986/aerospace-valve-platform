@@ -458,7 +458,11 @@ class AIAgentEngine:
                 try:
                     val = getattr(mat, attr)
                     if not callable(val):
-                        d[attr] = val
+                        # Convert Enum/MaterialCategory to string
+                        if hasattr(val, 'value'):
+                            d[attr] = val.value
+                        else:
+                            d[attr] = val
                 except Exception:
                     pass
         return d
