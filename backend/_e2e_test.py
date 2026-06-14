@@ -110,6 +110,21 @@ c, r = api('/api/graph/neighbors/formula_reynolds_number')
 chk('Graph neighbors', c == 200 and r.get('success'),
     'code={} n={}'.format(c, len(r.get('neighbors', []))))
 
+# --- 9. Search knowledge integration ---
+print('--- 9. Search knowledge integration ---')
+
+# Test via PAOR chat that uses search_knowledge
+c, r = api('/api/agent/chat', 'POST', {'message': 'what is reynolds number'}, auth=True)
+chk('PAOR chat with knowledge', c == 200 and r.get('success'),
+    'code={}'.format(c))
+if r.get('success'):
+    text = r.get('response', {}).get('text', '')
+    chk('Knowledge results in response',
+        'Knowledge' in text and len(text) > 100,
+        'text_len={} has_knowledge={}'.format(len(text), 'Knowledge' in text))
+else:
+    print('  FAIL  PAOR chat with knowledge  error={}'.format(r.get('error', '??')[:100]))
+
 total = passed + failed
 print('\n' + '=' * 60)
 print('RESULTS: {}/{} passed ({:.1f}%)'.format(passed, total, 100*passed/total if total else 0))

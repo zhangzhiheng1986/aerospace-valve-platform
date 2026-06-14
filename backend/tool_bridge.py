@@ -497,6 +497,32 @@ def _semantic_search(kwargs):
         return {'success': False, 'error': str(e), '_tool': 'semantic_search'}
 
 
+def _search_knowledge(kwargs):
+    """Search knowledge base (alias for semantic_search with formatted output).
+    Used by PAOR engine's 'search_knowledge' tool step."""
+    result = _semantic_search(kwargs)
+    if not result.get('success'):
+        return result
+    # Format results for PAOR consumption
+    formatted = []
+    for r in result.get('results', []):
+        item = {
+            'source': r.get('source', 'unknown'),
+            'title': r.get('title', r.get('name', '')),
+            'type': r.get('type', ''),
+            'score': r.get('score', 0),
+            'snippet': (r.get('text', '') or r.get('description', '') or '')[:300],
+        }
+        formatted.append(item)
+    return {
+        'success': True,
+        '_tool': 'search_knowledge',
+        'query': result.get('query', kwargs.get('query', '')),
+        'total': len(formatted),
+        'results': formatted,
+    }
+
+
 def _graph_search(kwargs):
     """Search knowledge graph entities."""
     query = kwargs.get('query', kwargs.get('message', ''))
@@ -549,6 +575,7 @@ TOOL_BRIDGE = {
     'design_spring': _design_spring,
     'design_oring': _design_oring,
     # Search
+    'search_knowledge': _search_knowledge,
     'semantic_search': _semantic_search,
     # Knowledge Graph
     'graph_search': _graph_search,

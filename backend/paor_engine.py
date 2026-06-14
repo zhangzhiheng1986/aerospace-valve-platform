@@ -301,15 +301,18 @@ class PAORPlanner:
     def _plan_fluid_calculation(cls, message: str, ctx: Dict) -> List[PlanStep]:
         formula_id, inputs = cls._identify_formula(message)
         return [
-            PlanStep(1, 'understand', 'identify_formula',
+            PlanStep(1, 'understand', 'search_knowledge',
+                     {'query': message},
+                     'Search knowledge base for context'),
+            PlanStep(2, 'understand', 'identify_formula',
                      {'message': message, 'formula_id': formula_id},
-                     f'Identify formula: {formula_id or "unknown"}'),
-            PlanStep(2, 'calculate', 'run_fluid_calculation',
+                     f'Identify formula: {formula_id or "unknown"}', depends_on=[1]),
+            PlanStep(3, 'calculate', 'run_fluid_calculation',
                      {'formula_id': formula_id, 'inputs': inputs},
-                     f'Calculate {formula_id}', depends_on=[1]),
-            PlanStep(3, 'verify', 'validate_physics',
+                     f'Calculate {formula_id}', depends_on=[2]),
+            PlanStep(4, 'verify', 'validate_physics',
                      {'calc_type': formula_id or 'general'},
-                     'Validate calculation result', depends_on=[2]),
+                     'Validate calculation result', depends_on=[3]),
         ]
 
     @classmethod

@@ -22,11 +22,12 @@ def _get_paor_tool_executor():
     from tool_bridge import (
         _material_query, _fluid_calculation, _analyze_solenoid, _analyze_prv,
         _design_spring, _design_oring, _compliance_check, _identify_formula, _verify_leak,
+        _search_knowledge,
     )
 
     tool_map = {
         'parse_requirements': lambda **kw: {'success': True, 'parsed': kw.get('message', '')},
-        'search_knowledge': lambda **kw: {'success': True, 'results': [f'Knowledge: {kw.get("query","")}']},
+        'search_knowledge': lambda **kw: _search_knowledge(kw),
         'run_fluid_calculation': lambda **kw: _fluid_calculation(kw),
         'analyze_solenoid_valve': lambda **kw: _analyze_solenoid(kw),
         'analyze_pressure_valve': lambda **kw: _analyze_prv(kw),
