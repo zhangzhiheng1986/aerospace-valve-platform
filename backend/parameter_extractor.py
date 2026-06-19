@@ -349,6 +349,84 @@ def extract_valve_type(text: str) -> Optional[str]:
     return None
 
 
+# Sprint 15.1: Additional lightweight extractors for process/knowledge/cost tools
+
+def extract_route_id(text: str) -> Optional[str]:
+    """Detect known process route IDs from user message."""
+    if not text:
+        return None
+    route_keywords = {
+        'relief_valve_seat': ['relief', 'seat', '减压阀', '座'],
+        'solenoid_valve_body': ['solenoid body', 'solenoid_valve_body', '电磁阀体'],
+        'check_valve_poppet': ['check poppet', 'check_valve_poppet', '单向阀'],
+    }
+    text_lower = text.lower()
+    for rid, kws in route_keywords.items():
+        for kw in kws:
+            if kw.lower() in text_lower:
+                return rid
+    return None
+
+
+def extract_process_category(text: str) -> Optional[str]:
+    """Detect a process category from text (machining/heat_treat/surface/welding/assembly)."""
+    if not text:
+        return None
+    mapping = {
+        'machining': ['machining', '机加工', '车', '铣', '磨', 'turning', 'milling', 'grinding'],
+        'heat_treat': ['heat treat', 'heat_treat', '热处理', '时效', '退火', '淬火', 'aging'],
+        'surface': ['surface', '表面处理', '喷丸', '钝化', 'shot', 'passivation'],
+        'welding': ['welding', 'weld', '焊接', 'tig', 'laser', '电子束'],
+        'assembly': ['assembly', '装配', '总装'],
+    }
+    text_lower = text.lower()
+    for cat, kws in mapping.items():
+        for kw in kws:
+            if kw in text_lower:
+                return cat
+    return None
+
+
+def extract_process_id(text: str) -> Optional[str]:
+    """Heuristically extract a process id like nickel_alloy_turning."""
+    if not text:
+        return None
+    m = re.search(r'\b([a-z]+_[a-z]+_?[a-z]*)\b', text.lower())
+    if m:
+        return m.group(1)
+    return None
+
+
+def extract_entity_id(text: str) -> Optional[str]:
+    """Extract a knowledge graph entity id from text (e.g., 'Inconel 718' -> 'inconel_718')."""
+    m = extract_material_name(text)
+    if m:
+        return m.lower().replace(' ', '_').replace('-', '_')
+    return None
+
+
+def extract_number(text: str, keyword: str) -> Optional[float]:
+    """Find a number near a keyword (e.g., '5kg', '3 hours')."""
+    if not text:
+        return None
+    # Try patterns like "5kg", "5 kg", "5千克"
+    pattern = rf'(\d+(?:\.\d+)?)\s*(?:{keyword}|{keyword}[^\d\s]*)'
+    m = re.search(pattern, text, re.IGNORECASE)
+    if m:
+        try:
+            return float(m.group(1))
+        except (ValueError, IndexError):
+            return None
+    # Fallback: any number near keyword
+    m = re.search(rf'{keyword}[^\d]*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
+    if m:
+        try:
+            return float(m.group(1))
+        except (ValueError, IndexError):
+            return None
+    return None
+
+
 def extract_prv_params(text: str) -> Dict[str, Any]:
     """Extract parameters for analyze_pressure_valve."""
     pressures = _parse_all_pressures(text)
@@ -525,6 +603,21 @@ EXTRACTORS = {
     'run_fluid_calculation': extract_fluid_calc_params,
     'identify_formula': lambda t: {'hint': t},
     'query_material': lambda t: {'material': extract_material_name(t), 'name': extract_material_name(t)},
+    # Sprint 15.1: Process + Cost + Knowledge + Search tools
+    'recommend_process': lambda t: {'material': extract_material_name(t), 'valve_type': extract_valve_type(t) or 'generic'},
+    'get_process_route': lambda t: {'route_id': extract_route_id(t)},
+    'list_processes': lambda t: {'keyword': t, 'category': extract_process_category(t)},
+    'get_process_detail': lambda t: {'process_id': extract_process_id(t)},
+    'search_knowledge': lambda t: {'query': t, 'top_k': 5},
+    'semantic_search': lambda t: {'query': t, 'top_k': 5},
+    'graph_search': lambda t: {'query': t, 'top_k': 5},
+    'graph_neighbors': lambda t: {'entity_id': extract_entity_id(t)},
+    'estimate_cost': lambda t: {'material': extract_material_name(t), 'mass_kg': extract_number(t, 'mass') or 1.0, 'process_time_min': extract_number(t, 'time') or 60.0},
+    'compare_costs': lambda t: {'material': extract_material_name(t)},
+    'cost_breakdown': lambda t: {'material': extract_material_name(t), 'mass_kg': extract_number(t, 'mass') or 1.0, 'process_time_min': extract_number(t, 'time') or 60.0},
+    'verify_leak': lambda t: {'standard': 'QJ 20156'},
+    'verify_rated': lambda t: {'standard': 'QJ 20156'},
+    'verify_life': lambda t: {'standard': 'QJ 20156'},
 }
 
 

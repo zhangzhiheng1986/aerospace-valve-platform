@@ -255,19 +255,19 @@ class TaskDecomposer:
             ("query_material", AgentRole.MATERIAL, []),
             ("analyze_solenoid_valve", AgentRole.DESIGN, [0]),
             ("check_compliance", AgentRole.COMPLIANCE, [1]),
-            ("recommend_process", AgentRole.PROCESS, [1]),
+            ("recommend_process", AgentRole.PROCESS, [0]),
             ("get_process_route", AgentRole.PROCESS, [3]),
             ("search_knowledge", AgentRole.KNOWLEDGE, [1]),
-            ("estimate_cost", AgentRole.COST, [4]),
+            ("estimate_cost", AgentRole.COST, [3]),
         ],
         "design_pressure_valve_full": [
             ("query_material", AgentRole.MATERIAL, []),
             ("analyze_pressure_valve", AgentRole.DESIGN, [0]),
             ("check_compliance", AgentRole.COMPLIANCE, [1]),
-            ("recommend_process", AgentRole.PROCESS, [1]),
+            ("recommend_process", AgentRole.PROCESS, [0]),
             ("get_process_route", AgentRole.PROCESS, [3]),
             ("search_knowledge", AgentRole.KNOWLEDGE, [1]),
-            ("estimate_cost", AgentRole.COST, [4]),
+            ("estimate_cost", AgentRole.COST, [3]),
         ],
         "process_design_review": [
             ("query_material", AgentRole.MATERIAL, []),
@@ -579,6 +579,32 @@ class OrchestratorAgent:
             for tid in list(remaining):
                 st = task_map[tid]
                 if all(dep in completed for dep in st.depends_on):
+                    # Sprint 15.1: Inject upstream data into inputs (only for required fields)
+                    upstream_keys = {'material', 'valve_type', 'mass_kg', 'process_time_min',
+                                     'inlet_pressure', 'outlet_pressure', 'flow_rate',
+                                     'voltage', 'stroke_mm', 'force_n', 'fluid_type',
+                                     'rated_pressure_mpa', 'rated_temperature_c',
+                                     'design_life_cycles'}
+                    for dep in st.depends_on:
+                        dep_result = completed.get(dep, {})
+                        dep_data = dep_result.get('result', dep_result) if isinstance(dep_result, dict) else {}
+                        if isinstance(dep_data, dict):
+                            # First, if dep has 'name' (query_material style) and current has no material, use name as material
+                            if 'name' in dep_data and dep_data['name'] and not st.inputs.get('material'):
+                                st.inputs['material'] = dep_data['name']
+                            # If dep has 'route_suggestion' (recommend_process), use that for route_id
+                            if 'route_suggestion' in dep_data and dep_data['route_suggestion'] and not st.inputs.get('route_id'):
+                                st.inputs['route_id'] = dep_data['route_suggestion']
+                            # If dep has 'total_time_min' (get_process_route), use for cost time
+                            if 'total_time_min' in dep_data and dep_data['total_time_min'] and st.inputs.get('process_time_min') in (60.0, None):
+                                st.inputs['process_time_min'] = dep_data['total_time_min']
+                            for k in upstream_keys:
+                                v = dep_data.get(k)
+                                if v is not None and (k not in st.inputs or st.inputs.get(k) in (None, '', 0, 0.0, 1.0, 60.0)):
+                                    if k in ('mass_kg', 'process_time_min') and st.inputs.get(k) in (1.0, 60.0):
+                                        st.inputs[k] = v
+                                    elif k in ('material', 'valve_type') and not st.inputs.get(k):
+                                        st.inputs[k] = v
                     # Sprint 9 fix: if any dependency failed, mark this task
                     # as failed-skipped (don't leave it PENDING forever).
                     # ADVISORY deps (query_material) don't block — they only inform.
