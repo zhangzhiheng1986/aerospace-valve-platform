@@ -210,6 +210,19 @@ def _register_page_routes(app):
             return redirect('/login?redirect=/ai-agent')
         return render_template('ai_agent.html', auth_token=token, user_name=user.get('username', 'Engineer'))
 
+    @app.route('/memory')
+    def memory_page():
+        """Sprint 14.2: Agent Memory dashboard."""
+        from flask import request, redirect
+        from auth_system import auth
+        token = request.cookies.get('auth_token', '')
+        if not token:
+            return redirect('/login?redirect=/memory')
+        is_valid, user = auth.verify_session(token)
+        if not is_valid:
+            return redirect('/login?redirect=/memory')
+        return render_template('memory.html', auth_token=token, user_name=user.get('username', 'Engineer'))
+
     # Legacy analysis APIs (non-module-specific)
     from app.middleware.auth import require_auth
 

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Memory - Avis Platform</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #162231;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0, 180, 216, 0.15);
+  --accent2: #7209b7;
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --info: #4dabf7;
+  --radius: 10px;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+a { color: var(--accent); text-decoration: none; }
+.container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+h1 { color: var(--accent); font-size: 1.6rem; margin-bottom: 0.5rem; }
+.subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.tab { padding: 0.7rem 1.2rem; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: var(--accent); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1rem; }
+.card h3 { color: var(--accent); margin-bottom: 0.7rem; font-size: 1.05rem; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; text-align: center; }
+.stat-value { font-size: 2.2rem; color: var(--accent); font-weight: bold; }
+.stat-label { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.4rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--border); }
+th { color: var(--accent); font-weight: 600; }
+tr:hover { background: var(--bg-secondary); }
+.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+.badge-success { background: rgba(81, 207, 102, 0.2); color: var(--success); }
+.badge-warning { background: rgba(255, 212, 59, 0.2); color: var(--warning); }
+.badge-danger { background: rgba(255, 107, 107, 0.2); color: var(--danger); }
+.badge-info { background: rgba(77, 171, 247, 0.2); color: var(--info); }
+.json-cell { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-secondary); max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+.btn:hover { opacity: 0.85; }
+.btn-secondary { background: var(--bg-secondary); border: 1px solid var(--border); }
+.input-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.input-row input, .input-row select { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); padding: 0.5rem 0.7rem; border-radius: 6px; font-size: 0.9rem; }
+.recommendation-box { background: var(--bg-secondary); border-left: 3px solid var(--accent); padding: 0.8rem 1rem; border-radius: 6px; margin-top: 0.5rem; }
+.empty { color: var(--text-secondary); font-style: italic; padding: 2rem; text-align: center; }
+.nav-back { display: inline-block; margin-bottom: 1rem; padding: 0.4rem 0.9rem; background: var(--bg-secondary); border-radius: 6px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="nav-back" href="/">← 返回首页</a>
+  <h1>🧠 Agent Memory & Experience</h1>
+  <p class="subtitle">Sprint 14.2: Hermes 思想落地 — Agent 经验沉淀、模式提取、反思复用</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="stats">📊 统计</div>
+    <div class="tab" data-tab="experiences">📝 经验 (Experiences)</div>
+    <div class="tab" data-tab="patterns">🔁 模式 (Patterns)</div>
+    <div class="tab" data-tab="reflect">💡 反思 (Reflect)</div>
+    <div class="tab" data-tab="snapshots">📸 快照 (Snapshots)</div>
+  </div>
+
+  <!-- Stats Panel -->
+  <div class="tab-panel" id="panel-stats">
+    <div class="stats-grid" id="statsGrid">Loading...</div>
+    <div class="card" id="statsByRole"></div>
+    <div class="card" id="statsByTool"></div>
+  </div>
+
+  <!-- Experiences Panel -->
+  <div class="tab-panel" id="panel-experiences" style="display:none">
+    <div class="card">
+      <h3>Recent Agent Experiences</h3>
+      <div class="input-row">
+        <select id="expAgentRole">
+          <option value="">All roles</option>
+          <option value="material">Material</option>
+          <option value="design">Design</option>
+          <option value="compliance">Compliance</option>
+          <option value="simulation">Simulation</option>
+          <option value="process">Process</option>
+          <option value="knowledge">Knowledge</option>
+          <option value="cost">Cost</option>
+        </select>
+        <select id="expSuccess">
+          <option value="">All</option>
+          <option value="true">Success only</option>
+          <option value="false">Failures only</option>
+        </select>
+        <input id="expLimit" type="number" value="30" min="1" max="200" placeholder="limit">
+        <button class="btn" id="expLoad">Load</button>
+      </div>
+      <div id="expTable"></div>
+    </div>
+  </div>
+
+  <!-- Patterns Panel -->
+  <div class="tab-panel" id="panel-patterns" style="display:none">
+    <div class="card">
+      <h3>Distilled Patterns <small style="color:var(--text-secondary)">(from 经验 history)</small></h3>
+      <div class="input-row">
+        <select id="patRole">
+          <option value="">All roles</option>
+          <option value="material">Material</option>
+          <option value="design">Design</option>
+          <option value="compliance">Compliance</option>
+          <option value="process">Process</option>
+          <option value="knowledge">Knowledge</option>
+          <option value="cost">Cost</option>
+        </select>
+        <input id="patConf" type="number" value="0" min="0" max="1" step="0.1" placeholder="min confidence">
+        <button class="btn" id="patLoad">Load Saved</button>
+        <button class="btn btn-secondary" id="patRefresh">🔄 Re-extract & Save</button>
+      </div>
+      <div id="patTable"></div>
+    </div>
+  </div>
+
+  <!-- Reflect Panel -->
+  <div class="tab-panel" id="panel-reflect" style="display:none">
+    <div class="card">
+      <h3>Reflect on a New Task</h3>
+      <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:0.7rem;">
+        描述新任务, AI 会查询历史记忆给出推荐工具和成功率
+      </p>
+      <div class="input-row">
+        <input id="refTask" placeholder="e.g. 设计新电磁阀 30V 3mm 12N" style="flex:1">
+        <select id="refRole">
+          <option value="">Any role</option>
+          <option value="material">Material</option>
+          <option value="design">Design</option>
+          <option value="compliance">Compliance</option>
+          <option value="process">Process</option>
+        </select>
+        <button class="btn" id="refGo">Reflect</button>
+      </div>
+      <div id="refResult"></div>
+    </div>
+  </div>
+
+  <!-- Snapshots Panel -->
+  <div class="tab-panel" id="panel-snapshots" style="display:none">
+    <div class="card">
+      <h3>Create Snapshot (冻结设计节点)</h3>
+      <div class="input-row">
+        <input id="snapId" placeholder="design_id (e.g. solenoid_001)" style="flex:1">
+        <input id="snapType" placeholder="design_type (solenoid/prv/check)" style="flex:1">
+        <input id="snapNote" placeholder="note (optional)" style="flex:2">
+        <button class="btn" id="snapCreate">📸 Freeze</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Snapshots</h3>
+      <div class="input-row">
+        <input id="snapFilter" placeholder="filter by design_id (optional)" style="flex:1">
+        <input id="snapLimit" type="number" value="20" min="1" max="200" placeholder="limit">
+        <button class="btn" id="snapLoad">Load</button>
+      </div>
+      <div id="snapTable"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const API = '/api/agent/memory';
+function getToken() { return localStorage.getItem('avis_token') || ''; }
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + getToken(),
+      ...(opts.headers || {}),
+    },
+  });
+  return r.json();
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const name = t.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    $('panel-' + name).style.display = 'block';
+  });
+});
+
+// Stats
+async function loadStats() {
+  const d = await api(API + '/stats');
+  if (!d.success) { $('statsGrid').innerHTML = '<div class="empty">Failed: ' + d.error + '</div>'; return; }
+  const s = d.stats;
+  $('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${s.experiences_total}</div><div class="stat-label">Total Experiences</div></div>
+    <div class="stat-card"><div class="stat-value">${(s.success_rate * 100).toFixed(0)}%</div><div class="stat-label">Success Rate</div></div>
+    <div class="stat-card"><div class="stat-value">${s.patterns_total}</div><div class="stat-label">Patterns</div></div>
+    <div class="stat-card"><div class="stat-value">${s.snapshots_total}</div><div class="stat-label">Snapshots</div></div>
+    <div class="stat-card"><div class="stat-value">${Object.keys(s.experiences_by_role || {}).length}</div><div class="stat-label">Active Roles</div></div>
+    <div class="stat-card"><div class="stat-value">${Object.keys(s.experiences_by_tool || {}).length}</div><div class="stat-label">Tools Used</div></div>
+  `;
+  $('statsByRole').innerHTML = '<h3>By Role</h3>' + tableOf(s.experiences_by_role);
+  $('statsByTool').innerHTML = '<h3>By Tool</h3>' + tableOf(s.experiences_by_tool);
+}
+function tableOf(d) {
+  if (!d || !Object.keys(d).length) return '<div class="empty">No data yet</div>';
+  let rows = Object.entries(d).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+  return '<table><tr><th>Name</th><th>Count</th></tr>' + rows + '</table>';
+}
+
+// Experiences
+async function loadExp() {
+  const role = $('expAgentRole').value;
+  const success = $('expSuccess').value;
+  const limit = $('expLimit').value || 30;
+  let url = `${API}/experiences?limit=${limit}`;
+  if (role) url += `&agent_role=${role}`;
+  if (success) url += `&success=${success}`;
+  const d = await api(url);
+  if (!d.success) { $('expTable').innerHTML = '<div class="empty">' + d.error + '</div>'; return; }
+  if (!d.experiences.length) { $('expTable').innerHTML = '<div class="empty">No experiences yet — go run some orchestrate calls</div>'; return; }
+  let rows = d.experiences.map(e => {
+    const ok = e.success;
+    return `<tr>
+      <td>${e.agent_role || '?'}</td>
+      <td>${e.decision?.tool || '?'}</td>
+      <td><span class="badge ${ok ? 'badge-success' : 'badge-danger'}">${ok ? 'OK' : 'FAIL'}</span></td>
+      <td>${(e.duration_ms || 0).toFixed(0)}ms</td>
+      <td class="json-cell">${JSON.stringify(e.outcome).substring(0, 100)}</td>
+      <td>${(e.created_at || '').substring(11, 19)}</td>
+    </tr>`;
+  }).join('');
+  $('expTable').innerHTML = `<table>
+    <tr><th>Role</th><th>Tool</th><th>Status</th><th>Time</th><th>Outcome</th><th>When</th></tr>
+    ${rows}</table>`;
+}
+
+// Patterns
+async function loadPatterns(refresh) {
+  const role = $('patRole').value;
+  const conf = $('patConf').value || 0;
+  let url = `${API}/patterns?min_confidence=${conf}` + (refresh ? '&refresh=1' : '');
+  if (role) url += `&agent_role=${role}`;
+  const d = await api(url);
+  if (!d.success) { $('patTable').innerHTML = '<div class="empty">' + d.error + '</div>'; return; }
+  if (!d.patterns.length) { $('patTable').innerHTML = '<div class="empty">No patterns yet — run more orchestrate calls to build history, then refresh</div>'; return; }
+  let rows = d.patterns.map(p => {
+    const rec = p.recommendation;
+    const recBadge = rec === 'use' ? 'badge-success' : rec === 'avoid' ? 'badge-danger' : 'badge-warning';
+    return `<tr>
+      <td>${p.agent_role}</td>
+      <td>${p.tool}</td>
+      <td>${p.valve_type}</td>
+      <td>${p.count}</td>
+      <td><span class="badge ${recBadge}">${(p.success_rate * 100).toFixed(0)}%</span></td>
+      <td>${(p.confidence * 100).toFixed(0)}%</td>
+      <td><span class="badge ${recBadge}">${rec}</span></td>
+      <td>${(p.avg_duration_ms || 0).toFixed(0)}ms</td>
+    </tr>`;
+  }).join('');
+  $('patTable').innerHTML = `<table>
+    <tr><th>Role</th><th>Tool</th><th>Valve Type</th><th>Count</th><th>Success</th><th>Confidence</th><th>Rec</th><th>Avg Time</th></tr>
+    ${rows}</table>`;
+}
+
+// Reflect
+async function reflect() {
+  const task = $('refTask').value.trim();
+  const role = $('refRole').value;
+  if (!task) { alert('Enter a task'); return; }
+  $('refResult').innerHTML = '<div class="empty">Reflecting...</div>';
+  const d = await api(API + '/reflect', { method: 'POST', body: JSON.stringify({ task, agent_role: role || null }) });
+  if (!d.success) { $('refResult').innerHTML = '<div class="empty">' + d.error + '</div>'; return; }
+  const patterns = d.guidance_patterns || [];
+  const recent = d.recent_experiences || [];
+  let pRows = patterns.length ? patterns.map(p => `<tr><td>${p.agent_role}</td><td>${p.tool}</td><td>${(p.success_rate*100).toFixed(0)}%</td><td>${(p.confidence*100).toFixed(0)}%</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No patterns</td></tr>';
+  let rRows = recent.length ? recent.slice(0, 5).map(e => `<tr><td>${e.agent_role}</td><td>${e.decision?.tool || '?'}</td><td>${e.success ? '✅' : '❌'}</td><td>${(e.created_at||'').substring(11,19)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No recent</td></tr>';
+  $('refResult').innerHTML = `
+    <div class="recommendation-box">
+      <strong>💡 Recommendation:</strong> ${d.recommendation}
+    </div>
+    <h3 style="margin-top:1rem">Guidance Patterns</h3>
+    <table><tr><th>Role</th><th>Tool</th><th>Success</th><th>Confidence</th></tr>${pRows}</table>
+    <h3 style="margin-top:1rem">Recent Experiences</h3>
+    <table><tr><th>Role</th><th>Tool</th><th>Status</th><th>When</th></tr>${rRows}</table>`;
+}
+
+// Snapshots
+async function snapCreate() {
+  const design_id = $('snapId').value.trim();
+  const design_type = $('snapType').value.trim();
+  const note = $('snapNote').value.trim();
+  if (!design_id) { alert('design_id required'); return; }
+  const d = await api(API + '/snapshots', { method: 'POST', body: JSON.stringify({
+    design_id, design_type, state: { voltage: 28, stroke_mm: 2, force_n: 10, awg: 29 },
+    note,
+  })});
+  if (d.success) { alert('Snapshot created: ' + d.snapshot_id); loadSnap(); }
+  else alert('Error: ' + d.error);
+}
+async function loadSnap() {
+  const filter = $('snapFilter').value.trim();
+  const limit = $('snapLimit').value || 20;
+  let url = `${API}/snapshots?limit=${limit}`;
+  if (filter) url += `&design_id=${filter}`;
+  const d = await api(url);
+  if (!d.success) { $('snapTable').innerHTML = '<div class="empty">' + d.error + '</div>'; return; }
+  if (!d.snapshots.length) { $('snapTable').innerHTML = '<div class="empty">No snapshots yet</div>'; return; }
+  let rows = d.snapshots.map(s => `<tr>
+    <td>${s.snapshot_id}</td>
+    <td>${s.design_id}</td>
+    <td>${s.design_type || '?'}</td>
+    <td>${(s.note || '').substring(0, 60)}</td>
+    <td>${(s.frozen_at || '').substring(0, 19)}</td>
+  </tr>`).join('');
+  $('snapTable').innerHTML = `<table>
+    <tr><th>ID</th><th>Design</th><th>Type</th><th>Note</th><th>Frozen At</th></tr>${rows}</table>`;
+}
+
+// Wire up
+$('expLoad').addEventListener('click', loadExp);
+$('patLoad').addEventListener('click', () => loadPatterns(false));
+$('patRefresh').addEventListener('click', () => loadPatterns(true));
+$('refGo').addEventListener('click', reflect);
+$('snapCreate').addEventListener('click', snapCreate);
+$('snapLoad').addEventListener('click', loadSnap);
+
+// Initial load
+loadStats();
+loadExp();
+</script>
+</body>
+</html>
