@@ -336,6 +336,13 @@ class AIAgentEngine:
             'Get a step-by-step process route (work instruction) for a specific valve component.',
             {'route_id': 'string (e.g. solenoid_valve_body, relief_valve_seat)'}
         )
+        # Sprint 12 follow-up: auto-route from design
+        self.tools.register(
+            'auto_route_from_design',
+            self._tool_auto_route_from_design,
+            'Automatically generate a complete process route from a finished valve design (solenoid/PRV/check).',
+            {'design_result': 'object (the JSON returned by analyze_solenoid_valve / analyze_pressure_valve / analyze_check_valve)'}
+        )
     
     # ---- Tool Implementations ----
     
@@ -596,6 +603,41 @@ class AIAgentEngine:
             return get_tool_handler('get_process_route')(kwargs)
         except Exception as e:
             return {'success': False, 'error': str(e)}
+
+    def _tool_auto_route_from_design(self, **kwargs) -> Dict:
+        """Auto-generate process route from a finished valve design.
+
+        Sprint 12 follow-up. Bridges design (solenoid/PRV/check) -> manufacturing.
+        """
+        design = kwargs.get('design_result', {})
+        if not isinstance(design, dict):
+            return {'success': False, 'error': 'design_result must be an object/dict'}
+        try:
+            from design_to_route import auto_route_from_design
+            route = auto_route_from_design(design)
+            return route
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    @staticmethod
+    def _format_route_summary(route: Dict, valve_type: str) -> str:
+        """Compact one-paragraph summary of the auto-generated route."""
+        ops = route.get('operations', [])
+        proc_names = ', '.join(op['process'] for op in ops[:3])
+        if len(ops) > 3:
+            proc_names += f' ... (+{len(ops)-3} more)'
+        kp = route.get('key_points', [])
+        kp_str = '\n'.join(f'  - {k}' for k in kp[:2]) if kp else '  - (none)'
+        return (
+            f"\n\n=== Auto-Generated Process Route / 自动工艺路线 ===\n\n"
+            f"Material: {route.get('material', '-')}\n"
+            f"Base template: {route.get('base_route_id', 'generic')}\n"
+            f"Steps: {route.get('steps', 0)} | Total time: {route.get('total_time_h', 0)} h "
+            f"({route.get('total_time_min', 0)} min)\n"
+            f"Sequence preview: {proc_names}\n\n"
+            f"Key points:\n{kp_str}\n\n"
+            f"Tip: Click 'Download Process Route PDF' to get the full work instruction."
+        )
     
     # ---- Main Processing Pipeline ----
     
@@ -830,17 +872,23 @@ class AIAgentEngine:
             response['tool_results'] = result
             
             if result.get('success'):
-                r = result.get('result', {})
+                bi = result.get('best_info', {})
                 response['text'] = (
                     '=== Solenoid Valve PSO Optimization ===\n\n'
                     f'Input: {voltage}V, {stroke}mm stroke, {force}N target\n\n'
-                    f'Turns: {r.get("turns", "N/A")}\n'
-                    f'Wire dia: {r.get("wire_diameter", "N/A")} mm\n'
-                    f'Current: {r.get("current", "N/A")} A\n'
-                    f'Power: {r.get("power", "N/A")} W\n'
-                    f'Force: {r.get("force", "N/A")} N\n'
+                    f'Best AWG: {result.get("best_awg", "N/A")}\n'
+                    f'Turns: {bi.get("N", "N/A")}\n'
+                    f'Wire dia: {bi.get("d_bare_mm", "N/A")} mm\n'
+                    f'Current: {bi.get("I", "N/A")} A\n'
+                    f'Power: {result.get("power_W", "N/A")} W\n'
+                    f'Force: {bi.get("F_final", "N/A")} N\n'
+                    f'Mass: {result.get("mass_g", "N/A")} g\n'
                 )
-                response['suggestions'] = ['Adjust stroke', 'Compare AWG', 'Open Solenoid Designer']
+                route = self._tool_auto_route_from_design(design_result=result)
+                if route.get('success'):
+                    response['text'] += self._format_route_summary(route, 'solenoid')
+                    response['process_route'] = route
+                response['suggestions'] = ['Adjust stroke', 'Compare AWG', 'Open Solenoid Designer', 'Download Process Route PDF']
             else:
                 response['text'] = f'Solenoid optimization error: {result.get("error")}'
         
@@ -865,7 +913,11 @@ class AIAgentEngine:
                     f'Spring K: {r.get("spring_stiffness", "N/A")} N/mm\n'
                     f'Cv: {r.get("cv", "N/A")}\n'
                 )
-                response['suggestions'] = ['Adjust outlet', 'Compare helium', 'Open PRV Designer']
+                route = self._tool_auto_route_from_design(design_result=result)
+                if route.get('success'):
+                    response['text'] += self._format_route_summary(route, 'pressure_valve')
+                    response['process_route'] = route
+                response['suggestions'] = ['Adjust outlet', 'Compare helium', 'Open PRV Designer', 'Download Process Route PDF']
             else:
                 response['text'] = f'PRV design error: {result.get("error")}'
         
@@ -888,7 +940,11 @@ class AIAgentEngine:
                     f'Flow resistance: {r.get("flow_resistance", "N/A")}\n'
                     f'Reverse leak: {r.get("reverse_leakage", "N/A")} Pa*m3/s\n'
                 )
-                response['suggestions'] = ['Compare diameters', 'Check sealing', 'Open Check Valve Designer']
+                route = self._tool_auto_route_from_design(design_result=result)
+                if route.get('success'):
+                    response['text'] += self._format_route_summary(route, 'check_valve')
+                    response['process_route'] = route
+                response['suggestions'] = ['Compare diameters', 'Check sealing', 'Open Check Valve Designer', 'Download Process Route PDF']
             else:
                 response['text'] = f'Check valve error: {result.get("error")}'
         

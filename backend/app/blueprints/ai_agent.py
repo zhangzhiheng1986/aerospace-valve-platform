@@ -157,6 +157,50 @@ def chat(current_user=None):
         except Exception:
             pass  # Graceful fallback to PAOR response
 
+        # ── Auto-generate process route for design intents ──
+        if paor_result.get('intent') == 'design_valve':
+            try:
+                from design_to_route import auto_route_from_design
+                # PAOR structure: paor_result['results'] is list of {tool, result}
+                results_list = paor_result.get('results', []) or paor_result.get('trace', [])
+                design_payload = {}
+                tool_name = ''
+                for item in results_list:
+                    tool = item.get('tool', '')
+                    if tool.startswith('analyze_') and tool.endswith(('_valve',)):
+                        tool_name = tool
+                        res = item.get('result', {})
+                        if isinstance(res, dict):
+                            if res.get('success'):
+                                design_payload = res
+                            elif res:  # not wrapped in success
+                                design_payload = res
+                        break
+                if design_payload:
+                    type_map = {
+                        'analyze_solenoid_valve': 'solenoid',
+                        'analyze_pressure_valve': 'pressure_valve',
+                        'analyze_check_valve': 'check_valve',
+                    }
+                    design_payload['type'] = type_map.get(tool_name, 'generic')
+                    route = auto_route_from_design(design_payload)
+                    if route.get('success'):
+                        sess_obj = engine.sessions.get_session(session_id) or {}
+                        sess_obj.setdefault('cached_routes', []).append(route)
+                        summary = (
+                            f"\n\n=== Auto-Generated Process Route / 自动工艺路线 ===\n\n"
+                            f"Material: {route.get('material', '-')}\n"
+                            f"Base template: {route.get('base_route_id', 'generic')}\n"
+                            f"Steps: {route.get('steps', 0)} | Total time: {route.get('total_time_h', 0)} h\n"
+                            f"Tip: Download the work instruction PDF to view the full sequence.\n"
+                        )
+                        response_text += summary
+                        paor_result['process_route'] = route
+            except Exception as e:
+                import traceback as _tb
+                print(f"[ai_agent] process route auto-gen failed: {e}")
+                _tb.print_exc()
+
         # Store in session
         engine.sessions.add_message(session_id, 'agent', response_text, {
             'paor': paor_result,
@@ -170,6 +214,12 @@ def chat(current_user=None):
                 'intent': paor_result['intent'],
                 'paor_trace': paor_result['trace'],
                 'llm_used': llm_used,
+                'process_route': paor_result.get('process_route'),
+                'pdf_download': ({
+                    'url': f'/api/agent/sessions/{session_id}/route-pdf',
+                    'method': 'GET',
+                    'note': 'Download the auto-generated work instruction PDF',
+                } if paor_result.get('process_route') else None),
             },
         })
 
@@ -183,6 +233,17 @@ def chat(current_user=None):
                 sid = engine.sessions.create_session('Engineer')
                 session_id = sid
             result = engine.process_message(session_id, message)
+            # If process route was auto-generated, expose a download URL
+            process_route = result.get('process_route') if isinstance(result, dict) else None
+            if process_route and process_route.get('success'):
+                # Cache the full route in the session for PDF download
+                sess = engine.sessions.get_session(session_id) or {}
+                sess.setdefault('cached_routes', []).append(process_route)
+                result['pdf_download'] = {
+                    'url': f'/api/agent/sessions/{session_id}/route-pdf',
+                    'method': 'GET',
+                    'note': 'Download the auto-generated work instruction PDF',
+                }
             return jsonify({
                 'success': True,
                 'session_id': session_id,
@@ -408,6 +469,33 @@ def get_session(session_id, current_user=None):
             }
         })
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@ai_agent_bp.route('/sessions/<session_id>/route-pdf', methods=['GET'])
+@require_auth()
+def download_cached_route_pdf(current_user, session_id):
+    """Download the most recent cached auto-generated process route PDF."""
+    try:
+        from ai_agent_engine import get_engine
+        from process_pdf_export import export_dynamic_route_pdf
+        from flask import send_file
+        engine = get_engine()
+        s = engine.sessions.get_session(session_id)
+        if not s:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        routes = s.get('cached_routes', [])
+        if not routes:
+            return jsonify({'success': False, 'error': 'No cached route. Run a valve design first.'}), 404
+        # Use the latest route
+        route = routes[-1]
+        buf, filename = export_dynamic_route_pdf(route)
+        if buf is None:
+            return jsonify({'success': False, 'error': 'Route empty'}), 400
+        return send_file(buf, mimetype='application/pdf', as_attachment=True,
+                         download_name=filename)
+    except Exception as e:
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

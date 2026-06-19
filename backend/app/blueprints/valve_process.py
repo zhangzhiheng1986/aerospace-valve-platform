@@ -92,3 +92,26 @@ def pdf_route():
         return jsonify(prepare_json({'error': 'route_not_found', 'id': route_id})), 404
     return send_file(buf, mimetype='application/pdf', as_attachment=True,
                      download_name=filename)
+
+
+@valve_process_bp.route('/api/valve-process/pdf/auto-route', methods=['POST'])
+def pdf_auto_route():
+    """Export auto-generated route (from design) as PDF.
+
+    Request body: {design_result: <design JSON>}
+    """
+    from process_pdf_export import export_dynamic_route_pdf
+    from design_to_route import auto_route_from_design
+    from flask import send_file
+    data = request.get_json() or {}
+    design = data.get('design_result') or data.get('design') or {}
+    if not design:
+        return jsonify(prepare_json({'error': 'design_result required'})), 400
+    route = auto_route_from_design(design)
+    if not route.get('success'):
+        return jsonify(prepare_json({'error': 'route_generation_failed', 'detail': route.get('error')})), 400
+    buf, filename = export_dynamic_route_pdf(route)
+    if buf is None:
+        return jsonify(prepare_json({'error': 'route_empty'})), 400
+    return send_file(buf, mimetype='application/pdf', as_attachment=True,
+                     download_name=filename)
