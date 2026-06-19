@@ -1,0 +1,970 @@
+<!--
+cron.html - Avis Cron Engine Scheduled Task Manager
+Aerospace Valve R&D Platform
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>定时任务管理 | 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #0d1321;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0,180,216,0.15);
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h3 { font-size: 1rem; color: var(--accent); margin-bottom:4px; }
+.sidebar-header span { font-size: 0.7rem; color: var(--text-secondary); }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 10px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover, .nav-item.active {
+  color: var(--text-primary);
+  background: var(--accent-glow);
+  border-left-color: var(--accent);
+}
+.nav-item .badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.sidebar-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.sidebar-footer a { color: var(--accent); text-decoration: none; }
+
+/* ---- MAIN ---- */
+.main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.toolbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.toolbar h2 { font-size: 1.15rem; margin-right: auto; }
+.btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-glow); }
+.btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight:600; }
+.btn-accent:hover { opacity: 0.85; }
+.btn-sm { padding: 4px 10px; font-size: 0.7rem; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: rgba(255,107,107,0.1); }
+.btn-success { border-color: var(--success); color: var(--success); }
+.btn-success:hover { background: rgba(81,207,102,0.1); }
+.btn-xs { padding: 2px 8px; font-size: 0.65rem; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ---- TABLE ---- */
+.data-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tr:hover td { background: var(--bg-secondary); }
+
+/* ---- TAGS ---- */
+.status-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.status-enabled { background: rgba(81,207,102,0.15); color: var(--success); }
+.status-disabled { background: rgba(255,107,107,0.15); color: var(--danger); }
+.status-success { background: rgba(81,207,102,0.15); color: var(--success); }
+.status-fail { background: rgba(255,107,107,0.15); color: var(--danger); }
+
+/* ---- TOGGLE SWITCH ---- */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px; height: 22px;
+  cursor: pointer;
+}
+.toggle input { display: none; }
+.toggle .slider {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg-secondary);
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  transition: 0.2s;
+}
+.toggle .slider::before {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+.toggle input:checked + .slider::before {
+  transform: translateX(18px);
+  background: #000;
+}
+
+/* ---- FORMS ---- */
+.form-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.form-section h4 {
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+  color: var(--accent);
+}
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.form-group textarea { min-height: 80px; resize: vertical; }
+
+.radio-group {
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+.radio-group label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; color: var(--text-primary); cursor: pointer;
+}
+.radio-group input[type="radio"] { accent-color: var(--accent); width: auto; }
+
+.preset-btns {
+  display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+}
+
+.schedule-row { display: flex; gap: 10px; align-items: flex-end; }
+.schedule-row .form-group { flex: 1; margin-bottom: 0; }
+
+.hint {
+  font-size: 0.68rem; color: var(--text-secondary); margin-top: 4px;
+}
+
+/* ---- HISTORY LIST ---- */
+.history-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.history-item {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  display: flex; align-items: center; gap: 14px;
+}
+.history-item .icon {
+  font-size: 1.3rem; width: 32px; text-align: center;
+}
+.history-item .info { flex: 1; }
+.history-item .info .time { font-size: 0.68rem; color: var(--text-secondary); }
+.history-item .info .summary { margin-top: 3px; }
+.history-item .info .error-msg {
+  font-size: 0.68rem; color: var(--danger); margin-top: 2px;
+  max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ---- EMPTY STATE ---- */
+.empty-state {
+  text-align: center; padding: 60px; color: var(--text-secondary);
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+
+/* ---- FILTER BAR ---- */
+.filter-bar {
+  display: flex; gap: 8px; margin-bottom: 16px;
+}
+.filter-btn {
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed; top: 20px; right: 20px; z-index: 9999;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  animation: slideIn 0.3s ease;
+  border: 1px solid var(--border);
+}
+.toast.success { background: rgba(81,207,102,0.15); border-color: var(--success); color: var(--success); }
+.toast.error { background: rgba(255,107,107,0.15); border-color: var(--danger); color: var(--danger); }
+.toast.info { background: rgba(0,180,216,0.15); border-color: var(--accent); color: var(--accent); }
+@keyframes slideIn {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h3>⏱️ 定时任务管理</h3>
+    <span>Avis Cron Engine</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-panel="jobs">
+      <span>⏱️</span> 任务列表
+      <span class="badge" id="jobCount">-</span>
+    </div>
+    <div class="nav-item" data-panel="create">
+      <span>➕</span> 创建任务
+    </div>
+    <div class="nav-item" data-panel="history">
+      <span>📋</span> 运行历史
+    </div>
+    <div class="nav-item" data-panel="due">
+      <span>🔔</span> 待执行任务
+      <span class="badge" id="dueCount">-</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/">← 返回主页</a>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="toolbar">
+    <h2 id="panelTitle">⏱️ 任务列表</h2>
+    <button class="btn btn-accent" onclick="switchPanel('create')">+ 创建任务</button>
+    <button class="btn" onclick="refreshAll()">🔄 刷新</button>
+  </div>
+  <div class="content" id="contentArea"></div>
+</main>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+const API = '/api/avis/cron';
+let jobs = [];
+let historyJobId = null;
+let historyAutoRefresh = null;
+
+// =====================================================================
+// Panel Switching
+// =====================================================================
+function switchPanel(panelId, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const target = el || document.querySelector(`[data-panel="${panelId}"]`);
+  if (target) target.classList.add('active');
+  const titles = { jobs:'⏱️ 任务列表', create:'➕ 创建任务', history:'📋 运行历史', due:'🔔 待执行任务' };
+  document.getElementById('panelTitle').textContent = titles[panelId] || '';
+  // Stop auto-refresh when switching away from history
+  if (panelId !== 'history' && historyAutoRefresh) {
+    clearInterval(historyAutoRefresh);
+    historyAutoRefresh = null;
+  }
+  renderPanel(panelId);
+}
+
+function renderPanel(panelId) {
+  const area = document.getElementById('contentArea');
+  switch(panelId) {
+    case 'jobs':    renderJobsPanel(area); break;
+    case 'create':  renderCreatePanel(area); break;
+    case 'history': renderHistoryPanel(area); break;
+    case 'due':     renderDuePanel(area); break;
+  }
+}
+
+// =====================================================================
+// Panel: Jobs List
+// =====================================================================
+async function renderJobsPanel(area) {
+  await loadJobs();
+
+  const filterBar = `
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">全部</button>
+      <button class="filter-btn" data-filter="enabled">已启用</button>
+      <button class="filter-btn" data-filter="disabled">已禁用</button>
+    </div>`;
+
+  if (!jobs.length) {
+    area.innerHTML = filterBar + `
+      <div class="empty-state">
+        <div class="icon">⏱️</div>
+        <h3>暂无定时任务</h3>
+        <p style="margin-top:8px;">点击「创建任务」添加你的第一个定时任务</p>
+      </div>`;
+    return;
+  }
+
+  const rows = jobs.map(j => `
+    <tr data-job-id="${j.id}" data-enabled="${j.enabled !== false}">
+      <td><strong>${escHtml(j.name || j.id)}</strong></td>
+      <td style="font-family:monospace;font-size:0.75rem;color:var(--accent)">${formatSchedule(j)}</td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${j.enabled !== false ? 'checked' : ''}
+            onchange="toggleJob('${j.id}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td style="font-size:0.75rem">${j.lastRun ? fmtTime(j.lastRun) : '-'}</td>
+      <td style="font-size:0.75rem">${j.nextRun ? fmtTime(j.nextRun) : '-'}</td>
+      <td>${j.runCount ?? 0}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="editJob('${j.id}')" title="编辑">✏️</button>
+        <button class="btn btn-sm btn-success" onclick="runJobNow('${j.id}')" title="立即执行">▶️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteJob('${j.id}')" title="删除">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+
+  area.innerHTML = filterBar + `
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr>
+          <th>名称</th><th>调度</th><th>启用</th><th>上次运行</th><th>下次运行</th><th>运行次数</th><th>操作</th>
+        </tr></thead>
+        <tbody id="jobsTbody">${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function formatSchedule(job) {
+  if (!job) return '-';
+  const s = job.schedule || {};
+  if (s.type === 'cron') return `cron: ${s.cron || s.value || ''}`;
+  if (s.type === 'every') {
+    const ms = s.everyMs ?? s.value;
+    if (!ms) return 'every: ?';
+    if (ms < 1000) return `每 ${ms}ms`;
+    if (ms < 60000) return `每 ${(ms/1000).toFixed(1)}s`;
+    if (ms < 3600000) return `每 ${(ms/60000).toFixed(1)}min`;
+    return `每 ${(ms/3600000).toFixed(1)}h`;
+  }
+  if (s.type === 'at') return s.at ? `单次: ${fmtTime(s.at)}` : '单次: ?';
+  return '-';
+}
+
+function fmtTime(ts) {
+  if (!ts) return '-';
+  try { return new Date(ts).toLocaleString('zh-CN'); } catch(e) { return ts; }
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// =====================================================================
+// Panel: Create Job
+// =====================================================================
+async function renderCreatePanel(area) {
+  area.innerHTML = `
+    <form id="createForm" onsubmit="submitCreate(event)" style="max-width:640px">
+      <div class="form-section">
+        <h4>📝 基本信息</h4>
+        <div class="form-group">
+          <label>任务名称 *</label>
+          <input type="text" id="jobName" placeholder="例如：每日知识库更新" required>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>⏰ 调度配置</h4>
+        <div class="form-group">
+          <div class="radio-group">
+            <label><input type="radio" name="scheduleType" value="cron" checked onchange="toggleScheduleFields()"> Cron 表达式</label>
+            <label><input type="radio" name="scheduleType" value="every" onchange="toggleScheduleFields()"> 间隔执行</label>
+            <label><input type="radio" name="scheduleType" value="at" onchange="toggleScheduleFields()"> 单次定时</label>
+          </div>
+        </div>
+
+        <div id="cronFields">
+          <div class="form-group">
+            <label>Cron 表达式 (5位: 分 时 日 月 周)</label>
+            <input type="text" id="cronExpr" placeholder="例如: 0 8 * * * (每天早上8点)">
+          </div>
+          <div class="preset-btns">
+            <button type="button" class="btn btn-sm" onclick="setCronPreset('0 * * * *')">@hourly</button>
+            <button type="button" class="btn btn-sm" onclick="setCronPreset('0 8 * * *')">@daily (8:00)</button>
+            <button type="button" class="btn btn-sm" onclick="setCronPreset('0 9 * * 1')">@weekly (周一9:00)</button>
+          </div>
+        </div>
+
+        <div id="everyFields" style="display:none">
+          <div class="schedule-row">
+            <div class="form-group">
+              <label>间隔时间 (毫秒) *</label>
+              <input type="number" id="everyMs" placeholder="例如: 3600000 (1小时)" min="1000">
+            </div>
+            <div class="form-group">
+              <label>起始时间 (可选)</label>
+              <input type="datetime-local" id="anchorMs">
+            </div>
+          </div>
+        </div>
+
+        <div id="atFields" style="display:none">
+          <div class="form-group">
+            <label>执行时间 *</label>
+            <input type="datetime-local" id="atTime">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>📦 载荷</h4>
+        <div class="form-group">
+          <div class="radio-group">
+            <label><input type="radio" name="payloadType" value="agentTurn" checked onchange="togglePayloadFields()"> Agent 对话</label>
+            <label><input type="radio" name="payloadType" value="systemEvent" onchange="togglePayloadFields()"> 系统事件</label>
+          </div>
+        </div>
+
+        <div id="agentPayloadFields">
+          <div class="form-group">
+            <label>目标 Agent</label>
+            <select id="agentSelect">
+              <option value="">-- 请选择 --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>消息内容</label>
+            <textarea id="agentMessage" placeholder="发送给 Agent 的消息..."></textarea>
+          </div>
+        </div>
+
+        <div id="eventPayloadFields" style="display:none">
+          <div class="form-group">
+            <label>事件文本</label>
+            <textarea id="eventText" placeholder="系统事件内容..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>📬 投递模式</h4>
+        <div class="form-group">
+          <div class="radio-group">
+            <label><input type="radio" name="deliveryMode" value="none" checked> 无 (静默执行)</label>
+            <label><input type="radio" name="deliveryMode" value="log"> 日志记录</label>
+            <label><input type="radio" name="deliveryMode" value="notify"> 通知推送</label>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button type="submit" class="btn btn-accent">✅ 创建任务</button>
+        <button type="button" class="btn" onclick="switchPanel('jobs')">取消</button>
+      </div>
+    </form>`;
+
+  // Load agents for dropdown
+  loadAgents();
+  toggleScheduleFields();
+  togglePayloadFields();
+}
+
+function toggleScheduleFields() {
+  const type = document.querySelector('input[name="scheduleType"]:checked')?.value || 'cron';
+  document.getElementById('cronFields').style.display = type === 'cron' ? '' : 'none';
+  document.getElementById('everyFields').style.display = type === 'every' ? '' : 'none';
+  document.getElementById('atFields').style.display = type === 'at' ? '' : 'none';
+}
+
+function togglePayloadFields() {
+  const type = document.querySelector('input[name="payloadType"]:checked')?.value || 'agentTurn';
+  document.getElementById('agentPayloadFields').style.display = type === 'agentTurn' ? '' : 'none';
+  document.getElementById('eventPayloadFields').style.display = type === 'systemEvent' ? '' : 'none';
+}
+
+function setCronPreset(expr) {
+  const el = document.getElementById('cronExpr');
+  if (el) el.value = expr;
+}
+
+async function loadAgents() {
+  try {
+    const r = await fetch('/api/avis/agents');
+    const d = await r.json();
+    const agents = d.agents || [];
+    const sel = document.getElementById('agentSelect');
+    if (sel) sel.innerHTML = `<option value="">-- 请选择 --</option>` +
+      agents.map(a => `<option value="${escHtml(a.id || a.name)}">${escHtml(a.icon || '🤖')} ${escHtml(a.name)}</option>`).join('');
+  } catch(e) { console.error('Failed to load agents:', e); }
+}
+
+async function submitCreate(e) {
+  e.preventDefault();
+  const name = document.getElementById('jobName').value.trim();
+  const scheduleType = document.querySelector('input[name="scheduleType"]:checked')?.value;
+  const payloadType = document.querySelector('input[name="payloadType"]:checked')?.value;
+  const delivery = document.querySelector('input[name="deliveryMode"]:checked')?.value;
+
+  if (!name) return toast('请输入任务名称', 'error');
+
+  // Build schedule
+  let schedule = {};
+  if (scheduleType === 'cron') {
+    const expr = document.getElementById('cronExpr').value.trim();
+    if (!expr) return toast('请输入 Cron 表达式', 'error');
+    schedule = { type: 'cron', cron: expr };
+  } else if (scheduleType === 'every') {
+    const ms = parseInt(document.getElementById('everyMs').value);
+    if (!ms || ms < 1000) return toast('间隔时间至少 1000ms', 'error');
+    schedule = { type: 'every', everyMs: ms };
+    const anchor = document.getElementById('anchorMs').value;
+    if (anchor) schedule.anchorMs = new Date(anchor).toISOString();
+  } else if (scheduleType === 'at') {
+    const at = document.getElementById('atTime').value;
+    if (!at) return toast('请选择执行时间', 'error');
+    schedule = { type: 'at', at: new Date(at).toISOString() };
+  }
+
+  // Build payload
+  let payload = {};
+  if (payloadType === 'agentTurn') {
+    payload.type = 'agentTurn';
+    payload.agentId = document.getElementById('agentSelect').value;
+    payload.message = document.getElementById('agentMessage').value.trim();
+    if (!payload.message) return toast('请输入消息内容', 'error');
+  } else {
+    payload.type = 'systemEvent';
+    payload.text = document.getElementById('eventText').value.trim();
+    if (!payload.text) return toast('请输入事件文本', 'error');
+  }
+
+  const body = { name, schedule, payload, delivery };
+
+  try {
+    const r = await fetch(`${API}/jobs`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '创建失败');
+    toast('定时任务创建成功', 'success');
+    switchPanel('jobs');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// =====================================================================
+// Panel: Run History
+// =====================================================================
+async function renderHistoryPanel(area) {
+  area.innerHTML = `
+    <div style="max-width:800px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <select id="historyJobSelect" onchange="onHistoryJobChange()" style="flex:1;min-width:200px;
+          padding:8px 12px;border-radius:7px;border:1px solid var(--border);
+          background:var(--bg-secondary);color:var(--text-primary);font-size:0.82rem;">
+          <option value="">-- 选择任务查看历史 --</option>
+          ${jobs.map(j => `<option value="${j.id}">${escHtml(j.name || j.id)}</option>`).join('')}
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer">
+          <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh(this.checked)">
+          自动刷新
+        </label>
+      </div>
+      <div id="historyContent">
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <h3>选择任务查看运行历史</h3>
+        </div>
+      </div>
+    </div>`;
+
+  // Restore selection
+  if (historyJobId) {
+    const sel = document.getElementById('historyJobSelect');
+    if (sel) {
+      sel.value = historyJobId;
+      loadHistory(historyJobId);
+    }
+  }
+}
+
+function onHistoryJobChange() {
+  const id = document.getElementById('historyJobSelect').value;
+  historyJobId = id;
+  if (id) loadHistory(id);
+  else document.getElementById('historyContent').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">📋</div>
+      <h3>选择任务查看运行历史</h3>
+    </div>`;
+}
+
+async function loadHistory(jobId) {
+  const container = document.getElementById('historyContent');
+  if (!container) return;
+  try {
+    const r = await fetch(`${API}/history/${jobId}`);
+    if (!r.ok) throw new Error('加载失败');
+    const d = await r.json();
+    const entries = d.history || d.entries || [];
+
+    if (!entries.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">📭</div>
+          <h3>暂无运行记录</h3>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="history-list">${entries.map(e => {
+      const ok = e.success !== false && !e.error;
+      return `
+      <div class="history-item">
+        <div class="icon">${ok ? '✅' : '❌'}</div>
+        <div class="info">
+          <div class="time">
+            <span>开始: ${fmtTime(e.started_at || e.startedAt)}</span>
+            <span style="margin:0 6px">|</span>
+            <span>完成: ${fmtTime(e.finished_at || e.finishedAt)}</span>
+          </div>
+          <div class="summary">${escHtml(e.result_summary || e.resultSummary || e.summary || '-')}</div>
+          ${e.error ? `<div class="error-msg">⚠️ ${escHtml(String(e.error))}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } catch(e) {
+    container.innerHTML = `<p style="color:var(--danger)">加载失败: ${escHtml(e.message)}</p>`;
+  }
+}
+
+function toggleAutoRefresh(on) {
+  if (on) {
+    historyAutoRefresh = setInterval(() => {
+      if (historyJobId) loadHistory(historyJobId);
+    }, 5000);
+  } else {
+    if (historyAutoRefresh) clearInterval(historyAutoRefresh);
+    historyAutoRefresh = null;
+  }
+}
+
+// =====================================================================
+// Panel: Due Jobs
+// =====================================================================
+async function renderDuePanel(area) {
+  try {
+    const r = await fetch(`${API}/due`);
+    if (!r.ok) throw new Error('加载失败');
+    const d = await r.json();
+    const dueJobs = d.jobs || d.due || [];
+
+    document.getElementById('dueCount').textContent = dueJobs.length;
+
+    if (!dueJobs.length) {
+      area.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🔔</div>
+          <h3>暂无待执行任务</h3>
+          <p style="margin-top:8px;">所有定时任务都处于正常等待状态</p>
+        </div>`;
+      return;
+    }
+
+    area.innerHTML = `
+      <div style="margin-bottom:14px">
+        <button class="btn btn-accent" onclick="runAllDue()">▶️ 执行全部 (${dueJobs.length})</button>
+      </div>
+      ${dueJobs.map(j => `
+        <div class="history-item" style="margin-bottom:8px">
+          <div class="icon">🔔</div>
+          <div class="info">
+            <strong>${escHtml(j.name || j.id)}</strong>
+            <div class="time">调度: ${formatSchedule(j)} · 应执行: ${fmtTime(j.due_at || j.dueAt)}</div>
+          </div>
+          <button class="btn btn-sm btn-success" onclick="runJobNow('${j.id}')">▶️ 执行</button>
+        </div>
+      `).join('')}`;
+  } catch(e) {
+    area.innerHTML = `<p style="color:var(--danger)">加载失败: ${escHtml(e.message)}</p>`;
+  }
+}
+
+// =====================================================================
+// Job Actions
+// =====================================================================
+async function loadJobs() {
+  try {
+    const r = await fetch(`${API}/jobs`);
+    const d = await r.json();
+    jobs = d.jobs || [];
+    document.getElementById('jobCount').textContent = jobs.length;
+  } catch(e) { console.error('Failed to load jobs:', e); }
+}
+
+async function toggleJob(id, enabled) {
+  try {
+    const ep = enabled ? 'enable' : 'disable';
+    const r = await fetch(`${API}/jobs/${id}/${ep}`, { method: 'POST' });
+    if (!r.ok) throw new Error((await r.json()).error || '操作失败');
+    toast(enabled ? '任务已启用' : '任务已禁用', 'success');
+    await loadJobs();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function runJobNow(id) {
+  try {
+    const r = await fetch(`${API}/jobs/${id}/run`, { method: 'POST' });
+    if (!r.ok) throw new Error((await r.json()).error || '执行失败');
+    toast('任务已触发执行', 'success');
+    await loadJobs();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function runAllDue() {
+  try {
+    const r = await fetch(`${API}/due`);
+    const d = await r.json();
+    const dueJobs = d.jobs || d.due || [];
+    if (!dueJobs.length) return toast('没有待执行任务', 'info');
+
+    let ok = 0, fail = 0;
+    for (const j of dueJobs) {
+      try {
+        const rr = await fetch(`${API}/jobs/${j.id}/run`, { method: 'POST' });
+        if (rr.ok) ok++; else fail++;
+      } catch(e) { fail++; }
+    }
+    toast(`执行完成: ${ok} 成功, ${fail} 失败`, ok > 0 ? 'success' : 'error');
+    await loadJobs();
+    // Refresh due panel if visible
+    const dueTab = document.querySelector('.nav-item[data-panel="due"]');
+    if (dueTab && dueTab.classList.contains('active')) {
+      renderDuePanel(document.getElementById('contentArea'));
+    }
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function editJob(id) {
+  switchPanel('create');
+  const job = jobs.find(j => j.id === id);
+  if (!job) return toast('任务未找到', 'error');
+  setTimeout(() => {
+    const nameEl = document.getElementById('jobName');
+    if (nameEl) nameEl.value = job.name || '';
+
+    // Set schedule fields
+    if (job.schedule) {
+      const s = job.schedule;
+      const stEl = document.querySelector(`input[name="scheduleType"][value="${s.type || 'cron'}"]`);
+      if (stEl) stEl.checked = true;
+      toggleScheduleFields();
+
+      if (s.type === 'cron') {
+        const ce = document.getElementById('cronExpr');
+        if (ce) ce.value = s.cron || s.value || '';
+      } else if (s.type === 'every') {
+        const me = document.getElementById('everyMs');
+        if (me) me.value = s.everyMs ?? s.value ?? '';
+      } else if (s.type === 'at') {
+        const ae = document.getElementById('atTime');
+        if (ae && s.at) ae.value = new Date(s.at).toISOString().slice(0, 16);
+      }
+    }
+
+    // Set payload fields
+    if (job.payload) {
+      const p = job.payload;
+      const ptEl = document.querySelector(`input[name="payloadType"][value="${p.type || 'agentTurn'}"]`);
+      if (ptEl) ptEl.checked = true;
+      togglePayloadFields();
+
+      if (p.type === 'agentTurn') {
+        const as = document.getElementById('agentSelect');
+        if (as && p.agentId) as.value = p.agentId;
+        const am = document.getElementById('agentMessage');
+        if (am) am.value = p.message || '';
+      } else {
+        const et = document.getElementById('eventText');
+        if (et) et.value = p.text || '';
+      }
+    }
+
+    // Delivery mode
+    if (job.delivery) {
+      const dmEl = document.querySelector(`input[name="deliveryMode"][value="${job.delivery}"]`);
+      if (dmEl) dmEl.checked = true;
+    }
+
+    toast('正在编辑任务: ' + (job.name || id), 'info');
+  }, 100);
+}
+
+async function deleteJob(id) {
+  if (!confirm('确认删除此定时任务？此操作不可撤销。')) return;
+  try {
+    const r = await fetch(`${API}/jobs/${id}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.json()).error || '删除失败');
+    toast('任务已删除', 'success');
+    await loadJobs();
+    renderJobsPanel(document.getElementById('contentArea'));
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// =====================================================================
+// Toast
+// =====================================================================
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast ${type || 'info'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// =====================================================================
+// Event Delegation: filter buttons
+// =====================================================================
+document.addEventListener('click', e => {
+  const filterBtn = e.target.closest('.filter-btn');
+  if (filterBtn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    filterBtn.classList.add('active');
+    const filter = filterBtn.dataset.filter;
+    const tbody = document.getElementById('jobsTbody');
+    if (tbody) {
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach(row => {
+        const enabled = row.dataset.enabled === 'true';
+        if (filter === 'all') row.style.display = '';
+        else if (filter === 'enabled') row.style.display = enabled ? '' : 'none';
+        else row.style.display = !enabled ? '' : 'none';
+      });
+    }
+  }
+});
+
+// =====================================================================
+// Keyboard
+// =====================================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    // Return to jobs panel if not already there
+    if (!document.querySelector('.nav-item[data-panel="jobs"].active')) {
+      switchPanel('jobs');
+    }
+  }
+});
+
+// =====================================================================
+// Boot
+// =====================================================================
+async function refreshAll() {
+  await loadJobs();
+  // Refresh current panel
+  const active = document.querySelector('.nav-item.active');
+  if (active) renderPanel(active.dataset.panel);
+}
+
+refreshAll();
+</script>
+</body>
+</html>

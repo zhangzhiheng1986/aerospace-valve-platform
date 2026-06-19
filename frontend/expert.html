@@ -1,0 +1,1049 @@
+<!--
+expert.html — Avis Expert System
+Intelligent agent platform for aerospace valve design analysis
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avis 专家系统 | 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #0d1321;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0,180,216,0.15);
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h3 { font-size: 1rem; color: var(--accent); margin-bottom:4px; }
+.sidebar-header span { font-size: 0.7rem; color: var(--text-secondary); }
+.sidebar-nav {
+  flex: 1; overflow-y: auto; padding: 10px 0;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover, .nav-item.active {
+  color: var(--text-primary);
+  background: var(--accent-glow);
+  border-left-color: var(--accent);
+}
+.sidebar-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.sidebar-footer a { color: var(--accent); text-decoration: none; }
+
+/* ---- MAIN ---- */
+.main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.toolbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.toolbar h2 { font-size: 1.15rem; margin-right: auto; }
+.btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-glow); }
+.btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight:600; }
+.btn-accent:hover { opacity: 0.85; }
+.btn-sm { padding: 4px 10px; font-size: 0.7rem; }
+.content {
+  flex: 1; overflow-y: auto; padding: 24px;
+}
+
+/* ---- PANEL ---- */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ---- FORM ---- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.form-group { display: flex; flex-direction: column; }
+.form-group label {
+  font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.form-group input, .form-group select {
+  padding: 9px 11px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+}
+.form-actions {
+  display: flex; gap: 10px; margin-bottom: 20px;
+}
+
+/* ---- RESULT CARDS ---- */
+.result-section { margin-top: 20px; }
+.result-section h4 {
+  font-size: 0.85rem; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.result-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.result-card:hover { border-color: var(--accent); }
+.result-card.green { border-left: 3px solid var(--success); }
+.result-card.yellow { border-left: 3px solid var(--warning); }
+.result-card.orange { border-left: 3px solid #ff9f43; }
+.result-card.blue { border-left: 3px solid var(--accent); }
+.result-card.red { border-left: 3px solid var(--danger); }
+.result-card-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px;
+}
+.result-card-header .icon { font-size: 1.1rem; }
+.result-card-header .title { font-weight: 600; font-size: 0.85rem; }
+.result-card-desc {
+  font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;
+}
+
+/* ---- RISK BADGE ---- */
+.risk-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 20px;
+  font-size: 1rem; font-weight: 700;
+  margin-bottom: 16px;
+}
+.risk-badge.low { background: rgba(81,207,102,0.15); color: var(--success); border: 1px solid var(--success); }
+.risk-badge.medium { background: rgba(255,212,59,0.15); color: var(--warning); border: 1px solid var(--warning); }
+.risk-badge.high { background: rgba(255,159,67,0.15); color: #ff9f43; border: 1px solid #ff9f43; }
+.risk-badge.critical { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid var(--danger); }
+
+/* ---- SAFETY CHECK ---- */
+.safety-check {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.safety-check .check-icon { font-size: 1.2rem; width: 28px; text-align: center; }
+.safety-check .check-info { flex: 1; }
+.safety-check .check-name { font-size: 0.82rem; font-weight: 500; }
+.safety-check .check-detail { font-size: 0.7rem; color: var(--text-secondary); }
+.safety-check.pass { border-left: 3px solid var(--success); }
+.safety-check.warn { border-left: 3px solid var(--warning); }
+.safety-check.fail { border-left: 3px solid var(--danger); }
+.safety-check.pass .check-icon { color: var(--success); }
+.safety-check.warn .check-icon { color: var(--warning); }
+.safety-check.fail .check-icon { color: var(--danger); }
+
+/* ---- REQUIRED ACTIONS ---- */
+.action-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.action-item .action-priority {
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 0.65rem; font-weight: 700;
+  white-space: nowrap;
+}
+.action-item .action-priority.must { background: rgba(255,107,107,0.15); color: var(--danger); }
+.action-item .action-priority.should { background: rgba(255,159,67,0.15); color: #ff9f43; }
+.action-item .action-priority.may { background: rgba(81,207,102,0.15); color: var(--success); }
+.action-item .action-text { font-size: 0.8rem; flex: 1; line-height: 1.4; }
+
+/* ---- RULE CARD ---- */
+.rule-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rule-card:hover { border-color: var(--accent); }
+.rule-card.expanded { border-color: var(--accent); }
+.rule-card-header {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
+}
+.rule-id {
+  font-family: monospace; font-size: 0.7rem;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--bg-secondary); color: var(--text-secondary);
+}
+.priority-badge {
+  font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+}
+.priority-badge.p1 { background: rgba(255,107,107,0.15); color: var(--danger); }
+.priority-badge.p2 { background: rgba(255,159,67,0.15); color: #ff9f43; }
+.priority-badge.p3 { background: rgba(255,212,59,0.15); color: var(--warning); }
+.priority-badge.p4 { background: rgba(81,207,102,0.15); color: var(--success); }
+.priority-badge.p5 { background: rgba(136,153,170,0.15); color: var(--text-secondary); }
+.domain-tag {
+  font-size: 0.62rem; padding: 2px 7px; border-radius: 4px;
+  background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent);
+}
+.rule-name { font-weight: 600; font-size: 0.85rem; flex: 1; }
+.rule-desc { font-size: 0.72rem; color: var(--text-secondary); margin-top: 6px; }
+.rule-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.rule-card.expanded .rule-detail { display: block; }
+.rule-detail pre {
+  font-size: 0.7rem; color: var(--text-secondary);
+  background: var(--bg-secondary); padding: 10px; border-radius: 6px;
+  overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+}
+
+/* ---- TABS ---- */
+.tabs {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tab {
+  padding: 8px 16px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ---- FACTS TEXTAREA ---- */
+.facts-area {
+  width: 100%; min-height: 160px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.8rem; font-family: monospace;
+  resize: vertical;
+  outline: none;
+}
+.facts-area:focus { border-color: var(--accent); }
+
+/* ---- TRACE ---- */
+.trace-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+.trace-step {
+  font-family: monospace; font-size: 0.65rem;
+  padding: 2px 6px; border-radius: 4px;
+  background: var(--bg-secondary); color: var(--accent);
+  white-space: nowrap;
+}
+.trace-detail { flex: 1; color: var(--text-secondary); line-height: 1.4; }
+.trace-detail strong { color: var(--text-primary); }
+
+/* ---- NEW FACT ---- */
+.new-fact {
+  display: inline-block;
+  margin: 4px 4px 0 0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  background: rgba(81,207,102,0.1);
+  border: 1px solid var(--success);
+  color: var(--success);
+}
+
+/* ---- EMPTY STATE ---- */
+.empty-state {
+  text-align: center; padding: 60px; color: var(--text-secondary);
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+.empty-state h3 { margin-bottom: 8px; }
+.empty-state p { font-size: 0.8rem; }
+
+/* ---- LOADING ---- */
+.loading {
+  display: flex; align-items: center; gap: 8px;
+  padding: 20px; color: var(--text-secondary); font-size: 0.82rem;
+}
+.loading::before {
+  content: ''; width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  z-index: 1000;
+  animation: toastIn 0.3s ease;
+  max-width: 360px;
+}
+.toast.success { background: rgba(81,207,102,0.15); border: 1px solid var(--success); color: var(--success); }
+.toast.error { background: rgba(255,107,107,0.15); border: 1px solid var(--danger); color: var(--danger); }
+.toast.info { background: rgba(0,180,216,0.15); border: 1px solid var(--accent); color: var(--accent); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h3>🧠 专家系统</h3>
+    <span>Avis Intelligent Agent</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-panel="analyze" onclick="switchPanel('analyze', this)">
+      🧠 设计分析
+    </a>
+    <a class="nav-item" data-panel="safety" onclick="switchPanel('safety', this)">
+      🛡️ 安全评估
+    </a>
+    <a class="nav-item" data-panel="standards" onclick="switchPanel('standards', this)">
+      📐 适用标准
+    </a>
+    <a class="nav-item" data-panel="rules" onclick="switchPanel('rules', this)">
+      📋 规则库
+    </a>
+    <a class="nav-item" data-panel="reasoning" onclick="switchPanel('reasoning', this)">
+      🔍 推理调试
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/">← 返回主页</a> &nbsp;|&nbsp;
+    <a href="/departments">🏢 部门协作</a>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="toolbar">
+    <h2 id="panelTitle">🧠 设计分析</h2>
+    <button class="btn" onclick="clearResults()">🔄 清空结果</button>
+  </div>
+  <div class="content" id="contentArea"></div>
+</main>
+
+<script>
+// =====================================================================
+// API base
+// =====================================================================
+const API = '/api/avis/expert';
+
+// =====================================================================
+// Panel Switching
+// =====================================================================
+function switchPanel(panelId, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const titles = {
+    analyze: '🧠 设计分析',
+    safety: '🛡️ 安全评估',
+    standards: '📐 适用标准',
+    rules: '📋 规则库',
+    reasoning: '🔍 推理调试'
+  };
+  document.getElementById('panelTitle').textContent = titles[panelId] || '';
+  renderPanel(panelId);
+}
+
+function renderPanel(panelId) {
+  const area = document.getElementById('contentArea');
+  switch (panelId) {
+    case 'analyze': area.innerHTML = renderAnalyzePanel(); break;
+    case 'safety': area.innerHTML = renderSafetyPanel(); break;
+    case 'standards': area.innerHTML = renderStandardsPanel(); break;
+    case 'rules':
+      area.innerHTML = renderRulesPanel();
+      loadRules();
+      break;
+    case 'reasoning': area.innerHTML = renderReasoningPanel(); break;
+  }
+}
+
+// =====================================================================
+// Common Design Form (used by panels 1, 2, 3)
+// =====================================================================
+function renderDesignForm(hideWallThickness) {
+  return `
+    <div class="form-grid">
+      <div class="form-group">
+        <label>温度 (°C)</label>
+        <input type="number" id="temperature" placeholder="-196 ~ 800" step="any">
+      </div>
+      <div class="form-group">
+        <label>压力 (MPa)</label>
+        <input type="number" id="pressure_mpa" placeholder="0.1 ~ 70" step="any">
+      </div>
+      <div class="form-group">
+        <label>介质</label>
+        <select id="medium">
+          <option value="">选择介质</option>
+          <option value="液氧">液氧</option>
+          <option value="液氢">液氢</option>
+          <option value="煤油">煤油</option>
+          <option value="氮气">氮气</option>
+          <option value="氦气">氦气</option>
+          <option value="水">水</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>材料</label>
+        <select id="material">
+          <option value="">选择材料</option>
+          <option value="316L">316L</option>
+          <option value="304L">304L</option>
+          <option value="Inconel718">Inconel718</option>
+          <option value="TC4">TC4</option>
+          <option value="铝合金">铝合金</option>
+          <option value="铜合金">铜合金</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>阀门类型</label>
+        <select id="valve_type">
+          <option value="">选择类型</option>
+          <option value="电磁阀">电磁阀</option>
+          <option value="减压阀">减压阀</option>
+          <option value="单向阀">单向阀</option>
+          <option value="球阀">球阀</option>
+          <option value="蝶阀">蝶阀</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>公称通径 (mm)</label>
+        <input type="number" id="diameter" placeholder="4 ~ 300" step="any">
+      </div>
+      <div class="form-group">
+        <label>密封材料</label>
+        <select id="seal_material">
+          <option value="">选择密封材料</option>
+          <option value="PTFE">PTFE</option>
+          <option value="FFKM">FFKM</option>
+          <option value="FKM">FKM</option>
+          <option value="金属">金属</option>
+          <option value="石墨">石墨</option>
+        </select>
+      </div>
+      ${hideWallThickness ? '' : `
+      <div class="form-group">
+        <label>壁厚 (mm)</label>
+        <input type="number" id="wall_thickness" placeholder="1 ~ 50" step="any">
+      </div>
+      `}
+    </div>`;
+}
+
+function getDesignParams() {
+  return {
+    temperature: parseFloat(document.getElementById('temperature')?.value) || null,
+    pressure_mpa: parseFloat(document.getElementById('pressure_mpa')?.value) || null,
+    medium: document.getElementById('medium')?.value || null,
+    material: document.getElementById('material')?.value || null,
+    valve_type: document.getElementById('valve_type')?.value || null,
+    diameter: parseFloat(document.getElementById('diameter')?.value) || null,
+    seal_material: document.getElementById('seal_material')?.value || null,
+    wall_thickness: parseFloat(document.getElementById('wall_thickness')?.value) || null
+  };
+}
+
+function cleanParams(p) {
+  const out = {};
+  for (const [k, v] of Object.entries(p)) {
+    if (v !== null && v !== '' && !isNaN(v)) out[k] = v;
+    else if (v && typeof v === 'string') out[k] = v;
+  }
+  return out;
+}
+
+// =====================================================================
+// Panel 1: 设计分析
+// =====================================================================
+function renderAnalyzePanel() {
+  return `
+    ${renderDesignForm()}
+    <div class="form-actions">
+      <button class="btn btn-accent" onclick="doAnalyze()">🔍 分析</button>
+    </div>
+    <div id="analyzeResults"></div>
+  `;
+}
+
+async function doAnalyze() {
+  const params = cleanParams(getDesignParams());
+  if (!Object.keys(params).length) return toast('请填写至少一项设计参数', 'error');
+
+  const area = document.getElementById('analyzeResults');
+  area.innerHTML = '<div class="loading">专家系统分析中...</div>';
+
+  try {
+    const r = await fetch(`${API}/analyze`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(params)
+    });
+    const d = await r.json();
+    if (d.error) { area.innerHTML = `<p style="color:var(--danger)">${d.error}</p>`; return; }
+    area.innerHTML = renderAnalyzeResults(d);
+  } catch (e) {
+    area.innerHTML = `<p style="color:var(--danger)">请求失败: ${e.message}</p>`;
+  }
+}
+
+function renderAnalyzeResults(d) {
+  let html = '';
+
+  // Recommendations (green cards)
+  if (d.recommendations && d.recommendations.length) {
+    html += `<div class="result-section"><h4>✅ 设计建议</h4>`;
+    d.recommendations.forEach(r => {
+      html += `
+        <div class="result-card green">
+          <div class="result-card-header">
+            <span class="icon">💡</span>
+            <span class="title">${escHtml(r.title || r.name || '建议')}</span>
+          </div>
+          <div class="result-card-desc">${escHtml(r.detail || r.description || r.message || '')}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Warnings (yellow/orange cards)
+  if (d.warnings && d.warnings.length) {
+    html += `<div class="result-section"><h4>⚠️ 注意事项</h4>`;
+    d.warnings.forEach(w => {
+      const cls = (w.severity === 'high') ? 'orange' : 'yellow';
+      html += `
+        <div class="result-card ${cls}">
+          <div class="result-card-header">
+            <span class="icon">⚠️</span>
+            <span class="title">${escHtml(w.title || w.name || '警告')}</span>
+          </div>
+          <div class="result-card-desc">${escHtml(w.detail || w.description || w.message || '')}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Applicable Standards (blue cards)
+  if (d.standards && d.standards.length) {
+    html += `<div class="result-section"><h4>📐 适用标准</h4>`;
+    d.standards.forEach(s => {
+      html += `
+        <div class="result-card blue">
+          <div class="result-card-header">
+            <span class="icon">📋</span>
+            <span class="title">${escHtml(s.code || s.name || '标准')}</span>
+          </div>
+          <div class="result-card-desc">${escHtml(s.description || s.requirement || '')}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Rule Firings (expandable list)
+  if (d.rule_firings && d.rule_firings.length) {
+    html += `<div class="result-section"><h4>📋 触发的规则 (${d.rule_firings.length})</h4>`;
+    d.rule_firings.forEach((rf, i) => {
+      html += `
+        <div class="result-card" style="cursor:pointer" onclick="this.classList.toggle('expanded')">
+          <div class="result-card-header">
+            <span class="icon">🔗</span>
+            <span class="title">${escHtml(rf.rule_name || rf.rule || '规则')}</span>
+            <span class="rule-id">${escHtml(rf.rule_id || '#R'+(i+1))}</span>
+          </div>
+          <div class="result-card-desc">${escHtml(rf.summary || rf.reason || '')}</div>
+          <div class="rule-detail">
+            ${rf.condition ? `<pre>条件: ${escHtml(typeof rf.condition === 'object' ? JSON.stringify(rf.condition, null, 2) : rf.condition)}</pre>` : ''}
+            ${rf.action ? `<pre>动作: ${escHtml(typeof rf.action === 'object' ? JSON.stringify(rf.action, null, 2) : rf.action)}</pre>` : ''}
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (!html) html = `<p style="color:var(--text-secondary)">分析完成，未产生特殊建议。</p>`;
+  return html;
+}
+
+// =====================================================================
+// Panel 2: 安全评估
+// =====================================================================
+function renderSafetyPanel() {
+  return `
+    ${renderDesignForm()}
+    <div class="form-actions">
+      <button class="btn btn-accent" onclick="doSafety()">🛡️ 安全评估</button>
+    </div>
+    <div id="safetyResults"></div>
+  `;
+}
+
+async function doSafety() {
+  const params = cleanParams(getDesignParams());
+  if (!Object.keys(params).length) return toast('请填写至少一项设计参数', 'error');
+
+  const area = document.getElementById('safetyResults');
+  area.innerHTML = '<div class="loading">安全评估中...</div>';
+
+  try {
+    const r = await fetch(`${API}/safety`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(params)
+    });
+    const d = await r.json();
+    if (d.error) { area.innerHTML = `<p style="color:var(--danger)">${d.error}</p>`; return; }
+    area.innerHTML = renderSafetyResults(d);
+  } catch (e) {
+    area.innerHTML = `<p style="color:var(--danger)">请求失败: ${e.message}</p>`;
+  }
+}
+
+function renderSafetyResults(d) {
+  let html = '';
+
+  // Overall risk level
+  const riskLevel = (d.risk_level || d.overall_risk || 'low').toLowerCase();
+  const riskLabels = { low: '低风险 ✅', medium: '中风险 ⚠️', high: '高风险 🔴', critical: '严重风险 💀' };
+  const riskLabel = riskLabels[riskLevel] || riskLevel;
+  html += `
+    <div style="margin-bottom:20px;">
+      <span style="font-size:0.8rem;color:var(--text-secondary);margin-right:10px;">总体风险等级:</span>
+      <span class="risk-badge ${riskLevel}">${riskLabel}</span>
+    </div>`;
+
+  // Safety checks
+  if (d.checks && d.checks.length) {
+    html += `<div class="result-section"><h4>🔍 安全检测项</h4>`;
+    d.checks.forEach(c => {
+      const status = (c.status || c.result || 'pass').toLowerCase();
+      const icons = { pass: '✅', warn: '⚠️', fail: '❌' };
+      html += `
+        <div class="safety-check ${status}">
+          <span class="check-icon">${icons[status] || '❓'}</span>
+          <div class="check-info">
+            <div class="check-name">${escHtml(c.name || c.check || '检测项')}</div>
+            <div class="check-detail">${escHtml(c.detail || c.description || c.message || '')}</div>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Required actions
+  if (d.required_actions && d.required_actions.length) {
+    html += `<div class="result-section"><h4>📋 必要措施</h4>`;
+    d.required_actions.forEach(a => {
+      const pri = (a.priority || 'should').toLowerCase();
+      const priLabel = { must: '必须', should: '应当', may: '可选' };
+      html += `
+        <div class="action-item">
+          <span class="action-priority ${pri}">${priLabel[pri] || pri}</span>
+          <span class="action-text">${escHtml(a.text || a.action || a.description || '')}</span>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (!html.includes('result-section')) {
+    html += `<p style="color:var(--text-secondary)">安全评估完成。</p>`;
+  }
+  return html;
+}
+
+// =====================================================================
+// Panel 3: 适用标准
+// =====================================================================
+function renderStandardsPanel() {
+  return `
+    ${renderDesignForm()}
+    <div class="form-actions">
+      <button class="btn btn-accent" onclick="doStandards()">📐 查询标准</button>
+    </div>
+    <div id="standardsResults"></div>
+  `;
+}
+
+async function doStandards() {
+  const params = cleanParams(getDesignParams());
+  if (!Object.keys(params).length) return toast('请填写至少一项设计参数', 'error');
+
+  const area = document.getElementById('standardsResults');
+  area.innerHTML = '<div class="loading">查询适用标准...</div>';
+
+  try {
+    const r = await fetch(`${API}/standards`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(params)
+    });
+    const d = await r.json();
+    if (d.error) { area.innerHTML = `<p style="color:var(--danger)">${d.error}</p>`; return; }
+    area.innerHTML = renderStandardsResults(d);
+  } catch (e) {
+    area.innerHTML = `<p style="color:var(--danger)">请求失败: ${e.message}</p>`;
+  }
+}
+
+function renderStandardsResults(d) {
+  const list = d.standards || d.results || [];
+  if (!list.length) return `<p style="color:var(--text-secondary)">未找到匹配的标准。</p>`;
+
+  return `
+    <div class="result-section">
+      <h4>📐 适用标准 (${list.length})</h4>
+      ${list.map(s => `
+        <div class="result-card blue">
+          <div class="result-card-header">
+            <span class="icon">📋</span>
+            <span class="title">${escHtml(s.code || s.name || s.standard_id || '标准')}</span>
+            ${s.version ? `<span style="font-size:0.65rem;color:var(--text-secondary)">v${escHtml(s.version)}</span>` : ''}
+          </div>
+          <div class="result-card-desc">${escHtml(s.description || s.scope || s.summary || '')}</div>
+          ${s.clauses && s.clauses.length ? `
+            <div style="margin-top:6px;font-size:0.7rem;color:var(--text-secondary)">
+              相关条款: ${s.clauses.slice(0,5).map(cl => escHtml(cl)).join(' · ')}${s.clauses.length > 5 ? ' ...' : ''}
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+// =====================================================================
+// Panel 4: 规则库
+// =====================================================================
+function renderRulesPanel() {
+  const domains = ['全部', '材料', '安全', '密封', '低温', '高温', '疲劳腐蚀', '标准', '运行'];
+  return `
+    <div class="tabs" id="ruleDomainTabs">
+      ${domains.map(d => `
+        <span class="tab${d === '全部' ? ' active' : ''}" data-domain="${d}"
+              onclick="switchRuleDomain('${d}', this)">${d}</span>
+      `).join('')}
+    </div>
+    <div id="rulesList"><div class="loading">加载规则...</div></div>
+  `;
+}
+
+async function loadRules(domain) {
+  const list = document.getElementById('rulesList');
+  if (!list) return;
+  list.innerHTML = '<div class="loading">加载规则...</div>';
+
+  try {
+    const qs = (domain && domain !== '全部') ? `?domain=${encodeURIComponent(domain)}` : '';
+    const r = await fetch(`${API}/rules${qs}`);
+    const d = await r.json();
+    const rules = d.rules || d.results || d || [];
+    if (Array.isArray(rules) && rules.length) {
+      list.innerHTML = rules.map(rule => renderRuleCard(rule)).join('');
+    } else if (Array.isArray(d) && d.length) {
+      list.innerHTML = d.map(rule => renderRuleCard(rule)).join('');
+    } else {
+      list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h3>暂无规则</h3><p>该领域暂无已加载的规则。</p></div>`;
+    }
+  } catch (e) {
+    list.innerHTML = `<p style="color:var(--danger)">加载失败: ${e.message}</p>`;
+  }
+}
+
+function switchRuleDomain(domain, el) {
+  document.querySelectorAll('#ruleDomainTabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadRules(domain);
+}
+
+function renderRuleCard(rule) {
+  const priority = rule.priority || rule.salience || 'p3';
+  const p = String(priority).toLowerCase();
+  const domain = rule.domain || rule.category || '通用';
+  const conditions = formatConditions(rule.conditions || rule.if || rule.lhs);
+  const actions = formatActions(rule.actions || rule.then || rule.rhs);
+
+  return `
+    <div class="rule-card" onclick="toggleRuleDetail(this, '${escAttr(rule.id || rule.rule_id || '')}')">
+      <div class="rule-card-header">
+        <span class="rule-id">${escHtml(rule.id || rule.rule_id || 'N/A')}</span>
+        <span class="priority-badge ${p}">${escHtml(priority)}</span>
+        <span class="domain-tag">${escHtml(domain)}</span>
+        <span class="rule-name">${escHtml(rule.name || rule.rule_name || '未命名规则')}</span>
+      </div>
+      <div class="rule-desc">${escHtml(rule.description || rule.summary || '')}</div>
+      <div class="rule-detail" id="rule-detail-${escAttr(rule.id || rule.rule_id || '')}">
+        ${conditions ? `<pre style="margin-bottom:4px"><strong>条件:</strong>\n${escHtml(conditions)}</pre>` : ''}
+        ${actions ? `<pre><strong>动作:</strong>\n${escHtml(actions)}</pre>` : ''}
+      </div>
+    </div>`;
+}
+
+async function toggleRuleDetail(el, ruleId) {
+  el.classList.toggle('expanded');
+  if (el.classList.contains('expanded') && ruleId) {
+    const detail = el.querySelector('.rule-detail');
+    if (detail && detail.textContent.trim() === '') {
+      try {
+        const r = await fetch(`${API}/rules/${encodeURIComponent(ruleId)}`);
+        const d = await r.json();
+        const conditions = formatConditions(d.conditions || d.if || d.lhs);
+        const actions = formatActions(d.actions || d.then || d.rhs);
+        detail.innerHTML = `
+          ${conditions ? `<pre style="margin-bottom:4px"><strong>条件:</strong>\n${escHtml(conditions)}</pre>` : ''}
+          ${actions ? `<pre><strong>动作:</strong>\n${escHtml(actions)}</pre>` : ''}
+        `;
+      } catch (e) {
+        detail.innerHTML = `<pre style="color:var(--danger)">加载详情失败</pre>`;
+      }
+    }
+  }
+}
+
+function formatConditions(cond) {
+  if (!cond) return '';
+  if (typeof cond === 'string') return cond;
+  if (Array.isArray(cond)) return cond.map(c => typeof c === 'object' ? JSON.stringify(c) : c).join('\n');
+  return JSON.stringify(cond, null, 2);
+}
+
+function formatActions(act) {
+  if (!act) return '';
+  if (typeof act === 'string') return act;
+  if (Array.isArray(act)) return act.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join('\n');
+  return JSON.stringify(act, null, 2);
+}
+
+// =====================================================================
+// Panel 5: 推理调试
+// =====================================================================
+function renderReasoningPanel() {
+  const domains = ['全部', '材料', '安全', '密封', '低温', '高温', '疲劳腐蚀', '标准', '运行'];
+  return `
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:6px;">
+        初始事实 (JSON 格式，每行一个键值对):
+      </label>
+      <textarea class="facts-area" id="factsInput" placeholder='{
+  "temperature": -196,
+  "pressure": 15.0,
+  "medium": "液氧",
+  "material": "316L",
+  "valve_type": "\u7535\u78c1\u9600"
+}'></textarea>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.72rem;color:var(--text-secondary);margin-right:10px;">推理域:</label>
+      <select id="reasonDomain" style="padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:0.78rem;font-family:inherit;">
+        ${domains.map(d => `<option value="${d === '全部' ? '' : d}">${d}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-accent" onclick="doReason()">🧠 推理</button>
+    </div>
+    <div id="reasonResults"></div>
+  `;
+}
+
+async function doReason() {
+  const factsStr = document.getElementById('factsInput')?.value.trim();
+  if (!factsStr) return toast('请填写初始事实', 'error');
+
+  let facts;
+  try {
+    facts = JSON.parse(factsStr);
+  } catch (e) {
+    return toast('JSON 格式错误: ' + e.message, 'error');
+  }
+
+  const domain = document.getElementById('reasonDomain')?.value || null;
+  const area = document.getElementById('reasonResults');
+  area.innerHTML = '<div class="loading">推理中...</div>';
+
+  try {
+    const body = { facts };
+    if (domain) body.domain = domain;
+    const r = await fetch(`${API}/reason`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.error) { area.innerHTML = `<p style="color:var(--danger)">${d.error}</p>`; return; }
+    area.innerHTML = renderReasonResults(d);
+  } catch (e) {
+    area.innerHTML = `<p style="color:var(--danger)">请求失败: ${e.message}</p>`;
+  }
+}
+
+function renderReasonResults(d) {
+  let html = '';
+
+  // Fired rules
+  if (d.fired_rules && d.fired_rules.length) {
+    html += `<div class="result-section"><h4>🔥 触发的规则 (${d.fired_rules.length})</h4>`;
+    d.fired_rules.forEach(r => {
+      html += `
+        <div class="result-card" style="border-left:3px solid var(--accent)">
+          <div class="result-card-header">
+            <span class="icon">🔗</span>
+            <span class="title">${escHtml(r.name || r.rule || '规则')}</span>
+            <span class="rule-id">${escHtml(r.id || r.rule_id || '')}</span>
+          </div>
+          <div class="result-card-desc">${escHtml(r.description || r.summary || r.reason || '')}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // New facts
+  if (d.new_facts && d.new_facts.length) {
+    html += `<div class="result-section"><h4>🆕 新增事实 (${d.new_facts.length})</h4>`;
+    html += `<div style="margin-top:8px;">`;
+    d.new_facts.forEach(f => {
+      if (typeof f === 'object') {
+        for (const [k, v] of Object.entries(f)) {
+          html += `<span class="new-fact">${escHtml(k)}: ${escHtml(String(v))}</span>`;
+        }
+      } else {
+        html += `<span class="new-fact">${escHtml(String(f))}</span>`;
+      }
+    });
+    html += `</div></div>`;
+  }
+
+  // Trace
+  if (d.trace && d.trace.length) {
+    html += `<div class="result-section"><h4>📜 推理追踪</h4>`;
+    d.trace.forEach((t, i) => {
+      html += `
+        <div class="trace-item">
+          <span class="trace-step">#${i+1}</span>
+          <span class="trace-detail">${escHtml(typeof t === 'object' ? (t.message || t.step || JSON.stringify(t)) : t)}</span>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // All facts (final state)
+  if (d.all_facts) {
+    html += `<div class="result-section"><h4>📊 最终事实</h4>`;
+    html += `<pre style="font-size:0.72rem;color:var(--text-secondary);background:var(--bg-secondary);padding:10px;border-radius:6px;">${escHtml(JSON.stringify(d.all_facts, null, 2))}</pre>`;
+    html += `</div>`;
+  }
+
+  if (!html) html += `<p style="color:var(--text-secondary)">推理完成，无规则触发。</p>`;
+  return html;
+}
+
+// =====================================================================
+// Utilities
+// =====================================================================
+function clearResults() {
+  const active = document.querySelector('.nav-item.active');
+  if (active) renderPanel(active.dataset.panel);
+}
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escAttr(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// =====================================================================
+// Boot
+// =====================================================================
+switchPanel('analyze', document.querySelector('[data-panel="analyze"]'));
+</script>
+</body>
+</html>

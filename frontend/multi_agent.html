@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent Collaboration - Avis Platform</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #162231;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0, 180, 216, 0.15);
+  --accent2: #7209b7;
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --info: #4dabf7;
+  --radius: 10px;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+}
+a { color: var(--accent); text-decoration: none; }
+
+/* Sidebar */
+.sidebar {
+  width: 260px; min-width: 260px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 1.2rem 0;
+}
+.sidebar-logo {
+  padding: 0 1.2rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+.sidebar-logo h2 { font-size: 1.1rem; color: var(--accent); }
+.sidebar-logo p { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.2rem; }
+.sidebar-nav { flex:1; overflow-y: auto; padding: 0 0.8rem; }
+.sidebar-nav a {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem; margin-bottom: 0.3rem;
+  border-radius: 8px; color: var(--text-secondary);
+  font-size: 0.8rem; transition: all 0.15s;
+}
+.sidebar-nav a:hover, .sidebar-nav a.active {
+  background: rgba(0,180,216,0.1); color: var(--accent);
+}
+.sidebar-nav .nav-icon { font-size: 1rem; width: 24px; text-align: center; }
+
+/* Main */
+.main { flex:1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-secondary);
+}
+.topbar h1 { font-size: 1.15rem; font-weight: 600; }
+.topbar-right { display: flex; gap: 0.8rem; align-items: center; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.status-dot.active { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.status-dot.idle { background: var(--text-secondary); }
+.content { flex:1; overflow-y: auto; padding: 1.5rem; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem; margin-bottom: 1.2rem;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem; padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+.card-header h3 { font-size: 0.95rem; font-weight: 600; color: var(--accent); }
+.card-header .badge {
+  font-size: 0.7rem; padding: 0.2rem 0.6rem;
+  border-radius: 12px; background: rgba(0,180,216,0.15);
+  color: var(--accent); border: 1px solid rgba(0,180,216,0.3);
+}
+
+/* Grid layout */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+/* Form elements */
+.form-group { margin-bottom: 1rem; }
+.form-group label {
+  display: block; font-size: 0.78rem; color: var(--text-secondary);
+  margin-bottom: 0.3rem; font-weight: 500;
+}
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%; padding: 0.55rem 0.7rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text-primary);
+  font-size: 0.82rem; font-family: inherit;
+  transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-group textarea { min-height: 90px; resize: vertical; }
+.form-row { display: flex; gap: 1rem; }
+.form-row .form-group { flex:1; }
+
+.btn {
+  padding: 0.55rem 1.2rem; border: none; border-radius: 6px;
+  font-size: 0.82rem; font-weight: 500; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.btn-primary:hover { filter: brightness(1.15); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { filter: brightness(1.15); }
+.btn-outline {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.72rem; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Agent chips */
+.agent-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.agent-chip {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding: 0.35rem 0.7rem; border-radius: 16px;
+  font-size: 0.75rem; cursor: pointer; user-select: none;
+  border: 1px solid var(--border); background: var(--bg-primary);
+  color: var(--text-secondary); transition: all 0.15s;
+}
+.agent-chip:hover { border-color: var(--accent); color: var(--accent); }
+.agent-chip.selected {
+  border-color: var(--accent); background: rgba(0,180,216,0.1);
+  color: var(--accent);
+}
+.agent-chip-icon { font-size: 0.9rem; }
+
+/* Progress bar */
+.progress-bar {
+  height: 6px; background: var(--bg-primary);
+  border-radius: 3px; overflow: hidden; margin-top: 0.5rem;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.4s ease;
+}
+
+/* DAG visualization */
+.dag-container {
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.dag-level {
+  display: flex; gap: 0.8rem; justify-content: center;
+  flex-wrap: wrap; padding: 0.5rem;
+}
+.dag-node {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 1rem; min-width: 150px; max-width: 220px;
+  transition: all 0.2s; cursor: pointer;
+}
+.dag-node:hover { border-color: var(--accent); }
+.dag-node.completed { border-color: var(--success); background: rgba(81,207,102,0.05); }
+.dag-node.in_progress { border-color: var(--warning); background: rgba(255,212,59,0.05); }
+.dag-node.failed { border-color: var(--danger); background: rgba(255,107,107,0.05); }
+.dag-node.blocked { border-color: var(--text-secondary); opacity: 0.5; }
+.dag-node-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+.dag-agent-badge {
+  font-size: 0.65rem; padding: 0.1rem 0.4rem;
+  border-radius: 8px; background: rgba(0,180,216,0.1);
+  color: var(--accent);
+}
+.dag-node-desc { font-size: 0.73rem; color: var(--text-secondary); line-height: 1.3; }
+.dag-status-icon { font-size: 0.9rem; }
+
+/* Message log */
+.message-log {
+  max-height: 350px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.message-item {
+  padding: 0.6rem 0.8rem; border-radius: 8px;
+  background: var(--bg-primary); border-left: 3px solid var(--border);
+  font-size: 0.78rem;
+}
+.message-item.request { border-left-color: var(--warning); }
+.message-item.response { border-left-color: var(--success); }
+.message-item.handoff { border-left-color: var(--accent); }
+.message-item.error { border-left-color: var(--danger); }
+.message-meta {
+  display: flex; gap: 0.5rem; align-items: center;
+  margin-bottom: 0.3rem; font-size: 0.68rem;
+}
+.message-sender { font-weight: 600; color: var(--accent); }
+.message-receiver { color: var(--text-secondary); }
+.message-time { color: var(--text-secondary); margin-left: auto; }
+.message-body { color: var(--text-primary); line-height: 1.4; }
+
+/* Team list */
+.team-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.team-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.team-item:hover { border-color: var(--accent); }
+.team-item.active { border-color: var(--accent); background: rgba(0,180,216,0.05); }
+.team-item-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+.team-id { font-weight: 600; color: var(--accent); font-family: var(--font-mono); font-size: 0.78rem; }
+.team-title { font-size: 0.82rem; margin-bottom: 0.3rem; }
+.team-members { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.team-member-tag {
+  font-size: 0.65rem; padding: 0.15rem 0.4rem;
+  border-radius: 8px; background: rgba(0,180,216,0.1);
+  color: var(--accent);
+}
+
+/* Result summary */
+.result-summary {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem; max-height: 300px; overflow-y: auto;
+}
+.result-summary pre {
+  font-family: var(--font-mono); font-size: 0.75rem;
+  color: var(--text-secondary); white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* Status badges */
+.status-badge {
+  font-size: 0.7rem; padding: 0.2rem 0.6rem;
+  border-radius: 12px; font-weight: 500;
+}
+.status-badge.pending { background: rgba(136,153,170,0.15); color: var(--text-secondary); }
+.status-badge.in_progress { background: rgba(255,212,59,0.15); color: var(--warning); }
+.status-badge.completed { background: rgba(81,207,102,0.15); color: var(--success); }
+.status-badge.failed { background: rgba(255,107,107,0.15); color: var(--danger); }
+.status-badge.blocked { background: rgba(136,153,170,0.15); color: var(--text-secondary); }
+
+/* Toast notifications */
+.toast-container {
+  position: fixed; top: 1rem; right: 1rem; z-index: 1000;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.toast {
+  padding: 0.7rem 1rem; border-radius: 8px;
+  font-size: 0.8rem; animation: slideIn 0.3s ease;
+  border: 1px solid var(--border);
+}
+.toast.success { background: rgba(81,207,102,0.12); border-color: var(--success); color: var(--success); }
+.toast.error { background: rgba(255,107,107,0.12); border-color: var(--danger); color: var(--danger); }
+.toast.info { background: rgba(0,180,216,0.12); border-color: var(--accent); color: var(--accent); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Tab switching */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+.tab {
+  padding: 0.5rem 1rem; cursor: pointer;
+  font-size: 0.8rem; color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--accent); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Loading spinner */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Protocol selector */
+.protocol-option {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.6rem; cursor: pointer;
+  border-radius: 6px; border: 1px solid var(--border);
+  font-size: 0.75rem; transition: all 0.15s;
+}
+.protocol-option:hover { border-color: var(--accent); }
+.protocol-option.selected { border-color: var(--accent); background: rgba(0,180,216,0.1); }
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 2rem;
+  color: var(--text-secondary); font-size: 0.85rem;
+}
+.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { width: 60px; min-width: 60px; }
+  .sidebar-logo h2, .sidebar-logo p, .nav-label { display: none; }
+  .sidebar-nav a { justify-content: center; padding: 0.5rem; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h2>🤝 Multi-Agent</h2>
+    <p>Avis Collaboration Engine</p>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-link">
+      <span class="nav-icon">🏠</span><span class="nav-label">主仪表板</span>
+    </a>
+    <a href="/departments" class="nav-link">
+      <span class="nav-icon">🏛️</span><span class="nav-label">部门协作</span>
+    </a>
+    <a href="/multi-agent" class="nav-link active">
+      <span class="nav-icon">🤝</span><span class="nav-label">多Agent协作</span>
+    </a>
+    <a href="/product-structure" class="nav-link">
+      <span class="nav-icon">📦</span><span class="nav-label">产品结构库</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+  <div class="topbar">
+    <h1>Multi-Agent Collaboration Engine</h1>
+    <div class="topbar-right">
+      <span id="apiStatus">
+        <span class="status-dot idle"></span> API
+      </span>
+      <span id="teamCount" style="font-size:0.8rem; color:var(--text-secondary);">
+        0 active teams
+      </span>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Create Panel -->
+    <div class="card" id="createPanel">
+      <div class="card-header">
+        <h3>🚀 Create Collaboration Task</h3>
+        <span class="badge">New</span>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="form-group">
+            <label>Task Title</label>
+            <input type="text" id="taskTitle" placeholder="e.g., LOX solenoid valve design review">
+          </div>
+          <div class="form-group">
+            <label>Task Description <span style="color:var(--danger)">*</span></label>
+            <textarea id="taskDesc" placeholder="Describe the engineering task in detail. The system will automatically decompose it into subtasks and assign the right agents..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Template (optional)</label>
+              <select id="taskTemplate">
+                <option value="">Auto-detect</option>
+                <option value="valve_design">Valve Design</option>
+                <option value="material_selection">Material Selection</option>
+                <option value="compliance_audit">Compliance Audit</option>
+                <option value="simulation_study">Simulation Study</option>
+                <option value="general_engineering">General Engineering</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Consensus Model</label>
+              <select id="consensusModel">
+                <option value="expert_override">Expert Override</option>
+                <option value="majority_vote">Majority Vote</option>
+                <option value="unanimous">Unanimous</option>
+                <option value="orchestrator_decides">Orchestrator Decides</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="createCollaboration()" id="createBtn">
+            🤝 Create & Form Team
+          </button>
+          <span id="createSpinner" style="display:none;margin-left:0.5rem;" class="spinner"></span>
+        </div>
+        <div>
+          <div class="form-group">
+            <label>Communication Protocol</label>
+            <div style="display:flex;gap:0.5rem;flex-direction:column;" id="protocolSelector">
+              <div class="protocol-option selected" data-protocol="ORCHESTRATOR">
+                <strong>🎯 Orchestrator</strong> - Central coordinator routes all messages
+              </div>
+              <div class="protocol-option" data-protocol="BROADCAST">
+                <strong>📢 Broadcast</strong> - One-to-all announcements
+              </div>
+              <div class="protocol-option" data-protocol="ALL_P2P">
+                <strong>🔗 Peer-to-Peer</strong> - Direct agent-to-agent communication
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Available Agents</label>
+            <div class="agent-chips" id="agentChips">
+              <div class="agent-chip"><span class="agent-chip-icon">🎨</span> Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team List + Detail Panel -->
+    <div class="grid-2">
+      <!-- Team List -->
+      <div class="card">
+        <div class="card-header">
+          <h3>👥 Active Teams</h3>
+          <button class="btn btn-sm btn-outline" onclick="refreshTeams()">🔄 Refresh</button>
+        </div>
+        <div class="team-list" id="teamList">
+          <div class="empty-state">
+            <div class="empty-icon">🤖</div>
+            <p>No active teams. Create a collaboration task above.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Detail -->
+      <div class="card" id="teamDetailPanel">
+        <div class="card-header">
+          <h3>📋 Team Detail</h3>
+          <span id="selectedTeamBadge" style="font-size:0.75rem; color:var(--text-secondary);">Select a team</span>
+        </div>
+        <div id="teamDetailContent">
+          <div class="empty-state">
+            <div class="empty-icon">👈</div>
+            <p>Select a team from the list to view details</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAG + Messages + Results -->
+    <div class="grid-3" id="collabDashboard" style="display:none;">
+      <!-- DAG Visualization -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📊 Task DAG</h3>
+          <span class="status-badge" id="taskStatusBadge">pending</span>
+        </div>
+        <div id="progressInfo" style="margin-bottom:0.8rem; font-size:0.78rem; color:var(--text-secondary);">
+          Progress: 0/0 (0%)
+        </div>
+        <div class="progress-bar" style="margin-bottom:0.8rem;">
+          <div class="progress-fill" id="taskProgressBar" style="width:0%;"></div>
+        </div>
+        <div class="dag-container" id="dagContainer"></div>
+      </div>
+
+      <!-- Message Log -->
+      <div class="card">
+        <div class="card-header">
+          <h3>💬 Agent Messages</h3>
+          <button class="btn btn-sm btn-outline" onclick="sendAgentMessage()" id="sendMsgBtn">✉️ Send</button>
+        </div>
+        <div class="message-log" id="messageLog">
+          <div class="empty-state"><p>No messages yet</p></div>
+        </div>
+        <!-- Quick message form -->
+        <div style="margin-top:0.8rem; display:flex; gap:0.5rem; display:none;" id="quickMsgForm">
+          <select id="msgSender" style="flex:1; padding:0.35rem; background:var(--bg-primary); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); font-size:0.72rem;">
+            <option value="design">Design</option>
+            <option value="compliance">Compliance</option>
+            <option value="material">Material</option>
+            <option value="simulation">Simulation</option>
+            <option value="knowledge">Knowledge</option>
+            <option value="general">General</option>
+          </select>
+          <input type="text" id="quickMsgText" placeholder="Type message..." style="flex:3; padding:0.35rem; background:var(--bg-primary); border:1px solid var(--border); border-radius:6px; color:var(--text-primary); font-size:0.72rem;">
+          <button class="btn btn-sm btn-primary" onclick="sendQuickMessage()">Send</button>
+        </div>
+      </div>
+
+      <!-- Result Summary -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📝 Results</h3>
+          <div>
+            <button class="btn btn-sm btn-primary" onclick="executeCollaboration()" id="executeBtn">▶️ Execute</button>
+            <button class="btn btn-sm btn-danger" onclick="cancelTeam()" id="cancelBtn" style="margin-left:0.3rem;">✕ Cancel</button>
+          </div>
+        </div>
+        <div class="result-summary" id="resultSummary">
+          <div class="empty-state"><p>Execute the collaboration to see results</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================================================
+// Global State
+// ============================================================
+let selectedTeamId = null;
+let selectedProtocol = 'ORCHESTRATOR';
+let availableAgents = [];
+let pollingInterval = null;
+
+const API_BASE = '/api/avis/collab';
+
+// Agent icons
+const AGENT_ICONS = {
+  design: '🎨', compliance: '✅', material: '🔬',
+  simulation: '⚙️', knowledge: '📚', general: '🤖'
+};
+const AGENT_NAMES = {
+  design: 'Design', compliance: 'Compliance', material: 'Material',
+  simulation: 'Simulation', knowledge: 'Knowledge', general: 'General'
+};
+
+// ============================================================
+// Init
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  setupProtocolSelector();
+  loadAgents();
+  refreshTeams();
+  checkApiHealth();
+});
+
+function setupProtocolSelector() {
+  document.querySelectorAll('.protocol-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.protocol-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedProtocol = opt.dataset.protocol;
+    });
+  });
+}
+
+// ============================================================
+// API Helpers
+// ============================================================
+async function apiFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || `HTTP ${res.status}`, 'error');
+    }
+    return data;
+  } catch (e) {
+    showToast(`Network error: ${e.message}`, 'error');
+    return null;
+  }
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// ============================================================
+// Health Check
+// ============================================================
+async function checkApiHealth() {
+  const dot = document.querySelector('#apiStatus .status-dot');
+  try {
+    const res = await fetch('/api/avis/health');
+    if (res.ok) {
+      dot.className = 'status-dot active';
+      document.getElementById('apiStatus').innerHTML =
+        '<span class="status-dot active"></span> API Online';
+    }
+  } catch (e) {
+    dot.className = 'status-dot';
+    document.getElementById('apiStatus').innerHTML =
+      '<span class="status-dot"></span> API Offline';
+  }
+}
+
+// ============================================================
+// Load Available Agents
+// ============================================================
+async function loadAgents() {
+  const data = await apiFetch(`${API_BASE}/agents`);
+  if (data && data.agents) {
+    availableAgents = data.agents;
+    renderAgentChips();
+  }
+}
+
+function renderAgentChips() {
+  const container = document.getElementById('agentChips');
+  container.innerHTML = availableAgents.map(a => `
+    <div class="agent-chip" data-agent="${a.id}" title="${a.capabilities.slice(0,3).join(', ')}">
+      <span class="agent-chip-icon">${AGENT_ICONS[a.id] || '🤖'}</span>
+      ${a.display || a.id}
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.agent-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+  });
+}
+
+// ============================================================
+// Create Collaboration
+// ============================================================
+async function createCollaboration() {
+  const taskDesc = document.getElementById('taskDesc').value.trim();
+  if (!taskDesc) {
+    showToast('Please enter a task description', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('createBtn');
+  const spinner = document.getElementById('createSpinner');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  const body = {
+    task_desc: taskDesc,
+    title: document.getElementById('taskTitle').value.trim(),
+    force_template: document.getElementById('taskTemplate').value,
+    protocol: selectedProtocol,
+    consensus: document.getElementById('consensusModel').value,
+  };
+
+  const data = await apiFetch(`${API_BASE}/create`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+  btn.disabled = false;
+  spinner.style.display = 'none';
+
+  if (data && data.team_id) {
+    showToast(`Team ${data.team_id} created with ${data.members.length} agents`, 'success');
+    await refreshTeams();
+    selectTeam(data.team_id);
+    document.getElementById('taskDesc').value = '';
+  }
+}
+
+// ============================================================
+// Team Management
+// ============================================================
+async function refreshTeams() {
+  const data = await apiFetch(`${API_BASE}/teams`);
+  const container = document.getElementById('teamList');
+  const count = document.getElementById('teamCount');
+
+  if (data && data.teams) {
+    count.textContent = `${data.count} active teams`;
+    if (data.teams.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🤖</div>
+          <p>No active teams. Create a collaboration task above.</p>
+        </div>`;
+    } else {
+      container.innerHTML = data.teams.map(t => `
+        <div class="team-item ${t.team_id === selectedTeamId ? 'active' : ''}"
+             onclick="selectTeam('${t.team_id}')">
+          <div class="team-item-header">
+            <span class="team-id">${t.team_id}</span>
+            <span class="status-badge ${t.task_status || 'pending'}">${t.task_status || 'pending'}</span>
+          </div>
+          <div class="team-title">${t.task_title || 'Untitled'}</div>
+          <div class="team-members">
+            ${(t.members || []).map(m => `<span class="team-member-tag">${AGENT_ICONS[m] || ''} ${AGENT_NAMES[m] || m}</span>`).join('')}
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:0.3rem;">
+            ${t.protocol || 'ORCHESTRATOR'} | ${t.message_count || 0} messages
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+async function selectTeam(teamId) {
+  selectedTeamId = teamId;
+  document.getElementById('selectedTeamBadge').textContent = teamId;
+
+  // Highlight in list
+  document.querySelectorAll('.team-item').forEach(item => {
+    item.classList.toggle('active', item.querySelector('.team-id')?.textContent === teamId);
+  });
+
+  // Load team detail
+  const data = await apiFetch(`${API_BASE}/team/${teamId}`);
+  if (data) {
+    renderTeamDetail(data);
+    document.getElementById('collabDashboard').style.display = '';
+    document.getElementById('quickMsgForm').style.display = 'flex';
+
+    // Update task data
+    if (data.task) {
+      renderDAG(data.task.subtasks || []);
+      renderProgress(data.task.progress || {});
+      document.getElementById('taskStatusBadge').textContent = data.task.status || 'pending';
+      document.getElementById('taskStatusBadge').className = `status-badge ${data.task.status || 'pending'}`;
+    }
+
+    // Load messages
+    await loadMessages(teamId);
+
+    // Update button states
+    updateButtonStates(data);
+  }
+}
+
+function renderTeamDetail(data) {
+  const container = document.getElementById('teamDetailContent');
+  const task = data.task || {};
+  container.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:0.8rem;">
+      <div>
+        <strong style="font-size:0.78rem; color:var(--text-secondary);">Team</strong>
+        <div style="font-family:var(--font-mono); font-size:0.85rem; color:var(--accent);">${data.team_id}</div>
+      </div>
+      <div>
+        <strong style="font-size:0.78rem; color:var(--text-secondary);">Members (${(data.members||[]).length})</strong>
+        <div class="agent-chips" style="margin-top:0.3rem;">
+          ${(data.members||[]).map(m => `
+            <span class="agent-chip selected" style="cursor:default;">
+              ${AGENT_ICONS[m] || ''} ${AGENT_NAMES[m] || m}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <strong style="font-size:0.78rem; color:var(--text-secondary);">Protocol</strong>
+          <div style="font-size:0.82rem;">${data.protocol || 'ORCHESTRATOR'}</div>
+        </div>
+        <div>
+          <strong style="font-size:0.78rem; color:var(--text-secondary);">Consensus</strong>
+          <div style="font-size:0.82rem;">${data.consensus_model || 'expert_override'}</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <strong style="font-size:0.78rem; color:var(--text-secondary);">Created</strong>
+          <div style="font-size:0.72rem; font-family:var(--font-mono);">${(data.created_at||'').substring(0,19)}</div>
+        </div>
+        <div>
+          <strong style="font-size:0.78rem; color:var(--text-secondary);">Messages</strong>
+          <div style="font-size:0.82rem;">${data.message_count || 0}</div>
+        </div>
+      </div>
+      ${task.title ? `
+      <div>
+        <strong style="font-size:0.78rem; color:var(--text-secondary);">Task</strong>
+        <div style="font-size:0.82rem; margin-top:0.2rem;">${task.title}</div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function updateButtonStates(data) {
+  const executeBtn = document.getElementById('executeBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const task = data.task || {};
+  const status = task.status || 'pending';
+
+  if (status === 'completed' || status === 'failed') {
+    executeBtn.disabled = true;
+    executeBtn.textContent = status === 'completed' ? '✅ Done' : '❌ Failed';
+  } else if (status === 'in_progress') {
+    executeBtn.disabled = true;
+    executeBtn.textContent = '⏳ Running...';
+  } else {
+    executeBtn.disabled = false;
+    executeBtn.textContent = '▶️ Execute';
+  }
+}
+
+// ============================================================
+// DAG Rendering
+// ============================================================
+function renderDAG(subtasks) {
+  const container = document.getElementById('dagContainer');
+  if (!subtasks || subtasks.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No subtasks</p></div>';
+    return;
+  }
+
+  // Group subtasks by dependency level
+  const depCount = {};
+  subtasks.forEach(st => { depCount[st.sub_id] = st.dependencies ? st.dependencies.length : 0; });
+
+  // Simple level assignment: topological levels
+  const levels = computeDAGLevels(subtasks);
+  const maxLevel = Math.max(...levels.values(), 0);
+
+  // Build level arrays
+  const levelArrays = [];
+  for (let i = 0; i <= maxLevel; i++) levelArrays.push([]);
+  levels.forEach((level, subId) => {
+    levelArrays[level] = levelArrays[level] || [];
+    const st = subtasks.find(s => s.sub_id === subId);
+    if (st) levelArrays[level].push(st);
+  });
+
+  container.innerHTML = levelArrays.map((levelItems, idx) => `
+    <div class="dag-level">
+      ${levelItems.map(st => `
+        <div class="dag-node ${st.status || 'pending'}" onclick="showSubtaskDetail('${st.sub_id}')">
+          <div class="dag-node-header">
+            <span class="dag-agent-badge">${AGENT_ICONS[st.assigned_agent_id] || ''} ${AGENT_NAMES[st.assigned_agent_id] || st.assigned_agent_id}</span>
+            <span class="dag-status-icon">${statusIcon(st.status)}</span>
+          </div>
+          <div class="dag-node-desc">${st.description}</div>
+          ${st.dependencies && st.dependencies.length > 0 ? `
+          <div style="font-size:0.65rem; color:var(--text-secondary); margin-top:0.3rem;">
+            Deps: ${st.dependencies.join(', ')}
+          </div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  // Add level labels
+  const levelLabels = document.querySelectorAll('.dag-level');
+  levelLabels.forEach((level, idx) => {
+    const label = document.createElement('div');
+    label.style.cssText = 'text-align:center; font-size:0.7rem; color:var(--text-secondary); margin-bottom:0.3rem;';
+    label.textContent = `Level ${idx}`;
+    level.insertBefore(label, level.firstChild);
+  });
+}
+
+function computeDAGLevels(subtasks) {
+  const levels = new Map();
+  const visited = new Set();
+  const idMap = {};
+  subtasks.forEach(st => { idMap[st.sub_id] = st; });
+
+  function getLevel(subId, path = new Set()) {
+    if (levels.has(subId)) return levels.get(subId);
+    if (path.has(subId)) return 0; // cycle guard
+    path.add(subId);
+
+    const st = idMap[subId];
+    if (!st || !st.dependencies || st.dependencies.length === 0) {
+      levels.set(subId, 0);
+      return 0;
+    }
+
+    let maxDep = 0;
+    st.dependencies.forEach(dep => {
+      maxDep = Math.max(maxDep, getLevel(dep, new Set(path)) + 1);
+    });
+    levels.set(subId, maxDep);
+    return maxDep;
+  }
+
+  subtasks.forEach(st => getLevel(st.sub_id));
+  return levels;
+}
+
+function statusIcon(status) {
+  const icons = {
+    pending: '⏳', in_progress: '🔄', completed: '✅',
+    failed: '❌', blocked: '🚫'
+  };
+  return icons[status] || '⏳';
+}
+
+function renderProgress(progress) {
+  const info = document.getElementById('progressInfo');
+  const bar = document.getElementById('taskProgressBar');
+  if (progress) {
+    info.textContent = `Progress: ${progress.completed}/${progress.total} (${progress.percent}%)`;
+    bar.style.width = `${progress.percent}%`;
+  }
+}
+
+function showSubtaskDetail(subId) {
+  showToast(`Subtask: ${subId}`, 'info');
+}
+
+// ============================================================
+// Execute Collaboration
+// ============================================================
+async function executeCollaboration() {
+  if (!selectedTeamId) return;
+  const btn = document.getElementById('executeBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Executing...';
+
+  const data = await apiFetch(`${API_BASE}/team/${selectedTeamId}/execute`, {
+    method: 'POST',
+  });
+
+  if (data && !data.error) {
+    showToast('Collaboration executed!', 'success');
+    await selectTeam(selectedTeamId);
+
+    // Render results
+    const summary = document.getElementById('resultSummary');
+    if (data.results) {
+      summary.innerHTML = `<pre>${JSON.stringify(data.results, null, 2)}</pre>`;
+    } else if (data.progress) {
+      summary.innerHTML = `
+        <div style="padding:1rem;">
+          <h4 style="color:var(--accent); margin-bottom:0.5rem;">Execution Complete</h4>
+          <p>Status: <span class="status-badge ${data.status}">${data.status}</span></p>
+          <p>Completed: ${data.progress.completed}/${data.progress.total} subtasks</p>
+        </div>`;
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶️ Execute';
+}
+
+// ============================================================
+// Cancel Team
+// ============================================================
+async function cancelTeam() {
+  if (!selectedTeamId) return;
+  if (!confirm(`Cancel and remove team ${selectedTeamId}?`)) return;
+
+  const data = await apiFetch(`${API_BASE}/team/${selectedTeamId}`, {
+    method: 'DELETE',
+  });
+
+  if (data && data.cancelled) {
+    showToast(`Team ${selectedTeamId} cancelled`, 'info');
+    selectedTeamId = null;
+    document.getElementById('collabDashboard').style.display = 'none';
+    document.getElementById('quickMsgForm').style.display = 'none';
+    document.getElementById('teamDetailContent').innerHTML = `
+      <div class="empty-state"><div class="empty-icon">👈</div><p>Select a team</p></div>`;
+    await refreshTeams();
+  }
+}
+
+// ============================================================
+// Messages
+// ============================================================
+async function loadMessages(teamId) {
+  const data = await apiFetch(`${API_BASE}/team/${teamId}/messages`);
+  const container = document.getElementById('messageLog');
+
+  if (data && data.messages && data.messages.length > 0) {
+    container.innerHTML = data.messages.map(m => `
+      <div class="message-item ${m.msg_type || 'info'}">
+        <div class="message-meta">
+          <span class="message-sender">${AGENT_ICONS[m.sender] || ''} ${m.sender}</span>
+          <span>→</span>
+          <span class="message-receiver">${m.receiver === 'all' ? 'ALL' : m.receiver}</span>
+          <span class="message-time">${(m.timestamp || '').substring(11, 19)}</span>
+        </div>
+        <div class="message-body">${m.content}</div>
+      </div>
+    `).join('');
+  } else {
+    container.innerHTML = '<div class="empty-state"><p>No messages yet</p></div>';
+  }
+}
+
+function sendAgentMessage() {
+  const form = document.getElementById('quickMsgForm');
+  form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+}
+
+async function sendQuickMessage() {
+  if (!selectedTeamId) return;
+  const sender = document.getElementById('msgSender').value;
+  const text = document.getElementById('quickMsgText').value.trim();
+  if (!text) return;
+
+  const data = await apiFetch(`${API_BASE}/team/${selectedTeamId}/message`, {
+    method: 'POST',
+    body: JSON.stringify({ sender, receiver: 'all', content: text, msg_type: 'info' }),
+  });
+
+  if (data && data.msg_id) {
+    document.getElementById('quickMsgText').value = '';
+    await loadMessages(selectedTeamId);
+    showToast('Message sent', 'info');
+  }
+}
+
+// ============================================================
+// Periodic Refresh
+// ============================================================
+setInterval(() => {
+  if (selectedTeamId) {
+    selectTeam(selectedTeamId);
+  }
+  refreshTeams();
+}, 15000);
+</script>
+</body>
+</html>

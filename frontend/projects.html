@@ -1,0 +1,1040 @@
+<!--
+projects.html — Aviation Project Management Dashboard
+Aerospace Valve R&D Project Management Center
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目管理 | 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #0d1321;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0,180,216,0.15);
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --info: #5c7cfa;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex; height: 100vh; overflow: hidden;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h3 { font-size: 1rem; color: var(--accent); margin-bottom:4px; }
+.sidebar-header span { font-size: 0.7rem; color: var(--text-secondary); }
+.sidebar-nav {
+  flex: 1; overflow-y: auto; padding: 10px 0;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px; font-size: 0.82rem;
+  color: var(--text-secondary); cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover, .nav-item.active {
+  color: var(--text-primary);
+  background: var(--accent-glow);
+  border-left-color: var(--accent);
+}
+.nav-item .badge {
+  margin-left: auto; background: var(--accent); color: #000;
+  font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: 700;
+}
+.sidebar-footer {
+  padding: 12px 18px; border-top: 1px solid var(--border);
+  font-size: 0.72rem; color: var(--text-secondary);
+}
+.sidebar-footer a { color: var(--accent); text-decoration: none; }
+
+/* ---- MAIN ---- */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.toolbar {
+  padding: 12px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.toolbar h2 { font-size: 1.15rem; margin-right: auto; }
+.btn {
+  padding: 7px 16px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text-primary); font-size: 0.8rem;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-glow); }
+.btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight:600; }
+.btn-accent:hover { opacity:0.85; }
+.btn-sm { padding: 4px 10px; font-size: 0.7rem; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-success { border-color: var(--success); color: var(--success); }
+.btn-warn { border-color: var(--warning); color: var(--warning); }
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ---- STAT CARDS ---- */
+.stat-row { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+.stat-card {
+  flex: 1; min-width: 140px; padding: 16px;
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.stat-card .num { font-size: 1.8rem; font-weight: 700; }
+.stat-card .label { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; }
+.stat-card.accent .num { color: var(--accent); }
+.stat-card.success .num { color: var(--success); }
+.stat-card.warning .num { color: var(--warning); }
+.stat-card.danger .num { color: var(--danger); }
+
+/* ---- PROJECT LIST ---- */
+.project-card {
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid var(--border); padding: 18px;
+  margin-bottom: 12px; cursor: pointer; transition: all 0.2s;
+  position: relative;
+}
+.project-card:hover { border-color: var(--accent); }
+.project-card.selected { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+.pc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.pc-icon { font-size: 1.5rem; }
+.pc-info { flex: 1; }
+.pc-info h4 { font-size: 0.9rem; margin-bottom: 2px; }
+.pc-info .sub { font-size: 0.7rem; color: var(--text-secondary); }
+.pc-meta { display: flex; gap: 12px; font-size: 0.7rem; color: var(--text-secondary); align-items: center; }
+.pc-progress {
+  height: 6px; background: var(--bg-secondary); border-radius: 3px;
+  margin-top: 10px; overflow: hidden;
+}
+.pc-progress .bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.status-tag {
+  padding: 3px 10px; border-radius: 10px; font-size: 0.65rem; font-weight: 600;
+}
+.status-tag.draft { background: rgba(136,153,170,0.2); color: var(--text-secondary); }
+.status-tag.active { background: rgba(81,207,102,0.2); color: var(--success); }
+.status-tag.review { background: rgba(92,124,250,0.2); color: var(--info); }
+.status-tag.hold { background: rgba(255,212,59,0.2); color: var(--warning); }
+.status-tag.completed { background: rgba(0,180,216,0.2); color: var(--accent); }
+.priority-tag {
+  padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 700;
+}
+.priority-tag.critical { background: rgba(255,107,107,0.2); color: var(--danger); }
+.priority-tag.high { background: rgba(255,107,107,0.1); color: var(--warning); }
+.priority-tag.medium { background: rgba(255,193,7,0.1); color: var(--text-secondary); }
+
+/* ---- MILESTONE PIPELINE ---- */
+.ms-pipeline {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ms-node {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  transition: all 0.2s;
+}
+.ms-node:hover { border-color: var(--accent); }
+.ms-node.pending { opacity: 0.6; }
+.ms-node.in_progress { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.ms-node.review { border-color: var(--warning); }
+.ms-node.completed { border-color: var(--success); opacity: 0.85; }
+.ms-seq {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.ms-node.completed .ms-seq { background: var(--success); border-color: var(--success); color: #000; }
+.ms-node.in_progress .ms-seq { border-color: var(--accent); color: var(--accent); }
+.ms-info { flex: 1; }
+.ms-info .title { font-size: 0.85rem; font-weight: 500; margin-bottom: 2px; }
+.ms-info .meta { font-size: 0.65rem; color: var(--text-secondary); }
+.ms-gate {
+  padding: 3px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: 700;
+  background: rgba(255,212,59,0.15); color: var(--warning);
+  border: 1px solid rgba(255,212,59,0.3);
+}
+.ms-progress {
+  width: 60px; text-align: right; font-size: 0.8rem; font-weight: 600;
+  color: var(--accent);
+}
+.ms-actions { display: flex; gap: 6px; }
+
+/* ---- TASK LIST ---- */
+.task-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: 0.78rem; transition: background 0.15s;
+}
+.task-row:hover { background: var(--bg-secondary); }
+.task-check {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 2px solid var(--border); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem;
+}
+.task-check.done { background: var(--success); border-color: var(--success); }
+.task-info { flex: 1; }
+.task-info .t-title { font-weight: 500; }
+.task-info .t-meta { font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; }
+.task-status {
+  padding: 2px 8px; border-radius: 4px; font-size: 0.6rem;
+}
+.task-status.todo { background: rgba(136,153,170,0.2); color: var(--text-secondary); }
+.task-status.in_progress { background: rgba(0,180,216,0.2); color: var(--accent); }
+.task-status.done { background: rgba(81,207,102,0.2); color: var(--success); }
+.task-status.review { background: rgba(92,124,250,0.2); color: var(--info); }
+.task-status.blocked { background: rgba(255,107,107,0.2); color: var(--danger); }
+
+/* ---- REVIEW GATE CARD ---- */
+.review-card {
+  padding: 12px 16px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg-secondary);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+}
+.review-card.passed { border-color: var(--success); }
+.review-card.failed { border-color: var(--danger); }
+.review-card.pending { opacity: 0.6; }
+
+/* ---- RISK MATRIX ---- */
+.risk-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+.risk-score {
+  width: 40px; height: 40px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.risk-score.critical { background: rgba(255,107,107,0.3); color: var(--danger); }
+.risk-score.high { background: rgba(255,212,59,0.3); color: var(--warning); }
+.risk-score.medium { background: rgba(0,180,216,0.2); color: var(--accent); }
+.risk-score.low { background: rgba(81,207,102,0.2); color: var(--success); }
+
+/* ---- DIALOG ---- */
+.dialog-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 999;
+  align-items: center; justify-content: center;
+}
+.dialog-overlay.show { display: flex; }
+.dialog {
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid var(--border); padding: 24px;
+  min-width: 440px; max-width: 520px;
+  max-height: 80vh; overflow-y: auto;
+}
+.dialog h3 { margin-bottom: 18px; font-size: 1rem; }
+.dialog label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; }
+.dialog input, .dialog textarea, .dialog select {
+  width: 100%; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg-secondary);
+  color: var(--text-primary); font-size: 0.85rem; margin-bottom: 14px;
+  font-family: inherit; outline: none;
+}
+.dialog input:focus, .dialog textarea:focus, .dialog select:focus { border-color: var(--accent); }
+.dialog textarea { min-height: 80px; resize: vertical; }
+.dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 12px 20px; border-radius: 8px;
+  font-size: 0.82rem; z-index: 1000;
+  animation: toastIn 0.3s ease; max-width: 360px;
+}
+.toast.success { background: rgba(81,207,102,0.15); border:1px solid var(--success); color:var(--success); }
+.toast.error { background: rgba(255,107,107,0.15); border:1px solid var(--danger); color:var(--danger); }
+.toast.info { background: rgba(0,180,216,0.15); border:1px solid var(--accent); color:var(--accent); }
+.toast.warn { background: rgba(255,212,59,0.15); border:1px solid var(--warning); color:var(--warning); }
+@keyframes toastIn { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+
+/* ---- PANELS / TABS ---- */
+.panel { display: none; }
+.panel.active { display: block; }
+.tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+.tab {
+  padding: 8px 16px; font-size: 0.8rem; color: var(--text-secondary);
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.sub-panel { display: none; }
+.sub-panel.active { display: block; }
+
+/* ---- TRL BAR ---- */
+.trl-scale {
+  display: flex; gap: 2px; margin: 10px 0;
+}
+.trl-step {
+  flex: 1; height: 24px; border-radius: 3px;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.55rem; color: var(--text-secondary);
+}
+.trl-step.done { background: var(--accent); border-color: var(--accent); color: #000; }
+.trl-step.current { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+
+/* ---- EMPTY STATE ---- */
+.empty {
+  text-align: center; padding: 60px; color: var(--text-secondary);
+}
+.empty .icon { font-size: 3rem; margin-bottom: 16px; }
+.empty h3 { margin-bottom: 8px; }
+.empty p { font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h3>🚀 项目管理</h3>
+    <span>Aerospace PM Center</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-panel="dashboard" onclick="switchPanel('dashboard',this)">
+      📊 项目总览
+    </a>
+    <a class="nav-item" data-panel="projects" onclick="switchPanel('projects',this)">
+      📋 项目列表
+      <span class="badge" id="projCount">0</span>
+    </a>
+    <a class="nav-item" data-panel="review" onclick="switchPanel('review',this)">
+      🔍 评审门控
+    </a>
+    <a class="nav-item" data-panel="risks" onclick="switchPanel('risks',this)">
+      ⚠️ 风险管理
+    </a>
+    <a class="nav-item" data-panel="trl" onclick="switchPanel('trl',this)">
+      🎯 TRL追踪
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/classic">📊 经典仪表盘</a> &nbsp;|&nbsp;
+    <a href="/departments">🏢 多部门协作</a>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="toolbar">
+    <h2 id="panelTitle">📊 项目总览</h2>
+    <button class="btn btn-accent" onclick="openCreateDialog()">+ 新建项目</button>
+    <button class="btn" onclick="refreshAll()">🔄 刷新</button>
+  </div>
+  <div class="content" id="contentArea"></div>
+</main>
+
+<!-- ============ CREATE DIALOG ============ -->
+<div class="dialog-overlay" id="createDialog">
+  <div class="dialog">
+    <h3>🚀 新建航空航天阀门项目</h3>
+    <label>项目名称 *</label>
+    <input id="projName" placeholder="例：XX型号液氧电磁阀研制">
+    <label>项目模板</label>
+    <select id="projTemplate" onchange="previewTemplate()">
+      <option value="">自定义（空白）</option>
+    </select>
+    <div id="templatePreview" style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:12px;"></div>
+    <label>阀门类型</label>
+    <input id="projValveType" placeholder="电磁阀 / 减压阀 / 单向阀...">
+    <label>工作介质</label>
+    <input id="projMedium" placeholder="液氧 / RP-1煤油 / 氦气...">
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1">
+        <label>工作压力 (MPa)</label>
+        <input id="projPressure" type="number" step="0.1" value="15">
+      </div>
+      <div style="flex:1">
+        <label>优先级</label>
+        <select id="projPriority">
+          <option value="high">高</option>
+          <option value="critical">紧急</option>
+          <option value="medium">中</option>
+          <option value="low">低</option>
+        </select>
+      </div>
+    </div>
+    <label>牵头部门</label>
+    <select id="projLeadDept"></select>
+    <div class="dialog-actions">
+      <button class="btn" onclick="closeDialog()">取消</button>
+      <button class="btn btn-accent" onclick="createProject()">创建项目</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MILESTONE DETAIL DIALOG ============ -->
+<div class="dialog-overlay" id="msDetailDialog">
+  <div class="dialog" style="min-width:550px;max-width:700px;" id="msDetailContent"></div>
+</div>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+const API = '/api/avis/pm';
+let dashboard = null;
+let projects = [];
+let selectedProject = null;
+let departments = [];
+let templates = [];
+
+// =====================================================================
+// Init
+// =====================================================================
+async function refreshAll() {
+  await Promise.all([loadDashboard(), loadProjects(), loadDepartments(), loadTemplates()]);
+  render();
+}
+
+async function loadDashboard() {
+  try { dashboard = await (await fetch(`${API}/dashboard`)).json(); }
+  catch(e) { console.error(e); }
+}
+
+async function loadProjects() {
+  try {
+    const r = await fetch(`${API}/projects`);
+    const d = await r.json();
+    projects = d.projects || [];
+    document.getElementById('projCount').textContent = projects.length;
+  } catch(e) { console.error(e); }
+}
+
+async function loadDepartments() {
+  try {
+    const r = await fetch('/api/avis/departments');
+    const d = await r.json();
+    departments = d.departments || [];
+    const sel = document.getElementById('projLeadDept');
+    sel.innerHTML = departments.map(d =>
+      `<option value="${d.id}">${d.icon} ${d.name}</option>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadTemplates() {
+  try {
+    const r = await fetch(`${API}/templates`);
+    const d = await r.json();
+    templates = d.templates || [];
+    const sel = document.getElementById('projTemplate');
+    sel.innerHTML = '<option value="">自定义（空白）</option>' +
+      templates.map(t => `<option value="${t.id}">${t.name} (${t.milestone_count}阶段)</option>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// =====================================================================
+// Panel switching
+// =====================================================================
+function switchPanel(panelId, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const titles = {
+    dashboard: '📊 项目总览', projects: '📋 项目列表',
+    review: '🔍 评审门控', risks: '⚠️ 风险管理', trl: '🎯 TRL追踪'
+  };
+  document.getElementById('panelTitle').textContent = titles[panelId] || '';
+  renderPanel(panelId);
+}
+
+function render() {
+  const active = document.querySelector('.nav-item.active');
+  if (active) renderPanel(active.dataset.panel);
+}
+
+function renderPanel(id) {
+  const area = document.getElementById('contentArea');
+  switch(id) {
+    case 'dashboard': area.innerHTML = renderDashboard(); break;
+    case 'projects': area.innerHTML = renderProjectList(); break;
+    case 'review': area.innerHTML = renderReviewPanel(); break;
+    case 'risks': area.innerHTML = renderRiskPanel(); break;
+    case 'trl': area.innerHTML = renderTRLPanel(); break;
+  }
+  // Re-bind events
+  setTimeout(bindProjectEvents, 50);
+}
+
+// =====================================================================
+// Dashboard
+// =====================================================================
+function renderDashboard() {
+  if (!dashboard) return '<div class="empty"><div class="icon">⏳</div><h3>加载中...</h3></div>';
+
+  const d = dashboard;
+  return `
+    <div class="stat-row">
+      <div class="stat-card accent"><div class="num">${d.total_projects}</div><div class="label">总项目</div></div>
+      <div class="stat-card success"><div class="num">${d.active_projects}</div><div class="label">进行中</div></div>
+      <div class="stat-card warning"><div class="num">${d.total_tasks}</div><div class="label">总任务</div></div>
+      <div class="stat-card danger"><div class="num">${d.open_risks}</div><div class="label">未关闭风险</div></div>
+      <div class="stat-card"><div class="num">${d.critical_risks}</div><div class="label">紧急风险</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- Tasks by Status -->
+      <div class="stat-card">
+        <h4 style="margin-bottom:12px;font-size:0.85rem;">📋 任务状态分布</h4>
+        ${Object.entries(d.tasks_by_status || {}).map(([k,v]) => `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.75rem;">
+            <span class="task-status ${k}">${taskLabel(k)}</span>
+            <span style="flex:1;height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;">
+              <div style="height:100%;width:${d.total_tasks ? v/d.total_tasks*100 : 0}%;background:var(--accent);border-radius:4px;"></div>
+            </span>
+            <span style="color:var(--text-secondary);min-width:30px;text-align:right;">${v}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Department Workload -->
+      <div class="stat-card">
+        <h4 style="margin-bottom:12px;font-size:0.85rem;">🏢 部门工作量</h4>
+        ${Object.entries(d.dept_workload || {}).sort((a,b)=>b[1]-a[1]).map(([k,v]) => {
+          const dept = departments.find(x => x.id === k) || {};
+          return `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.75rem;">
+              <span>${dept.icon || '📋'} ${dept.name || k}</span>
+              <span style="flex:1;height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;">
+                <div style="height:100%;width:${Math.min(100, v*20)}%;background:${dept.color || 'var(--accent)'};border-radius:4px;"></div>
+              </span>
+              <span style="color:var(--text-secondary);">${v}任务</span>
+            </div>
+          `;
+        }).join('')}
+        ${!Object.keys(d.dept_workload || {}).length ? '<p style="color:var(--text-secondary);font-size:0.75rem;">暂无活跃任务</p>' : ''}
+      </div>
+    </div>
+
+    <!-- Upcoming Reviews -->
+    ${d.upcoming_reviews && d.upcoming_reviews.length ? `
+      <div style="margin-top:18px;">
+        <h4 style="margin-bottom:10px;font-size:0.85rem;">🔍 即将到来的评审</h4>
+        ${d.upcoming_reviews.slice(0, 5).map(r => `
+          <div class="review-card pending">
+            <span style="font-weight:600;font-size:0.8rem;">${r.gate_name}</span>
+            <span style="font-size:0.72rem;">${r.project_name}</span>
+            <span style="font-size:0.65rem;color:var(--text-secondary);">${r.milestone} · ${r.deliverable}</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
+    <!-- Templates -->
+    <div style="margin-top:18px;">
+      <h4 style="margin-bottom:10px;font-size:0.85rem;">📦 项目模板</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+        ${(d.templates || []).map(t => `
+          <div class="stat-card" style="cursor:pointer;" onclick="quickCreate('${t.id}')">
+            <div style="font-size:0.82rem;font-weight:500;margin-bottom:4px;">${t.name}</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:6px;">${t.description}</div>
+            <div style="font-size:0.65rem;color:var(--accent);">${t.milestone_count} 个里程碑</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================================
+// Project List
+// =====================================================================
+function renderProjectList() {
+  if (!projects.length) {
+    return `<div class="empty">
+      <div class="icon">📋</div>
+      <h3>暂无项目</h3>
+      <p>点击右上角「新建项目」开始你的第一个航空航天阀门项目</p>
+    </div>`;
+  }
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <h4 style="font-size:0.85rem;margin-bottom:12px;">项目列表 (${projects.length})</h4>
+        ${projects.map(p => `
+          <div class="project-card" data-projid="${p.id}" onclick="selectProject('${p.id}')">
+            <div class="pc-header">
+              <div class="pc-icon">🚀</div>
+              <div class="pc-info">
+                <h4>${p.name} <span class="status-tag ${p.status}">${statusLabel(p.status)}</span></h4>
+                <div class="sub">${p.description || ''}</div>
+              </div>
+            </div>
+            <div class="pc-meta">
+              <span class="priority-tag ${p.priority}">${priorityLabel(p.priority)}</span>
+              <span>TRL ${p.trl_current}→${p.trl_target}</span>
+              <span>${p.milestone_count} 里程碑</span>
+              <span>${p.task_count} 任务</span>
+              ${p.open_risk_count ? `<span style="color:var(--danger);">⚠️ ${p.open_risk_count} 风险</span>` : ''}
+            </div>
+            <div class="pc-progress">
+              <div class="bar" style="width:${p.progress_pct}%;background:${p.status==='completed'?'var(--success)':'var(--accent)'}"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div id="projectDetail" style="max-height:600px;overflow-y:auto;">
+        <div class="empty">
+          <div class="icon">👈</div>
+          <p>选择一个项目查看详情</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================================
+// Project Detail
+// =====================================================================
+async function selectProject(projId) {
+  document.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`[data-projid="${projId}"]`)?.classList.add('selected');
+  try {
+    const r = await fetch(`${API}/projects/${projId}`);
+    selectedProject = await r.json();
+    renderProjectDetail();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderProjectDetail() {
+  if (!selectedProject) return;
+  const p = selectedProject;
+
+  document.getElementById('projectDetail').innerHTML = `
+    <div style="padding:0 8px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <h3 style="font-size:1rem;flex:1;">${p.name}</h3>
+        <span class="status-tag ${p.status}">${statusLabel(p.status)}</span>
+        <span class="priority-tag ${p.priority}">${priorityLabel(p.priority)}</span>
+      </div>
+      <div class="pc-meta" style="margin-bottom:10px;">
+        <span>🎯 TRL ${p.trl_current}→${p.trl_target}</span>
+        <span>⚙️ ${p.valve_type || '未指定'}</span>
+        <span>💧 ${p.work_medium || '未指定'}</span>
+        <span>📐 ${p.pressure_mpa || 0} MPa</span>
+      </div>
+      <div class="pc-progress" style="margin-bottom:16px;">
+        <div class="bar" style="width:${p.progress_pct}%;background:var(--accent);"></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:10px;">
+        进度: ${p.progress_pct}% · 创建: ${new Date(p.created_at).toLocaleDateString('zh-CN')}
+      </div>
+
+      <!-- Tabs: Milestones | Risks | Reviews | Team -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchSubTab('milestones', this)">📌 里程碑 (${(p.milestones||[]).length})</div>
+        <div class="tab" onclick="switchSubTab('risks', this)">⚠️ 风险 (${(p.risks||[]).length})</div>
+        <div class="tab" onclick="switchSubTab('reviews', this)">🔍 评审 (${(p.reviews||[]).length})</div>
+        <div class="tab" onclick="switchSubTab('team', this)">👥 团队</div>
+      </div>
+
+      <!-- Milestones Panel -->
+      <div class="sub-panel active" data-sub="milestones">
+        <div class="ms-pipeline">
+          ${(p.milestones || []).map((ms,i) => `
+            <div class="ms-node ${ms.status}" ondblclick="viewMilestone('${ms.id}')">
+              <div class="ms-seq">${ms.seq}</div>
+              <div class="ms-info">
+                <div class="title">${ms.name}</div>
+                <div class="meta">
+                  ${ms.deliverable ? '📦 ' + ms.deliverable : ''}
+                  ${ms.owner_dept ? ' · ' + ms.owner_dept : ''}
+                  · ${ms.tasks ? ms.tasks.length : 0} 任务
+                </div>
+              </div>
+              ${ms.review_gate ? `<div class="ms-gate">${ms.review_gate}</div>` : ''}
+              <div class="ms-progress">${ms.progress_pct}%</div>
+              <div class="ms-actions">
+                ${ms.status !== 'completed' ? `<button class="btn btn-sm btn-accent" onclick="advanceMS('${ms.id}')" title="推进">▶</button>` : ''}
+                <button class="btn btn-sm" onclick="viewMilestone('${ms.id}')" title="查看任务">📋</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Risks Panel -->
+      <div class="sub-panel" data-sub="risks">
+        ${!p.risks || !p.risks.length ? '<p style="color:var(--text-secondary);font-size:0.8rem;">暂无风险项</p>' :
+          p.risks.map(r => `
+            <div class="risk-row">
+              <div class="risk-score ${r.severity}">${r.risk_score}</div>
+              <div style="flex:1;">
+                <div style="font-weight:500;font-size:0.78rem;">${r.title}</div>
+                <div style="font-size:0.65rem;color:var(--text-secondary);">
+                  ${catLabel(r.category)} · ${r.status} · ${r.mitigation}
+                </div>
+              </div>
+              <span style="font-size:0.6rem;color:var(--text-secondary);">${r.owner}</span>
+            </div>
+          `).join('')
+        }
+        <button class="btn btn-sm btn-warn" style="margin-top:10px;" onclick="openRiskDialog()">+ 新增风险</button>
+      </div>
+
+      <!-- Reviews Panel -->
+      <div class="sub-panel" data-sub="reviews">
+        ${(p.reviews || []).map(r => `
+          <div class="review-card ${r.status}">
+            <span style="font-weight:600;font-size:0.82rem;min-width:60px;">${r.gate}</span>
+            <span style="font-size:0.78rem;">${r.gate_name}</span>
+            <span class="status-tag ${r.status}" style="margin-left:auto;">${r.status}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Team Panel -->
+      <div class="sub-panel" data-sub="team">
+        ${Object.entries(p.team || {}).map(([dept, agents]) => {
+          const d = departments.find(x => x.id === dept) || {};
+          return `<div style="font-size:0.78rem;margin-bottom:8px;">${d.icon || '📋'} ${d.name || dept}: ${agents.length} 人</div>`;
+        }).join('')}
+        ${!Object.keys(p.team || {}).length ? '<p style="color:var(--text-secondary);">未分配团队</p>' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function switchSubTab(name, el) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const panels = parent.parentElement.querySelectorAll('.sub-panel');
+  panels.forEach(p => p.classList.remove('active'));
+  parent.parentElement.querySelector(`[data-sub="${name}"]`)?.classList.add('active');
+}
+
+// =====================================================================
+// Review Panel
+// =====================================================================
+function renderReviewPanel() {
+  if (!dashboard) return '';
+  const reviews = dashboard.upcoming_reviews || [];
+  if (!reviews.length) {
+    return '<div class="empty"><div class="icon">✅</div><h3>暂无待评审项</h3></div>';
+  }
+  return `
+    <h4 style="margin-bottom:12px;">🔍 评审门控状态 (${reviews.length})</h4>
+    ${reviews.map(r => `
+      <div class="review-card pending">
+        <span style="font-weight:700;font-size:0.85rem;min-width:60px;">${r.gate}</span>
+        <span style="font-size:0.8rem;">${r.gate_name}</span>
+        <div style="flex:1;font-size:0.7rem;">
+          <div>${r.project_name} · ${r.milestone}</div>
+          <div style="color:var(--text-secondary);">📦 ${r.deliverable}</div>
+        </div>
+        <span class="status-tag ${r.status}">${r.status}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+// =====================================================================
+// Risk Panel
+// =====================================================================
+function renderRiskPanel() {
+  if (!dashboard) return '';
+  const allRisks = [];
+  projects.forEach(p => {
+    (p.risks || []).forEach(r => {
+      allRisks.push({...r, project_name: p.name, project_id: p.id});
+    });
+  });
+  if (!allRisks.length) {
+    return '<div class="empty"><div class="icon">✅</div><h3>所有项目风险可控</h3></div>';
+  }
+  return `
+    <h4 style="margin-bottom:12px;">⚠️ 风险登记册 (${allRisks.length})</h4>
+    ${allRisks.filter(r => r.status === 'open').map(r => `
+      <div class="risk-row">
+        <div class="risk-score ${r.severity}">${r.risk_score}</div>
+        <div style="flex:1;">
+          <div style="font-weight:500;font-size:0.78rem;">${r.title}</div>
+          <div style="font-size:0.65rem;color:var(--text-secondary);">
+            ${r.project_name} · ${catLabel(r.category)} · ${r.mitigation}
+          </div>
+        </div>
+        <span style="font-size:0.6rem;color:var(--text-secondary);">${r.owner}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+// =====================================================================
+// TRL Panel
+// =====================================================================
+function renderTRLPanel() {
+  if (!dashboard) return '';
+  return `
+    <h4 style="margin-bottom:12px;">🎯 技术就绪度 (TRL) 追踪</h4>
+    <div class="trl-scale">
+      ${[1,2,3,4,5,6,7,8,9].map(lvl => {
+        let cls = 'trl-step';
+        return `<div class="${cls}" title="TRL ${lvl}">${lvl}</div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:16px;font-size:0.75rem;color:var(--text-secondary);">
+      <p>TRL 1-3: 基础研究与概念验证 | TRL 4-6: 技术开发与演示 | TRL 7-9: 系统集成与飞行验证</p>
+    </div>
+    <div style="margin-top:16px;">
+      ${projects.map(p => `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:0.78rem;">
+          <span>🚀 ${p.name}</span>
+          <div style="flex:1;height:16px;background:var(--bg-secondary);border-radius:8px;overflow:hidden;">
+            <div style="height:100%;width:${p.trl_target/9*100}%;background:var(--accent);opacity:0.2;border-radius:8px;"></div>
+            <div style="height:100%;width:${p.trl_current/9*100}%;background:var(--accent);border-radius:8px;margin-top:-16px;"></div>
+          </div>
+          <span style="font-size:0.7rem;color:var(--accent);min-width:80px;text-align:right;">TRL ${p.trl_current}→${p.trl_target}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// =====================================================================
+// Milestone Detail (dialog)
+// =====================================================================
+async function viewMilestone(msId) {
+  if (!selectedProject) return;
+  const ms = (selectedProject.milestones || []).find(m => m.id === msId);
+  if (!ms) return;
+
+  document.getElementById('msDetailContent').innerHTML = `
+    <h3>📌 ${ms.name}</h3>
+    <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:12px;">
+      状态: ${ms.status} · 进度: ${ms.progress_pct}% ·
+      ${ms.deliverable ? '📦 ' + ms.deliverable : ''}
+      ${ms.review_gate ? ' · 🔍 ' + ms.review_gate : ''}
+    </div>
+    <h4 style="font-size:0.8rem;margin-bottom:8px;">📋 任务列表 (${ms.tasks ? ms.tasks.length : 0})</h4>
+    ${(ms.tasks || []).map(t => `
+      <div class="task-row">
+        <div class="task-check ${t.status === 'done' ? 'done' : ''}" onclick="toggleTask('${t.id}', '${t.status}')">
+          ${t.status === 'done' ? '✓' : ''}
+        </div>
+        <div class="task-info">
+          <div class="t-title">${t.title}</div>
+          <div class="t-meta">
+            ${t.assigned_dept || ''} ${t.assigned_agent || ''} ·
+            ⏱ ${t.estimated_hours}h ·
+            ${t.priority}
+          </div>
+        </div>
+        <span class="task-status ${t.status}">${taskLabel(t.status)}</span>
+      </div>
+    `).join('')}
+    <div class="dialog-actions" style="margin-top:16px;">
+      <button class="btn" onclick="document.getElementById('msDetailDialog').classList.remove('show')">关闭</button>
+      ${ms.status !== 'completed' ? `<button class="btn btn-accent" onclick="advanceMS('${ms.id}');document.getElementById('msDetailDialog').classList.remove('show')">▶ 推进阶段</button>` : ''}
+    </div>
+  `;
+  document.getElementById('msDetailDialog').classList.add('show');
+  document.getElementById('msDetailDialog').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+}
+
+// =====================================================================
+// Actions
+// =====================================================================
+async function createProject() {
+  const name = document.getElementById('projName').value.trim();
+  if (!name) return toast('请输入项目名称', 'error');
+
+  const data = {
+    name, template: document.getElementById('projTemplate').value,
+    valve_type: document.getElementById('projValveType').value,
+    work_medium: document.getElementById('projMedium').value,
+    pressure_mpa: parseFloat(document.getElementById('projPressure').value) || 0,
+    priority: document.getElementById('projPriority').value,
+    lead_dept: document.getElementById('projLeadDept').value,
+  };
+
+  try {
+    const r = await fetch(`${API}/projects`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '创建失败');
+    const p = await r.json();
+    toast(`项目已创建: ${p.name}`, 'success');
+    closeDialog();
+    await refreshAll();
+    switchPanel('projects', document.querySelector('[data-panel="projects"]'));
+    setTimeout(() => selectProject(p.id), 500);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function quickCreate(tplId) {
+  document.getElementById('projTemplate').value = tplId;
+  previewTemplate();
+  document.getElementById('createDialog').classList.add('show');
+  document.getElementById('projName').focus();
+}
+
+async function previewTemplate() {
+  const tplId = document.getElementById('projTemplate').value;
+  if (!tplId) {
+    document.getElementById('templatePreview').innerHTML = '';
+    return;
+  }
+  try {
+    const r = await fetch(`${API}/templates/${tplId}`);
+    const t = await r.json();
+    document.getElementById('templatePreview').innerHTML = `
+      <strong>${t.name}</strong>: ${t.description}<br>
+      ${t.milestones ? t.milestones.length : 0} 个里程碑 ·
+      ${t.milestones ? t.milestones.reduce((s,m) => s + (m.tasks||[]).length, 0) : 0} 个任务
+    `;
+  } catch(e) {}
+}
+
+async function advanceProject() {
+  if (!selectedProject) return;
+  try {
+    const r = await fetch(`${API}/projects/${selectedProject.id}/advance`, {method:'POST'});
+    const d = await r.json();
+    toast(`项目推进至: ${statusLabel(d.new_status)}`, 'success');
+    selectProject(selectedProject.id);
+    refreshAll();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function advanceMS(msId) {
+  if (!selectedProject) return;
+  try {
+    const r = await fetch(`${API}/projects/${selectedProject.id}/milestones/${msId}/advance`, {method:'POST'});
+    const d = await r.json();
+    if (d.action === 'review_required') {
+      toast(`🔍 需要 ${d.review_name}: ${d.deliverable}`, 'warn');
+    } else {
+      toast(`阶段推进: ${d.milestone} → ${d.new_status}`, 'success');
+    }
+    selectProject(selectedProject.id);
+    refreshAll();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function toggleTask(taskId, currentStatus) {
+  if (!selectedProject) return;
+  const newStatus = currentStatus === 'done' ? 'todo' : 'done';
+  try {
+    await fetch(`${API}/projects/${selectedProject.id}/tasks/${taskId}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status: newStatus})
+    });
+    selectProject(selectedProject.id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openRiskDialog() {
+  // Simple risk creation
+  const title = prompt('风险项名称:');
+  if (!title) return;
+  const category = prompt('类别 (technical/schedule/cost/supply_chain/quality):', 'technical');
+  if (!category) return;
+  createRisk(title, category);
+}
+
+async function createRisk(title, category) {
+  if (!selectedProject) return;
+  try {
+    await fetch(`${API}/projects/${selectedProject.id}/risks`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({title, category, severity:'medium', probability:0.5, impact:0.5})
+    });
+    toast('风险已登记', 'info');
+    selectProject(selectedProject.id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// =====================================================================
+// Helpers
+// =====================================================================
+function statusLabel(s) {
+  const map = {draft:'草稿',active:'进行中',review:'评审中',hold:'暂停',completed:'已完成',cancelled:'已取消',
+    pending:'待开始',in_progress:'进行中',passed:'通过',failed:'未通过'};
+  return map[s] || s;
+}
+function priorityLabel(p) {
+  const map = {critical:'紧急',high:'高',medium:'中',low:'低'};
+  return map[p] || p;
+}
+function taskLabel(s) {
+  const map = {backlog:'积压',todo:'待办',in_progress:'进行中',review:'评审中',done:'完成',blocked:'阻塞'};
+  return map[s] || s;
+}
+function catLabel(c) {
+  const map = {technical:'技术',schedule:'进度',cost:'成本',supply_chain:'供应链',quality:'质量',
+    regulatory:'法规',personnel:'人员',facility:'设施',environmental:'环境'};
+  return map[c] || c;
+}
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// =====================================================================
+// Dialog
+// =====================================================================
+function openCreateDialog() {
+  document.getElementById('projName').value = '';
+  document.getElementById('projTemplate').value = '';
+  document.getElementById('projValveType').value = '';
+  document.getElementById('projMedium').value = '';
+  document.getElementById('projPressure').value = '15';
+  document.getElementById('templatePreview').innerHTML = '';
+  document.getElementById('createDialog').classList.add('show');
+  document.getElementById('projName').focus();
+}
+function closeDialog() {
+  document.getElementById('createDialog').classList.remove('show');
+}
+
+// =====================================================================
+// Keyboard
+// =====================================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDialog();
+    document.getElementById('msDetailDialog').classList.remove('show');
+    document.querySelectorAll('.dialog-overlay').forEach(d => d.classList.remove('show'));
+  }
+});
+
+// =====================================================================
+// Boot
+// =====================================================================
+refreshAll();
+</script>
+</body>
+</html>

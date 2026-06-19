@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阀门加工工艺 | Avis 研发平台</title>
+<style>
+:root {
+  --bg-primary: #0b0e1a; --bg-secondary: #111827; --bg-card: #1a2236;
+  --bg-input: #0f1525; --border: #2a3550; --text-pri: #e8edf5;
+  --text-sec: #8896b3; --text-mut: #5a6a8a;
+  --cyan: #00d4ff; --blue: #3b82f6; --green: #10b981;
+  --amber: #f59e0b; --red: #ef4444; --purple: #8b5cf6;
+  --orange: #f97316;
+  --radius: 10px; --radius-sm: 6px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg-primary); color:var(--text-pri); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+.topbar { background:var(--bg-secondary); border-bottom:1px solid var(--border); padding:0 20px; height:52px; display:flex; align-items:center; gap:20px; flex-shrink:0; }
+.topbar a { color:var(--text-sec); text-decoration:none; font-size:13px; }
+.topbar a:hover { color:var(--cyan); }
+.topbar .title { font-size:16px; font-weight:700; flex:1; }
+.topbar .title span { color:var(--text-mut); font-weight:400; font-size:13px; margin-left:8px; }
+.tab-bar { display:flex; gap:0; padding:0 20px; background:var(--bg-secondary); border-bottom:1px solid var(--border); flex-shrink:0; }
+.tab-btn { padding:10px 20px; border:none; background:none; color:var(--text-sec); font-size:13px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+.tab-btn:hover { color:var(--text-pri); }
+.tab-btn.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+.main { display:flex; flex:1; overflow:hidden; }
+.sidebar { width:330px; min-width:330px; overflow-y:auto; background:var(--bg-secondary); border-right:1px solid var(--border); padding:14px; display:flex; flex-direction:column; gap:10px; }
+.sidebar::-webkit-scrollbar { width:4px; }
+.sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+.content { flex:1; overflow-y:auto; padding:18px 22px; }
+.panel-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-mut); padding-bottom:6px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; margin-top:6px; }
+.panel-title .ct { background:var(--bg-card); color:var(--cyan); padding:1px 7px; border-radius:9px; font-size:10px; margin-left:auto; }
+.cat-list { display:flex; flex-direction:column; gap:4px; }
+.cat-item { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; transition:all .2s; font-size:12px; }
+.cat-item:hover { border-color:var(--cyan); background:#1f2a42; }
+.cat-item.sel { border-color:var(--cyan); background:rgba(0,212,255,.08); }
+.cat-item .ci-icon { font-size:16px; }
+.cat-item .ci-name { flex:1; font-weight:600; }
+.cat-item .ci-ct { font-size:10px; color:var(--text-mut); }
+.proc-list { display:flex; flex-direction:column; gap:4px; max-height:340px; overflow-y:auto; padding-right:4px; }
+.proc-list::-webkit-scrollbar { width:3px; }
+.proc-list::-webkit-scrollbar-thumb { background:var(--border); }
+.proc-item { padding:7px 10px; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; transition:all .2s; font-size:11px; }
+.proc-item:hover { border-color:var(--blue); }
+.proc-item.sel { border-color:var(--cyan); background:rgba(0,212,255,.06); }
+.proc-item .pi-name { font-weight:600; }
+.proc-item .pi-std { color:var(--text-mut); font-size:9px; margin-top:2px; font-family:Consolas,monospace; }
+.search-box { width:100%; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-pri); font-size:12px; padding:7px 10px; outline:none; }
+.search-box:focus { border-color:var(--cyan); }
+.recommend-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:12px; }
+.rec-form { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; }
+.rec-form input, .rec-form select { width:100%; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-pri); font-size:11px; padding:6px 8px; outline:none; }
+.rec-btn { width:100%; padding:8px; background:linear-gradient(135deg,var(--cyan),var(--blue)); border:none; border-radius:var(--radius-sm); color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:14px; }
+.card-hd { padding:11px 16px; border-bottom:1px solid var(--border); font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.card-hd .ch-icon { font-size:18px; }
+.card-hd .ch-tag { font-size:10px; padding:2px 8px; border-radius:10px; background:rgba(0,212,255,.15); color:var(--cyan); font-weight:500; }
+.card-bd { padding:14px 16px; }
+.kv-table { width:100%; border-collapse:collapse; font-size:12px; }
+.kv-table tr { border-bottom:1px solid var(--border); }
+.kv-table tr:last-child { border-bottom:none; }
+.kv-table td { padding:8px 4px; }
+.kv-table td.k { color:var(--text-mut); font-weight:500; width:160px; }
+.kv-table td.v { color:var(--text-pri); font-family:Consolas,monospace; }
+.kv-table td.v .range { color:var(--cyan); font-weight:600; }
+.kv-table td.v .note { color:var(--text-sec); font-size:11px; }
+.tag-list { display:flex; flex-wrap:wrap; gap:6px; }
+.tag { font-size:10px; padding:3px 8px; border-radius:10px; background:rgba(59,130,246,.15); color:#60a5fa; }
+.tag-machining{background:rgba(0,212,255,.15);color:#00d4ff}
+.tag-heat{background:rgba(245,158,11,.15);color:#fbbf24}
+.tag-surface{background:rgba(139,92,246,.15);color:#a78bfa}
+.tag-welding{background:rgba(249,115,22,.15);color:#fb923c}
+.tag-assembly{background:rgba(16,185,129,.15);color:#10b981}
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-mut); gap:12px; min-height:300px; }
+.empty-state .e-icon { font-size:48px; opacity:.2; }
+.empty-state .e-msg { font-size:16px; }
+.empty-state .e-sub { font-size:12px; opacity:.7; max-width:400px; text-align:center; }
+.status-row { display:flex; gap:16px; flex-wrap:wrap; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); font-size:12px; margin-bottom:14px; }
+.st-ok{color:var(--green)} .st-info{color:var(--cyan)}
+.route-table { width:100%; border-collapse:collapse; font-size:11px; }
+.route-table th { background:var(--bg-input); padding:9px 10px; text-align:left; color:var(--text-mut); font-weight:600; border-bottom:2px solid var(--border); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+.route-table td { padding:9px 10px; border-bottom:1px solid var(--border); font-family:Consolas,monospace; }
+.route-table tr:hover td { background:rgba(255,255,255,.02); }
+.route-table .step-no { color:var(--cyan); font-weight:700; width:36px; }
+.route-table .proc-name { color:var(--text-pri); font-weight:600; font-family:'Segoe UI','PingFang SC',sans-serif; }
+.timeline { position:relative; padding-left:24px; }
+.timeline::before { content:''; position:absolute; left:8px; top:8px; bottom:8px; width:2px; background:var(--border); }
+.tl-item { position:relative; margin-bottom:14px; }
+.tl-item::before { content:''; position:absolute; left:-20px; top:6px; width:12px; height:12px; border-radius:50%; background:var(--cyan); box-shadow:0 0 0 3px var(--bg-card); }
+.tl-step { font-size:10px; color:var(--cyan); font-weight:700; margin-bottom:2px; }
+.tl-name { font-size:13px; font-weight:600; margin-bottom:3px; }
+.tl-detail { font-size:11px; color:var(--text-sec); font-family:Consolas,monospace; }
+.tl-meta { display:flex; gap:10px; margin-top:4px; font-size:10px; color:var(--text-mut); }
+.pdf-btn { margin-left:auto; padding:4px 12px; background:linear-gradient(135deg,#ef4444,#f97316); border:none; border-radius:12px; color:#fff; font-size:10px; font-weight:600; cursor:pointer; }
+.pdf-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(239,68,68,.3); }
+.tl-meta .tme { background:var(--bg-input); padding:2px 7px; border-radius:8px; }
+.route-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.route-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; cursor:pointer; transition:all .2s; }
+.route-card:hover { border-color:var(--cyan); transform:translateY(-2px); }
+.route-card .rc-name { font-size:14px; font-weight:700; margin-bottom:5px; }
+.route-card .rc-mat { font-size:11px; color:var(--text-mut); margin-bottom:8px; }
+.route-card .rc-meta { display:flex; gap:8px; font-size:10px; }
+.route-card .rc-meta .m { background:var(--bg-input); padding:2px 8px; border-radius:8px; color:var(--cyan); }
+.rec-result { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; margin-top:10px; }
+.rec-section { margin-bottom:10px; }
+.rec-section .rs-title { font-size:11px; color:var(--text-mut); font-weight:600; margin-bottom:5px; text-transform:uppercase; letter-spacing:.05em; }
+.rec-section .rs-content { font-size:12px; color:var(--text-pri); }
+.loading { color:var(--text-mut); font-size:12px; padding:10px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/">&#x1F3E0; 返回首页</a>
+  <div class="title">&#x1F527; 阀门加工工艺 <span>Valve Manufacturing Process Library</span></div>
+  <span class="st-info" id="procCount">--</span>
+</div>
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="library">工艺库</button>
+  <button class="tab-btn" data-tab="route">工艺路线</button>
+  <button class="tab-btn" data-tab="recommend">智能推荐</button>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <div class="panel-title">&#x1F50D; 工艺分类 <span class="ct" id="totalCount">0</span></div>
+    <div class="cat-list" id="catList"></div>
+
+    <div class="panel-title" style="margin-top:6px;">&#x1F4DA; 工艺列表 <span class="ct" id="procCatCount">0</span></div>
+    <input type="text" class="search-box" id="searchBox" placeholder="搜索: 钛合金 / T6 / EBW..." style="margin-bottom:6px;">
+    <div class="proc-list" id="procList"></div>
+  </div>
+
+  <div class="content">
+    <div id="panel-library" class="panel">
+      <div id="libContent"></div>
+    </div>
+
+    <div id="panel-route" class="panel" style="display:none;">
+      <div id="routeList" class="route-list"></div>
+      <div id="routeDetail" style="margin-top:18px;"></div>
+    </div>
+
+    <div id="panel-recommend" class="panel" style="display:none;">
+      <div class="card">
+        <div class="card-hd"><span class="ch-icon">&#x1F9EA;</span> 工艺智能推荐</div>
+        <div class="card-bd">
+          <div class="recommend-box">
+            <div class="rec-form">
+              <div>
+                <label style="font-size:10px;color:var(--text-mut);display:block;margin-bottom:3px;">材料</label>
+                <select id="recMat">
+                  <option value="316L">316L Stainless</option>
+                  <option value="17-4PH">17-4PH Stainless</option>
+                  <option value="Inconel 718">Inconel 718</option>
+                  <option value="TC4">TC4 Titanium</option>
+                  <option value="Aluminum 6061">Aluminum 6061</option>
+                  <option value="Aluminum 7075">Aluminum 7075</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--text-mut);display:block;margin-bottom:3px;">阀门类型</label>
+                <select id="recValve">
+                  <option value="solenoid">Solenoid</option>
+                  <option value="check">Check Valve</option>
+                  <option value="relief">Relief Valve</option>
+                  <option value="regulating">Regulating</option>
+                  <option value="shutoff">Shutoff</option>
+                </select>
+              </div>
+            </div>
+            <button class="rec-btn" id="recBtn">&#x1F680; 生成推荐方案</button>
+          </div>
+          <div id="recResult"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let CATALOG = null;
+let CURRENT_CAT = 'machining';
+let CURRENT_PROC = null;
+
+const CAT_ICONS = {machining:'Wrench',heat_treatment:'Flame',surface_treatment:'Diamond',welding:'Link',assembly:'List'};
+const CAT_NAMES = {machining:'Machining',heat_treatment:'Heat Treatment',surface_treatment:'Surface',welding:'Welding',assembly:'Assembly'};
+const CAT_TAGS = {machining:'tag-machining',heat_treatment:'tag-heat',surface_treatment:'tag-surface',welding:'tag-welding',assembly:'tag-assembly'};
+
+function fmtRange(v){if(Array.isArray(v))return '<span class="range">'+v[0]+' &ndash; '+v[1]+'</span>';return v;}
+
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+
+async function loadCatalog(){
+  const r = await fetch('/api/valve-process/catalog');
+  CATALOG = await r.json();
+  renderCategories();
+  renderProcList();
+  let total = 0;
+  for (const k in CATALOG) total += CATALOG[k].count;
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('procCount').textContent = 'Total: '+total+' processes';
+}
+
+function renderCategories(){
+  const html = Object.keys(CATALOG).map(k=>{
+    const c = CATALOG[k];
+    return '<div class="cat-item '+(k===CURRENT_CAT?'sel':'')+'" data-cat="'+k+'">'
+      +'<span class="ci-icon">'+c.icon+'</span>'
+      +'<span class="ci-name">'+c.name+'</span>'
+      +'<span class="ci-ct">'+c.count+'</span></div>';
+  }).join('');
+  document.getElementById('catList').innerHTML = html;
+  document.querySelectorAll('.cat-item').forEach(el=>{
+    el.onclick = ()=>{CURRENT_CAT = el.dataset.cat; renderCategories(); renderProcList();};
+  });
+}
+
+function renderProcList(keyword){
+  const list = CATALOG[CURRENT_CAT].processes;
+  let filtered = list;
+  if (keyword) {
+    const kw = keyword.toLowerCase();
+    filtered = list.filter(p=>(p.name+' '+p.id).toLowerCase().includes(kw));
+  }
+  document.getElementById('procCatCount').textContent = filtered.length;
+  const html = filtered.map(p=>
+    '<div class="proc-item '+(p.id===CURRENT_PROC?'sel':'')+'" data-id="'+p.id+'">'
+    +'<div class="pi-name">'+escapeHtml(p.name)+'</div>'
+    +'<div class="pi-std">'+escapeHtml(p.id)+'</div></div>'
+  ).join('') || '<div class="loading">No match</div>';
+  document.getElementById('procList').innerHTML = html;
+  document.querySelectorAll('.proc-item').forEach(el=>{
+    el.onclick = ()=>{showProcessDetail(el.dataset.id);};
+  });
+}
+
+async function showProcessDetail(pid){
+  CURRENT_PROC = pid;
+  document.querySelectorAll('.proc-item').forEach(el=>{
+    el.classList.toggle('sel', el.dataset.id===pid);
+  });
+  document.getElementById('libContent').innerHTML = '<div class="loading">Loading '+pid+'...</div>';
+  const r = await fetch('/api/valve-process/detail', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({process_id: pid})
+  });
+  const d = await r.json();
+  renderProcessDetail(d);
+}
+
+function renderProcessDetail(d){
+  if (d.error){document.getElementById('libContent').innerHTML='<div class="empty-state"><div class="e-icon">&#x26A0;</div><div class="e-msg">Process not found</div></div>';return;}
+  const tagClass = CAT_TAGS[d.category]||'tag';
+  let rows = '';
+  const skipKeys = ['id','name','category'];
+  for (const k in d) {
+    if (skipKeys.includes(k)) continue;
+    const v = d[k];
+    if (v===null || v===undefined || v==='') continue;
+    const lbl = k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    let val = '';
+    if (Array.isArray(v)) {
+      if (v.length===2 && typeof v[0]==='number') val = '<span class="range">'+v[0]+' &ndash; '+v[1]+'</span>';
+      else val = v.join(', ');
+    } else if (typeof v === 'boolean') {
+      val = v ? 'Yes' : 'No';
+    } else {
+      val = escapeHtml(v);
+    }
+    rows += '<tr><td class="k">'+lbl+'</td><td class="v">'+val+'</td></tr>';
+  }
+  document.getElementById('libContent').innerHTML =
+    '<div class="card">'
+    +'<div class="card-hd"><span class="ch-icon">&#x1F527;</span>'+escapeHtml(d.name)
+    +'<span class="ch-tag tag '+tagClass+'">'+CAT_NAMES[d.category]+'</span>'
+    +'<button class="pdf-btn" onclick="downloadProcPdf(\''+d.id+'\')">&#x1F4C4; Download PDF</button>'
+    +'</div>'
+    +'<div class="card-bd"><table class="kv-table">'+rows+'</table></div></div>'
+    +'<div class="card"><div class="card-hd"><span class="ch-icon">&#x1F4CB;</span> Standards / Applicability</div>'
+    +'<div class="card-bd">'
+    +'<div style="margin-bottom:10px;"><strong style="color:var(--text-mut);font-size:11px;">STANDARD:</strong><br><span style="font-family:Consolas,monospace;color:var(--cyan);">'+escapeHtml(d.std||'-')+'</span></div>'
+    +'<div><strong style="color:var(--text-mut);font-size:11px;">APPLICABILITY:</strong><br><span>'+escapeHtml(d.applicability||'-')+'</span></div>'
+    +'</div></div>';
+}
+
+function downloadProcPdf(pid){
+  fetch('/api/valve-process/pdf/process', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({process_id: pid})
+  }).then(r=>{
+    if (!r.ok) throw new Error('PDF gen failed');
+    return r.blob();
+  }).then(blob=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'process_'+pid+'.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }).catch(e=>alert('Download error: '+e.message));
+}
+
+function downloadRoutePdf(rid){
+  fetch('/api/valve-process/pdf/route', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({route_id: rid})
+  }).then(r=>{
+    if (!r.ok) throw new Error('PDF gen failed');
+    return r.blob();
+  }).then(blob=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'route_'+rid+'.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }).catch(e=>alert('Download error: '+e.message));
+}
+
+async function loadRoutes(){
+  const r = await fetch('/api/valve-process/routes');
+  const d = await r.json();
+  const html = d.routes.map(rt=>
+    '<div class="route-card" data-id="'+rt.id+'">'
+    +'<div class="rc-name">&#x1F4CB; '+escapeHtml(rt.name)+'</div>'
+    +'<div class="rc-mat">Material: '+escapeHtml(rt.material)+'</div>'
+    +'<div class="rc-meta">'
+    +'<span class="m">'+rt.steps+' steps</span>'
+    +'<span class="m">'+(rt.total_time_min/60).toFixed(1)+' h</span>'
+    +'</div></div>'
+  ).join('');
+  document.getElementById('routeList').innerHTML = html;
+  document.querySelectorAll('.route-card').forEach(el=>{
+    el.onclick = ()=>showRouteDetail(el.dataset.id);
+  });
+}
+
+async function showRouteDetail(rid){
+  document.getElementById('routeDetail').innerHTML = '<div class="loading">Loading route '+rid+'...</div>';
+  const r = await fetch('/api/valve-process/route', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({route_id: rid})
+  });
+  const d = await r.json();
+  if (d.error){document.getElementById('routeDetail').innerHTML='<div class="empty-state"><div class="e-icon">&#x26A0;</div><div class="e-msg">Route not found</div></div>';return;}
+  const tl = d.operations.map(op=>
+    '<div class="tl-item">'
+    +'<div class="tl-step">STEP '+op.step+'</div>'
+    +'<div class="tl-name">'+escapeHtml(op.process)+'</div>'
+    +'<div class="tl-detail">'+escapeHtml(op.method)+'</div>'
+    +'<div class="tl-meta">'
+    +'<span class="tme">&#x1F527; '+escapeHtml(op.equipment)+'</span>'
+    +'<span class="tme">&#x23F1; '+op.time_min+' min</span>'
+    +'</div></div>'
+  ).join('');
+  const rows = d.operations.map(op=>
+    '<tr><td class="step-no">#'+op.step+'</td>'
+    +'<td class="proc-name">'+escapeHtml(op.process)+'</td>'
+    +'<td>'+escapeHtml(op.method)+'</td>'
+    +'<td>'+escapeHtml(op.equipment)+'</td>'
+    +'<td style="color:var(--cyan);text-align:right;">'+op.time_min+' min</td></tr>'
+  ).join('');
+  document.getElementById('routeDetail').innerHTML =
+    '<div class="card">'
+    +'<div class="card-hd"><span class="ch-icon">&#x1F4CB;</span>'+escapeHtml(d.name)
+    +'<span class="ch-tag">'+escapeHtml(d.material)+'</span>'
+    +'<span class="ch-tag">'+d.steps+' steps</span>'
+    +'<span class="ch-tag">'+d.total_time_h+' h</span>'
+    +'<button class="pdf-btn" onclick="downloadRoutePdf(\''+rid+'\')">&#x1F4C4; Download Work Instruction</button>'
+    +'</div>'
+    +'<div class="card-bd">'
+    +'<h4 style="font-size:12px;color:var(--text-mut);margin-bottom:12px;">TIMELINE</h4>'
+    +'<div class="timeline">'+tl+'</div>'
+    +'<h4 style="font-size:12px;color:var(--text-mut);margin:18px 0 10px;">DETAIL TABLE</h4>'
+    +'<table class="route-table"><thead><tr><th>#</th><th>Process</th><th>Method</th><th>Equipment</th><th style="text-align:right;">Time</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>'
+    +'</div></div>';
+}
+
+async function recommend(){
+  const mat = document.getElementById('recMat').value;
+  const vt = document.getElementById('recValve').value;
+  document.getElementById('recResult').innerHTML = '<div class="loading">Analyzing '+mat+' / '+vt+'...</div>';
+  const r = await fetch('/api/valve-process/recommend', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({material: mat, valve_type: vt})
+  });
+  const d = await r.json();
+  let procTags = d.processes.length
+    ? d.processes.map(p=>'<span class="tag">'+escapeHtml(p)+'</span>').join('')
+    : '<span style="color:var(--text-mut);">No specific process match</span>';
+  let routeBox = d.route_suggestion
+    ? '<div style="margin-top:8px;"><strong style="color:var(--text-mut);">SUGGESTED ROUTE:</strong> <span style="color:var(--cyan);font-family:Consolas,monospace;">'+escapeHtml(d.route_suggestion)+'</span></div>'
+    : '';
+  let kp = d.key_points.map(k=>'<li style="margin-left:18px;font-size:11px;color:var(--text-sec);margin-bottom:3px;">'+escapeHtml(k)+'</li>').join('');
+  document.getElementById('recResult').innerHTML =
+    '<div class="rec-result">'
+    +'<div class="rec-section"><div class="rs-title">Recommended Processes</div><div class="rs-content"><div class="tag-list">'+procTags+'</div></div></div>'
+    +'<div class="rec-section"><div class="rs-title">Route</div><div class="rs-content">'+routeBox+'</div></div>'
+    +'<div class="rec-section"><div class="rs-title">Key Points</div><div class="rs-content"><ul style="list-style:disc;padding:0;">'+kp+'</ul></div></div>'
+    +'</div>';
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.tab;
+    document.getElementById('panel-library').style.display = t==='library'?'block':'none';
+    document.getElementById('panel-route').style.display = t==='route'?'block':'none';
+    document.getElementById('panel-recommend').style.display = t==='recommend'?'block':'none';
+    if (t==='route') loadRoutes();
+  };
+});
+
+document.getElementById('searchBox').oninput = e=>{renderProcList(e.target.value);};
+document.getElementById('recBtn').onclick = recommend;
+
+loadCatalog();
+</script>
+</body>
+</html>

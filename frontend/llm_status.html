@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 服务状态 — Avis 平台</title>
+    <style>
+        :root {
+            --bg-primary: #0f1923;
+            --bg-secondary: #1a2736;
+            --bg-card: #1e2d3d;
+            --bg-input: #0f1923;
+            --border: #2a3a4a;
+            --border-active: rgba(0,180,216,0.4);
+            --text-primary: #e0e6ed;
+            --text-secondary: #8899aa;
+            --text-muted: #5a6a7a;
+            --accent: #00b4d8;
+            --accent-glow: rgba(0,180,216,0.15);
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .page-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-header-left h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .page-header-left .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all var(--transition);
+        }
+
+        .page-header-left .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .refresh-timer {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: "SF Mono", "Fira Code", monospace;
+        }
+
+        .auto-refresh-toggle {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            background: none;
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .auto-refresh-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .auto-refresh-toggle.paused {
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Status Overview Card */
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-active);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .stat-icon {
+            width: 48px; height: 48px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.green { background: rgba(16,185,129,0.15); }
+        .stat-icon.red { background: rgba(239,68,68,0.15); }
+        .stat-icon.amber { background: rgba(245,158,11,0.15); }
+        .stat-icon.blue { background: rgba(0,180,216,0.15); }
+        .stat-icon.purple { background: rgba(139,92,246,0.15); }
+
+        .stat-info h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .stat-value.green { color: var(--accent-green); }
+        .stat-value.red { color: var(--accent-red); }
+        .stat-value.amber { color: var(--accent-amber); }
+        .stat-value.accent { color: var(--accent); }
+        .stat-value.purple { color: var(--accent-purple); }
+
+        .stat-sub {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Detail Section */
+        .detail-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .detail-section-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-section-header h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .detail-body {
+            padding: 1rem 1.25rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(42,58,74,0.4);
+            font-size: 0.82rem;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-family: "SF Mono", "Fira Code", monospace;
+            font-size: 0.8rem;
+        }
+
+        .detail-value.status-online {
+            color: var(--accent-green);
+        }
+
+        .detail-value.status-offline {
+            color: var(--accent-red);
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.3rem;
+        }
+
+        .status-indicator.online {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px rgba(16,185,129,0.6);
+        }
+
+        .status-indicator.offline {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px rgba(239,68,68,0.4);
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #0077b6);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 16px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-input);
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .btn-danger {
+            background: rgba(239,68,68,0.1);
+            border-color: rgba(239,68,68,0.3);
+            color: var(--accent-red);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.2);
+            border-color: var(--accent-red);
+        }
+
+        /* Test Result Area */
+        #testResult {
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            line-height: 1.6;
+            display: none;
+        }
+
+        #testResult.success {
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: var(--text-primary);
+        }
+
+        #testResult.error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: var(--text-primary);
+        }
+
+        #testResult.loading {
+            background: rgba(0,180,216,0.05);
+            border: 1px dashed var(--accent);
+            color: var(--accent);
+        }
+
+        /* Agent List */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .agent-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all var(--transition);
+        }
+
+        .agent-item:hover {
+            border-color: var(--border-active);
+        }
+
+        .agent-item-icon {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .agent-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .agent-item-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .agent-item-role {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .agent-item-status {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .agent-item-status.active { background: var(--accent-green); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+        .agent-item-status.inactive { background: var(--accent-red); box-shadow: 0 0 6px rgba(239,68,68,0.3); }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.4rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .toast.success { background: #065f46; border: 1px solid var(--accent-green); color: var(--text-primary); }
+        .toast.error { background: #7f1d1d; border: 1px solid var(--accent-red); color: var(--text-primary); }
+        .toast.info { background: #1e3a5f; border: 1px solid var(--accent); color: var(--text-primary); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-header-left">
+        <a href="/" class="back-link">← 返回主页</a>
+        <h1>🤖 LLM 服务状态</h1>
+    </div>
+    <div class="header-status">
+        <span class="refresh-timer" id="refreshTimer">自动刷新: 30s</span>
+        <button class="auto-refresh-toggle" id="autoRefreshBtn" data-action="toggle-auto-refresh">⏸ 暂停</button>
+    </div>
+</div>
+
+<div class="main-container">
+    <!-- Action Buttons -->
+    <div class="btn-row">
+        <button class="btn btn-primary" id="testBtn" data-action="test-connectivity">
+            🔌 测试连通性
+        </button>
+        <button class="btn btn-secondary" id="refreshBtn" data-action="refresh-status">
+            🔄 刷新状态
+        </button>
+        <button class="btn btn-danger" id="resetBudgetBtn" data-action="reset-budget">
+            💰 重置预算
+        </button>
+    </div>
+
+    <!-- Test Result -->
+    <div id="testResult"></div>
+
+    <!-- Status Overview Cards -->
+    <div class="status-overview" id="statusOverview">
+        <div class="stat-card">
+            <div class="stat-icon green">💚</div>
+            <div class="stat-info">
+                <h3>服务状态</h3>
+                <div class="stat-value green" id="statEnabled">--</div>
+                <div class="stat-sub" id="statModel">加载中...</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue">📊</div>
+            <div class="stat-info">
+                <h3>调用次数</h3>
+                <div class="stat-value accent" id="statCalls">0</div>
+                <div class="stat-sub" id="statSuccessRate">成功率: --</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon amber">💰</div>
+            <div class="stat-info">
+                <h3>总费用 (USD)</h3>
+                <div class="stat-value amber" id="statCost">$0.00</div>
+                <div class="stat-sub" id="statBudget">剩余预算: --</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">⏱</div>
+            <div class="stat-info">
+                <h3>平均延迟</h3>
+                <div class="stat-value purple" id="statLatency">--</div>
+                <div class="stat-sub" id="statLastCall">最近: --</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Info -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>📋 服务详情</h2>
+        </div>
+        <div class="detail-body" id="detailInfo">
+            <div class="detail-row">
+                <span class="detail-label">启用状态</span>
+                <span class="detail-value" id="detailEnabled">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">模型名称</span>
+                <span class="detail-value" id="detailModel">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Base URL</span>
+                <span class="detail-value" id="detailBaseUrl">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">调用次数</span>
+                <span class="detail-value" id="detailCalls">0</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">成功次数</span>
+                <span class="detail-value" id="detailSuccesses">0</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">失败次数</span>
+                <span class="detail-value" id="detailFailures">0</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">成功率</span>
+                <span class="detail-value" id="detailSuccessRate">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">总费用 (USD)</span>
+                <span class="detail-value" id="detailCost">$0.00</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">剩余预算 (USD)</span>
+                <span class="detail-value" id="detailBudget">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Session 消费</span>
+                <span class="detail-value" id="detailSessionSpend">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">平均延迟</span>
+                <span class="detail-value" id="detailLatency">--</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">最近调用</span>
+                <span class="detail-value" id="detailLastCall">--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Types -->
+    <div class="detail-section">
+        <div class="detail-section-header">
+            <h2>👥 Agent 类型</h2>
+            <span style="font-size:0.7rem;color:var(--text-muted);" id="agentCount">共 6 种</span>
+        </div>
+        <div class="detail-body">
+            <div class="agent-grid" id="agentGrid">
+                <div class="agent-item">
+                    <div class="agent-item-icon" style="background:rgba(77,171,247,0.15)">🎨</div>
+                    <div class="agent-item-info">
+                        <div class="agent-item-name">design</div>
+                        <div class="agent-item-role">设计大师 - 阀门设计</div>
+                    </div>
+                    <div class="agent-item-status active"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===== State =====
+    let autoRefresh = true;
+    let refreshCountdown = 30;
+    let refreshTimerId = null;
+    let countdownTimerId = null;
+
+    // ===== Agent Type Metadata =====
+    const AGENT_META = {
+        design: { emoji: '🎨', name: '设计大师', role: '阀门/弹簧/密封设计', color: 'rgba(77,171,247,0.15)' },
+        compliance: { emoji: '📋', name: '标准官', role: 'QJ20156 · HB6455 合规审查', color: 'rgba(16,185,129,0.15)' },
+        material: { emoji: '🔬', name: '材料专家', role: '材料推荐 · 兼容性分析', color: 'rgba(245,158,11,0.15)' },
+        simulation: { emoji: '🌊', name: '仿真专家', role: 'CFD / FEM / 热力学', color: 'rgba(139,92,246,0.15)' },
+        knowledge: { emoji: '📚', name: '知识官', role: '知识检索与推理', color: 'rgba(0,180,216,0.15)' },
+        general: { emoji: '🏗️', name: '总工程师', role: '任务分解 · 多Agent调度', color: 'rgba(16,185,129,0.15)' }
+    };
+
+    // ===== Init =====
+    function init() {
+        fetchStatus();
+        startAutoRefresh();
+    }
+
+    // ===== Fetch Status =====
+    async function fetchStatus() {
+        try {
+            const resp = await fetch('/api/avis/llm/status');
+            const data = await resp.json();
+            renderStatus(data);
+            updateCountdown();
+        } catch (e) {
+            console.error('Failed to fetch LLM status:', e);
+            showToast('无法连接到后端服务', 'error');
+            setOfflineState();
+        }
+    }
+
+    function renderStatus(data) {
+        const enabled = data.enabled;
+        const statusText = enabled ? '在线' : '离线';
+        const statusClass = enabled ? 'online' : 'offline';
+
+        // Stat cards
+        setEl('statEnabled', statusText, enabled ? 'green' : 'red');
+        setEl('statModel', data.model || 'unknown');
+
+        const calls = data.calls || 0;
+        const successes = data.successes || 0;
+        const failures = data.failures || 0;
+        const rate = calls > 0 ? Math.round((successes / calls) * 100) : 0;
+
+        setEl('statCalls', calls);
+        setEl('statSuccessRate', '成功率: ' + rate + '% (' + successes + '/' + calls + ')');
+
+        const cost = data.total_cost || 0;
+        setEl('statCost', '$' + cost.toFixed(4));
+
+        const budget = data.session_budget;
+        const spend = data.session_spend || 0;
+        const remaining = budget != null ? (budget - spend).toFixed(4) : '--';
+        setEl('statBudget', '剩余预算: $' + (remaining === '--' ? '--' : remaining));
+
+        const avgLatency = data.avg_latency_ms || '--';
+        setEl('statLatency', avgLatency !== '--' ? avgLatency + 'ms' : '--');
+
+        const lastCall = data.last_call || '--';
+        setEl('statLastCall', '最近: ' + (lastCall !== '--' ? formatTime(lastCall) : '--'));
+
+        // Detail section
+        const statusSpan = '<span class="status-indicator ' + statusClass + '"></span>';
+        setElHTML('detailEnabled', statusSpan + statusText);
+        document.getElementById('detailEnabled').className = 'detail-value status-' + (enabled ? 'online' : 'offline');
+        setEl('detailModel', data.model || 'unknown');
+        setEl('detailBaseUrl', data.base_url || '--');
+        setEl('detailCalls', calls);
+        setEl('detailSuccesses', successes);
+        setEl('detailFailures', failures);
+        setEl('detailSuccessRate', rate + '%');
+        setEl('detailCost', '$' + cost.toFixed(4));
+        setEl('detailBudget', '$' + (remaining === '--' ? '--' : remaining));
+        setEl('detailSessionSpend', '$' + spend.toFixed(6));
+        setEl('detailLatency', avgLatency !== '--' ? avgLatency + 'ms' : '--');
+        setEl('detailLastCall', lastCall !== '--' ? formatTime(lastCall) : '--');
+
+        // Agent types
+        renderAgents(data.agents || [], enabled);
+    }
+
+    function renderAgents(agentList, enabled) {
+        const grid = document.getElementById('agentGrid');
+        document.getElementById('agentCount').textContent = '共 ' + agentList.length + ' 种';
+
+        let html = '';
+        agentList.forEach(agt => {
+            const meta = AGENT_META[agt.type] || { emoji: '🤖', name: agt.type, role: 'Agent', color: 'rgba(100,100,100,0.15)' };
+            const active = agt.enabled !== false && enabled;
+            html += '<div class="agent-item">' +
+                '<div class="agent-item-icon" style="background:' + meta.color + '">' + meta.emoji + '</div>' +
+                '<div class="agent-item-info">' +
+                    '<div class="agent-item-name">' + meta.name + ' <code style="font-size:0.65rem;color:var(--text-muted)">' + agt.type + '</code></div>' +
+                    '<div class="agent-item-role">' + meta.role + '</div>' +
+                '</div>' +
+                '<div class="agent-item-status ' + (active ? 'active' : 'inactive') + '" title="' + (active ? 'Active' : 'Inactive') + '"></div>' +
+            '</div>';
+        });
+        grid.innerHTML = html;
+    }
+
+    function setOfflineState() {
+        setEl('statEnabled', '离线', 'red');
+        setEl('statModel', 'unknown');
+        setEl('statCalls', '--');
+        setEl('statSuccessRate', '成功率: --');
+        setEl('statCost', '--');
+        setEl('statBudget', '剩余预算: --');
+        setEl('statLatency', '--');
+        setEl('statLastCall', '最近: --');
+        setElHTML('detailEnabled', '<span class="status-indicator offline"></span>离线');
+    }
+
+    // ===== Auto Refresh =====
+    function startAutoRefresh() {
+        if (refreshTimerId) clearInterval(refreshTimerId);
+        if (countdownTimerId) clearInterval(countdownTimerId);
+
+        refreshTimerId = setInterval(() => {
+            if (autoRefresh) fetchStatus();
+        }, 30000);
+
+        countdownTimerId = setInterval(() => {
+            if (autoRefresh) {
+                refreshCountdown--;
+                updateCountdown();
+                if (refreshCountdown <= 0) refreshCountdown = 30;
+            }
+        }, 1000);
+    }
+
+    function updateCountdown() {
+        refreshCountdown = 30;
+        document.getElementById('refreshTimer').textContent = '自动刷新: ' + refreshCountdown + 's';
+    }
+
+    function toggleAutoRefresh() {
+        autoRefresh = !autoRefresh;
+        const btn = document.getElementById('autoRefreshBtn');
+        const timer = document.getElementById('refreshTimer');
+
+        if (autoRefresh) {
+            btn.textContent = '⏸ 暂停';
+            btn.classList.remove('paused');
+            refreshCountdown = 30;
+            timer.textContent = '自动刷新: 30s';
+        } else {
+            btn.textContent = '▶ 恢复';
+            btn.classList.add('paused');
+            timer.textContent = '自动刷新: 已暂停';
+        }
+    }
+
+    // ===== Test Connectivity =====
+    async function testConnectivity() {
+        const btn = document.getElementById('testBtn');
+        const resultDiv = document.getElementById('testResult');
+        const origText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>测试中...';
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'loading';
+        resultDiv.innerHTML = '<span class="spinner"></span>正在测试 LLM 连通性...';
+
+        try {
+            const resp = await fetch('/api/avis/llm/test', { method: 'POST' });
+            const data = await resp.json();
+
+            if (data.success) {
+                resultDiv.className = 'success';
+                resultDiv.innerHTML = '✅ <strong>连通性测试通过</strong><br>' +
+                    '响应: ' + escapeHtml(data.response || '') + '<br>' +
+                    '延迟: ' + (data.latency_ms || '--') + 'ms | ' +
+                    '模型: ' + (data.model || 'unknown');
+                showToast('LLM 连接正常', 'success');
+            } else {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = '❌ <strong>连通性测试失败</strong><br>' +
+                    '错误: ' + escapeHtml(data.error || 'Unknown error');
+                showToast('LLM 连接失败: ' + (data.error || 'Unknown'), 'error');
+            }
+        } catch (e) {
+            resultDiv.className = 'error';
+            resultDiv.innerHTML = '❌ <strong>连通性测试失败</strong><br>无法连接到后端服务';
+            showToast('无法连接到后端服务', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            fetchStatus();
+        }
+    }
+
+    // ===== Reset Budget =====
+    async function resetBudget() {
+        const btn = document.getElementById('resetBudgetBtn');
+        const origText = btn.innerHTML;
+
+        if (!confirm('确认重置 LLM 调用预算？此操作将清空当前会话的消费统计。')) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>重置中...';
+
+        try {
+            const resp = await fetch('/api/avis/llm/reset-budget', { method: 'POST' });
+            const data = await resp.json();
+
+            if (data.success) {
+                showToast('预算已重置', 'success');
+            } else {
+                showToast('重置失败: ' + (data.error || 'Unknown'), 'error');
+            }
+        } catch (e) {
+            showToast('无法连接到后端服务', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            fetchStatus();
+        }
+    }
+
+    // ===== Event Delegation =====
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        switch (action) {
+            case 'test-connectivity': testConnectivity(); break;
+            case 'refresh-status': fetchStatus(); break;
+            case 'reset-budget': resetBudget(); break;
+            case 'toggle-auto-refresh': toggleAutoRefresh(); break;
+        }
+    });
+
+    // ===== Helpers =====
+    function setEl(id, value, cls) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value;
+            if (cls) el.className = el.className.replace(/green|red|amber|accent|purple/g, '').trim() + ' ' + cls;
+        }
+    }
+
+    function setElHTML(id, html) {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    }
+
+    function formatTime(isoStr) {
+        try {
+            const d = new Date(isoStr);
+            return d.toLocaleString('zh-CN', {
+                month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        } catch (e) {
+            return isoStr;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        str = str.toString();
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function showToast(msg, type) {
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + (type || 'info');
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ===== Init =====
+    init();
+</script>
+</body>
+</html>

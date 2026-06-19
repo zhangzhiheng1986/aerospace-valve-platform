@@ -3,1034 +3,1025 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>航空航天阀门研发平台</title>
+    <title>航空航天阀门研发平台 — AI Agent</title>
     <style>
         :root {
             --bg-primary: #0a0e17;
             --bg-secondary: #111827;
             --bg-sidebar: #0d1321;
             --bg-card: rgba(17,24,39,0.8);
+            --bg-input: #0f1923;
             --border: rgba(255,255,255,0.06);
             --border-active: rgba(0,180,216,0.4);
             --text-primary: #e2e8f0;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --accent: #00b4d8;
-            --accent2: #48cae4;
+            --accent-glow: rgba(0,180,216,0.15);
             --accent-green: #10b981;
             --accent-amber: #f59e0b;
             --accent-purple: #8b5cf6;
             --accent-red: #ef4444;
-            --accent-pink: #ec4899;
-            --sidebar-width: 260px;
-            --header-height: 60px;
+            --sidebar-width: 300px;
+            --header-height: 56px;
             --radius: 12px;
             --radius-sm: 8px;
-            --radius-xs: 6px;
             --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
-            --font-mono: 'JetBrains Mono','Cascadia Code','Fira Code',monospace;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
         body {
-            font-family: 'Segoe UI',system-ui,-apple-system,sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
+            height: 100vh;
             display: flex;
-            min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden;
         }
+
         /* ===== SIDEBAR ===== */
         .sidebar {
             width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            left: 0; top: 0;
             background: var(--bg-sidebar);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            z-index: 100;
-            transition: transform var(--transition);
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+            z-index: 20;
         }
-        .sidebar-brand {
-            padding: 20px 20px 16px;
+
+        .sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar { width: 3px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .sidebar-header {
+            padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.75rem;
         }
+
         .sidebar-logo {
-            width: 38px; height: 38px;
+            width: 40px; height: 40px;
             background: linear-gradient(135deg, var(--accent), #0077b6);
             border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; color: #fff; flex-shrink: 0;
-        }
-        .sidebar-brand-text h3 {
-            font-size: 15px; font-weight: 700; color: var(--text-primary);
-            line-height: 1.2;
-        }
-        .sidebar-brand-text span {
-            font-size: 10px; color: var(--text-muted);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        .sidebar-nav {
-            flex: 1; overflow-y: auto; overflow-x: hidden;
-            padding: 12px 0;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
-        }
-        .sidebar-nav::-webkit-scrollbar { width: 4px; }
-        .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        .nav-section {
-            margin-bottom: 4px;
-        }
-        .nav-section-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 20px;
-            cursor: pointer;
-            user-select: none;
-            transition: background var(--transition);
-        }
-        .nav-section-header:hover { background: rgba(255,255,255,0.03); }
-        .nav-section-label {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 11px; font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .nav-section-arrow {
-            font-size: 10px; color: var(--text-muted);
-            transition: transform var(--transition);
-        }
-        .nav-section.collapsed .nav-section-arrow { transform: rotate(-90deg); }
-        .nav-section.collapsed .nav-items { display: none; }
-        .nav-items { list-style: none; }
-        .nav-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 20px 9px 16px;
-            margin: 2px 8px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-size: 13px; color: var(--text-secondary);
-            transition: all var(--transition);
-            position: relative;
-            text-decoration: none;
-        }
-        .nav-item:hover {
-            background: rgba(255,255,255,0.04);
-            color: var(--text-primary);
-        }
-        .nav-item.active {
-            background: rgba(0,180,216,0.12);
-            color: var(--accent);
-            font-weight: 600;
-        }
-        .nav-item.active::before {
-            content: '';
-            position: absolute; left: 0; top: 4px; bottom: 4px;
-            width: 3px; background: var(--accent);
-            border-radius: 0 2px 2px 0;
-        }
-        .nav-item .nav-icon {
-            width: 32px; height: 32px;
-            border-radius: var(--radius-xs);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 15px; flex-shrink: 0;
-            background: rgba(255,255,255,0.03);
-        }
-        .nav-item.active .nav-icon {
-            background: rgba(0,180,216,0.15);
-        }
-        .nav-badge {
-            margin-left: auto; font-size: 10px;
-            padding: 2px 8px; border-radius: 10px;
-            background: rgba(16,185,129,0.15); color: var(--accent-green);
-            font-weight: 600;
-        }
-        .sidebar-footer {
-            padding: 12px 16px;
-            border-top: 1px solid var(--border);
-        }
-        .sidebar-user {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: background var(--transition);
-        }
-        .sidebar-user:hover { background: rgba(255,255,255,0.04); }
-        .sidebar-user-avatar {
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), #0077b6);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 15px; font-weight: 700; flex-shrink: 0;
-        }
-        .sidebar-user-info {
-            flex: 1; min-width: 0;
-        }
-        .sidebar-user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-        .sidebar-user-role { font-size: 11px; color: var(--text-muted); }
-        .sidebar-user-menu {
-            display: none; position: absolute; bottom: 60px; left: 16px; right: 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 4px;
-            z-index: 200;
-        }
-        .sidebar-user-menu.show { display: block; }
-        .sidebar-user-menu a, .sidebar-user-menu button {
-            display: flex; align-items: center; gap: 8px;
-            width: 100%; padding: 8px 12px;
-            font-size: 13px; color: var(--text-secondary);
-            background: none; border: none; cursor: pointer;
-            border-radius: var(--radius-xs);
-            text-decoration: none;
-        }
-        .sidebar-user-menu a:hover, .sidebar-user-menu button:hover {
-            background: rgba(255,255,255,0.06);
-            color: var(--text-primary);
-        }
-        .sidebar-user-menu button.logout {
-            color: var(--accent-red);
-        }
-        /* ===== MAIN CONTENT ===== */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            flex: 1; min-height: 100vh;
-            display: flex; flex-direction: column;
-        }
-        /* ===== TOP BAR ===== */
-        .topbar {
-            height: var(--header-height);
-            background: rgba(13,19,33,0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            display: flex; align-items: center;
-            padding: 0 24px;
-            gap: 16px;
-            position: sticky; top: 0; z-index: 50;
-        }
-        .topbar-search {
-            flex: 1; max-width: 480px;
-            display: flex; align-items: center; gap: 10px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 8px 16px;
-            transition: all var(--transition);
-        }
-        .topbar-search:focus-within {
-            border-color: var(--accent);
-            background: rgba(0,180,216,0.05);
-            box-shadow: 0 0 0 3px rgba(0,180,216,0.1);
-        }
-        .topbar-search input {
-            flex: 1; background: none; border: none; outline: none;
-            color: var(--text-primary); font-size: 13px;
-        }
-        .topbar-search input::placeholder { color: var(--text-muted); }
-        .topbar-search .search-icon { color: var(--text-muted); font-size: 16px; }
-        .topbar-search .search-shortcut {
-            font-size: 11px; color: var(--text-muted);
-            background: rgba(255,255,255,0.06);
-            padding: 2px 8px; border-radius: 4px;
-            font-family: var(--font-mono);
-        }
-        .topbar-breadcrumb {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 13px; color: var(--text-secondary);
-        }
-        .topbar-breadcrumb span { color: var(--text-muted); }
-        .topbar-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
-        .topbar-actions {
-            margin-left: auto; display: flex; align-items: center; gap: 12px;
-        }
-        .topbar-btn {
-            width: 36px; height: 36px;
-            border-radius: var(--radius-xs);
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px;
-            transition: all var(--transition);
-            position: relative;
-        }
-        .topbar-btn:hover {
-            background: rgba(255,255,255,0.08);
-            color: var(--text-primary);
-        }
-        .topbar-btn .dot {
-            position: absolute; top: 6px; right: 6px;
-            width: 7px; height: 7px;
-            background: var(--accent-pink);
-            border-radius: 50%;
-        }
-        /* ===== CONTENT AREA ===== */
-        .content-area {
-            flex: 1; padding: 24px 28px 40px;
-            overflow-y: auto;
-        }
-        .page-title {
-            font-size: 24px; font-weight: 700;
-            margin-bottom: 4px;
-            color: var(--text-primary);
-        }
-        .page-subtitle {
-            font-size: 13px; color: var(--text-muted);
-            margin-bottom: 24px;
-        }
-        /* Quick Stats Row */
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-        .quick-stat {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 18px 20px;
-            transition: all var(--transition);
-            cursor: default;
-        }
-        .quick-stat:hover {
-            border-color: rgba(255,255,255,0.12);
-            transform: translateY(-2px);
-        }
-        .quick-stat-top {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .quick-stat-icon {
-            width: 40px; height: 40px;
-            border-radius: var(--radius-xs);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-        }
-        .quick-stat-trend {
-            font-size: 11px; font-weight: 600;
-            padding: 2px 8px; border-radius: 10px;
-        }
-        .trend-up { background: rgba(16,185,129,0.12); color: var(--accent-green); }
-        .trend-stable { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
-        .quick-stat-value {
-            font-size: 28px; font-weight: 700;
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-        }
-        .quick-stat-label {
-            font-size: 12px; color: var(--text-muted);
-            margin-top: 4px;
-        }
-        /* Module Grid */
-        .section-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .section-title {
-            font-size: 16px; font-weight: 700;
-            color: var(--text-primary);
-        }
-        .section-count {
-            font-size: 12px; color: var(--text-muted);
-        }
-        .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .module-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 22px 24px;
-            transition: all var(--transition);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-        .module-card:hover {
-            border-color: rgba(0,180,216,0.35);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,180,216,0.1);
-        }
-        .module-card::after {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 2px;
-            background: var(--card-accent, linear-gradient(90deg, var(--accent), var(--accent2)));
-            opacity: 0;
-            transition: opacity var(--transition);
-        }
-        .module-card:hover::after { opacity: 1; }
-        .module-card-header {
-            display: flex; align-items: flex-start; justify-content: space-between;
-            margin-bottom: 12px;
-        }
-        .module-card-icon {
-            width: 44px; height: 44px;
-            border-radius: var(--radius-xs);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.25rem;
             flex-shrink: 0;
         }
-        .module-badge {
-            font-size: 10px; font-weight: 700;
-            padding: 3px 10px; border-radius: 10px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+
+        .sidebar-title h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
         }
-        .badge-active { background: rgba(16,185,129,0.12); color: var(--accent-green); }
-        .badge-new { background: rgba(139,92,246,0.12); color: var(--accent-purple); }
-        .badge-beta { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
-        .module-card h3 {
-            font-size: 16px; font-weight: 700;
-            margin-bottom: 8px;
+
+        .sidebar-title span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Agents Section */
+        .sidebar-section {
+            padding: 1rem 1.25rem 0.5rem;
+        }
+
+        .sidebar-section h3 {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-card {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-bottom: 0.2rem;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .agent-card:hover {
+            background: rgba(255,255,255,0.03);
+            border-color: var(--border);
+        }
+
+        .agent-card.active {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .agent-card .agent-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .agent-card .agent-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .agent-card .agent-name {
+            font-size: 0.8rem;
+            font-weight: 600;
             color: var(--text-primary);
         }
-        .module-card p {
-            font-size: 12px; color: var(--text-muted);
-            line-height: 1.6;
+
+        .agent-card .agent-role {
+            font-size: 0.65rem;
+            color: var(--text-muted);
         }
-        .module-card-footer {
-            display: flex; align-items: center; gap: 12px;
-            margin-top: 16px;
-            font-size: 11px; color: var(--text-muted);
+
+        .agent-card .agent-status {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
-        .module-card-footer span {
-            display: flex; align-items: center; gap: 4px;
+
+        .agent-card .agent-status.online { background: var(--accent-green); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+
+        /* Modules Quick-access */
+        .module-grid-sidebar {
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
         }
-        /* Footer */
-        .main-footer {
-            margin-top: auto;
-            padding: 20px 28px;
-            border-top: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            font-size: 12px; color: var(--text-muted);
-        }
-        .main-footer a { color: var(--accent); text-decoration: none; }
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center; padding: 60px 20px;
-        }
-        .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.6; }
-        .empty-state h3 { font-size: 18px; color: var(--text-secondary); margin-bottom: 8px; }
-        .empty-state p { font-size: 13px; color: var(--text-muted); }
-        /* ===== MOBILE HAMBURGER ===== */
-        .mobile-toggle {
-            display: none;
-            width: 36px; height: 36px;
-            background: rgba(255,255,255,0.04);
+
+        .module-chip {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: var(--radius-xs);
             color: var(--text-secondary);
             cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .module-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .module-chip.external {
+            border-style: dashed;
+            color: var(--text-muted);
+        }
+
+        .module-chip.external:hover {
+            border-style: solid;
+            border-color: var(--accent2);
+            color: var(--accent);
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .sidebar-footer .footer-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .sidebar-footer .footer-btn:hover {
+            background: rgba(255,255,255,0.03);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+
+        .sidebar-footer .footer-btn.classic {
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .sidebar-footer .footer-btn.classic:hover {
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+        }
+
+        /* ===== MAIN ===== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+
+        .main-header {
+            height: var(--header-height);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            flex-shrink: 0;
+            background: var(--bg-primary);
+        }
+
+        .main-header .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pulse-dot {
+            width: 8px; height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+        }
+
+        .session-badge {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-family: "SF Mono", "Fira Code", monospace;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar { width: 5px; }
+        .chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Welcome Screen */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            min-height: 300px;
+        }
+
+        .welcome-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, var(--accent), #0077b6);
+            border-radius: 20px;
+            display: flex;
             align-items: center; justify-content: center;
-            font-size: 18px;
-            position: fixed; top: 12px; left: 12px; z-index: 200;
         }
-        .sidebar-overlay {
+
+        .welcome h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--text-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            max-width: 650px;
+        }
+
+        .quick-action {
+            padding: 0.55rem 1rem;
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.78rem;
+            transition: all var(--transition);
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .quick-action:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
+            transform: translateY(-1px);
+        }
+
+        /* Message Bubbles */
+        .msg {
+            display: flex;
+            gap: 0.75rem;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .msg.assistant {
+            align-self: flex-start;
+        }
+
+        .msg-avatar {
+            width: 34px; height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .msg.user .msg-avatar {
+            background: linear-gradient(135deg, #0077b6, var(--accent));
+        }
+
+        .msg.assistant .msg-avatar {
+            background: linear-gradient(135deg, var(--accent-purple), #6d28d9);
+        }
+
+        .msg-bubble {
+            padding: 0.7rem 1rem;
+            border-radius: var(--radius);
+            line-height: 1.55;
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+
+        .msg.user .msg-bubble {
+            background: linear-gradient(135deg, #0077b6, #023e8a);
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg.assistant .msg-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg.assistant .msg-bubble h3 { font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent); }
+        .msg.assistant .msg-bubble h4 { font-size: 0.85rem; margin: 0.5rem 0 0.3rem; color: var(--text-primary); }
+        .msg.assistant .msg-bubble ul, .msg.assistant .msg-bubble ol { padding-left: 1.5rem; margin: 0.4rem 0; }
+        .msg.assistant .msg-bubble li { margin-bottom: 0.2rem; }
+        .msg.assistant .msg-bubble code {
+            background: rgba(255,255,255,0.08);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: "SF Mono","Fira Code","Consolas",monospace;
+        }
+        .msg.assistant .msg-bubble pre {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+        .msg.assistant .msg-bubble hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 0.6rem 0;
+        }
+
+        .msg-meta {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .msg.user .msg-meta { justify-content: flex-end; }
+
+        .agent-tag {
+            font-size: 0.6rem;
+            background: var(--accent-glow);
+            color: var(--accent);
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .thinking-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 0.5rem 0;
+        }
+
+        .thinking-indicator span {
+            width: 6px; height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+
+        .thinking-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Input Area */
+        .input-area {
+            border-top: 1px solid var(--border);
+            padding: 0.75rem 1.25rem;
+            background: var(--bg-primary);
+            flex-shrink: 0;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.35rem 0.5rem;
+            transition: border-color var(--transition);
+        }
+
+        .input-row:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .input-row textarea {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            resize: none;
+            font-family: inherit;
+            padding: 0.3rem 0;
+            min-height: 22px;
+            max-height: 120px;
+        }
+
+        .input-row textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #0077b6);
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            box-shadow: 0 0 16px var(--accent-glow);
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #selectedAgentLabel {
+            font-size: 0.65rem;
+            color: var(--accent);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(0,180,216,0.2);
+            white-space: nowrap;
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
             display: none;
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 99;
-            backdrop-filter: blur(4px);
+            position: fixed;
+            top: 0.75rem;
+            left: 0.75rem;
+            z-index: 30;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85rem;
         }
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 1024px) {
-            .quick-stats { grid-template-columns: repeat(2, 1fr); }
-            .modules-grid { grid-template-columns: 1fr; }
-        }
+
         @media (max-width: 768px) {
-            .mobile-toggle { display: flex; }
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
-            .sidebar.open ~ .sidebar-overlay { display: block; }
-            .main-content { margin-left: 0; }
-            .topbar { padding: 0 12px 0 56px; }
-            .topbar-search { max-width: none; }
-            .topbar-breadcrumb { display: none; }
-            .quick-stats { grid-template-columns: 1fr; }
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0; bottom: 0;
+                transition: left var(--transition);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            }
+            .sidebar.open { left: 0; }
+            .mobile-toggle { display: block; }
+            .msg { max-width: 95%; }
+            .main-header { padding-left: 3rem; }
+            .quick-actions { gap: 0.35rem; }
+            .quick-action { font-size: 0.7rem; padding: 0.4rem 0.7rem; }
         }
     </style>
 </head>
 <body>
-<!-- Mobile toggle -->
-<button class="mobile-toggle" onclick="toggleSidebar()">&#9776;</button>
-<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Mobile Toggle -->
+<button class="mobile-toggle" onclick="toggleSidebar()" title="Menu">☰</button>
 
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <div class="sidebar-logo">&#128640;</div>
-        <div class="sidebar-brand-text">
-            <h3>&#x9600;&#x95E8;&#x7814;&#x53D1;&#x5E73;&#x53F0;</h3>
-            <span>Aerospace Valve R&amp;D</span>
+    <div class="sidebar-header">
+        <div class="sidebar-logo">🛸</div>
+        <div class="sidebar-title">
+            <h2>阀门大脑</h2>
+            <span>AI AGENT PLATFORM</span>
         </div>
     </div>
-    <nav class="sidebar-nav">
-        <!-- Dashboard -->
-        <div class="nav-section">
-            <a class="nav-item active" href="/" data-section="dashboard">
-                <span class="nav-icon">&#x1F4CA;</span> &#x4EEA;&#x8868;&#x76D8;
-            </a>
-        </div>
-        <!-- Design -->
-        <div class="nav-section">
-            <div class="nav-section-header" onclick="toggleNavSection(this)">
-                <span class="nav-section-label">&#x2699; &#x8BBE;&#x8BA1;&#x8BA1;&#x7B97;</span>
-                <span class="nav-section-arrow">&#x25BC;</span>
+
+    <!-- Scrollable content -->
+    <div class="sidebar-scroll">
+
+    <!-- Agent List -->
+    <div class="sidebar-section">
+        <h3>专家 Agent</h3>
+        <div class="agent-card active" data-agent="all" onclick="selectAgent('all', this)">
+            <div class="agent-icon" style="background:rgba(0,180,216,0.15)">🏗️</div>
+            <div class="agent-info">
+                <div class="agent-name">总工程师</div>
+                <div class="agent-role">任务分解 · 多Agent调度</div>
             </div>
-            <ul class="nav-items">
-                <li><a class="nav-item" href="/solenoid"><span class="nav-icon">&#x26A1;</span> &#x7535;&#x78C1;&#x9600;&#x7EBF;&#x5708;&#x4F18;&#x5316;</a></li>
-                <li><a class="nav-item" href="/pressure_valve"><span class="nav-icon">&#x1F527;</span> &#x51CF;&#x538B;&#x9600;&#x8BBE;&#x8BA1;&#x8BA1;&#x7B97;<span class="nav-badge">NEW</span></a></li>
-                <li><a class="nav-item" href="/check_valve"><span class="nav-icon">&#x1F529;</span> &#x5355;&#x5411;&#x9600;&#x8BBE;&#x8BA1;&#x8BA1;&#x7B97;</a></li>
-                <li><a class="nav-item" href="/spring_design"><span class="nav-icon">&#x1FA9D;</span> &#x5F39;&#x7C27;&#x8BBE;&#x8BA1;</a></li>
-                <li><a class="nav-item" href="/oring_design"><span class="nav-icon">&#x2B55;</span> O&#x5F62;&#x5BC6;&#x5C01;&#x5708;&#x8BBE;&#x8BA1;</a></li>
-            </ul>
+            <div class="agent-status online"></div>
         </div>
-        <!-- Simulation -->
-        <div class="nav-section">
-            <div class="nav-section-header" onclick="toggleNavSection(this)">
-                <span class="nav-section-label">&#x1F30A; &#x4EFF;&#x771F;&#x5206;&#x6790;</span>
-                <span class="nav-section-arrow">&#x25BC;</span>
+        <div class="agent-card" data-agent="design" onclick="selectAgent('design', this)">
+            <div class="agent-icon" style="background:rgba(77,171,247,0.15)">🎨</div>
+            <div class="agent-info">
+                <div class="agent-name">设计大师</div>
+                <div class="agent-role">阀门/弹簧/密封设计</div>
             </div>
-            <ul class="nav-items">
-                <li><a class="nav-item" href="/cfd"><span class="nav-icon">&#x1F4A7;</span> &#x6D41;&#x4F53;&#x4EFF;&#x771F; CFD</a></li>
-                <li><a class="nav-item" href="/thermal"><span class="nav-icon">&#x1F321;</span> &#x70ED;&#x529B;&#x5B66;&#x5206;&#x6790;</a></li>
-                <li><a class="nav-item" href="/structural"><span class="nav-icon">&#x1F3D7;</span> &#x7ED3;&#x6784;&#x5F3A;&#x5EA6; FEM</a></li>
-                <li><a class="nav-item" href="/fluid_mechanics"><span class="nav-icon">&#x1F30A;</span> &#x6D41;&#x4F53;&#x529B;&#x5B66;&#x8BA1;&#x7B97;&#x5668;<span class="nav-badge">NEW</span></a></li>
-            </ul>
+            <div class="agent-status online"></div>
         </div>
-        <!-- Data & Standards -->
-        <div class="nav-section">
-            <div class="nav-section-header" onclick="toggleNavSection(this)">
-                <span class="nav-section-label">&#x1F4CA; &#x6570;&#x636E;&#x4E0E;&#x6807;&#x51C6;</span>
-                <span class="nav-section-arrow">&#x25BC;</span>
+        <div class="agent-card" data-agent="compliance" onclick="selectAgent('compliance', this)">
+            <div class="agent-icon" style="background:rgba(16,185,129,0.15)">📋</div>
+            <div class="agent-info">
+                <div class="agent-name">标准官</div>
+                <div class="agent-role">QJ20156 · HB6455 合规</div>
             </div>
-            <ul class="nav-items">
-                <li><a class="nav-item" href="/materials"><span class="nav-icon">&#x1F52C;</span> &#x6750;&#x6599;&#x6570;&#x636E;&#x5E93;</a></li>
-                <li><a class="nav-item" href="/valve_metrics"><span class="nav-icon">&#x1F4C8;</span> &#x6027;&#x80FD;&#x6307;&#x6807;&#x5E93;</a></li>
-                <li><a class="nav-item" href="/qj20156"><span class="nav-icon">&#x1F4CB;</span> QJ 20156 &#x5408;&#x89C4;&#x5DE5;&#x5177;</a></li>
-            </ul>
+            <div class="agent-status online"></div>
         </div>
-        <!-- Knowledge -->
-        <div class="nav-section">
-            <div class="nav-section-header" onclick="toggleNavSection(this)">
-                <span class="nav-section-label">&#x1F4D6; &#x77E5;&#x8BC6;&#x7BA1;&#x7406;</span>
-                <span class="nav-section-arrow">&#x25BC;</span>
+        <div class="agent-card" data-agent="material" onclick="selectAgent('material', this)">
+            <div class="agent-icon" style="background:rgba(245,158,11,0.15)">🔬</div>
+            <div class="agent-info">
+                <div class="agent-name">材料专家</div>
+                <div class="agent-role">材料推荐 · 兼容性分析</div>
             </div>
-            <ul class="nav-items">
-                <li><a class="nav-item" href="/knowledge"><span class="nav-icon">&#x1F4DA;</span> &#x4E13;&#x4E1A;&#x77E5;&#x8BC6;&#x5E93;</a></li>
-                <li><a class="nav-item" href="/knowledge_articles"><span class="nav-icon">&#x1F4F0;</span> &#x6280;&#x672F;&#x6587;&#x7AE0;</a></li>
-                <li><a class="nav-item admin-only" href="/cms_admin" style="display:none"><span class="nav-icon">&#x270F;</span> &#x5185;&#x5BB9;&#x7BA1;&#x7406; CMS</a></li>
-                <li><a class="nav-item" href="/templates"><span class="nav-icon">&#x1F4D0;</span> 研发模板库<span class="nav-badge">NEW</span></a></li>
-                <li><a class="nav-item" href="/news"><span class="nav-icon">&#x1F4E2;</span> 每日资讯</a></li>
-                <li><a class="nav-item external-link" href="https://avis8888.github.io/Avis/" target="_blank" rel="noopener"><span class="nav-icon">&#x1F3DB;</span> Avis 研发智库<span class="nav-badge">智库</span></a></li>
-                <li><a class="nav-item" href="/seal_design"><span class="nav-icon">&#x1F9ED;</span> &#x5BC6;&#x5C01;&#x526F;&#x8BBE;&#x8BA1;<span class="nav-badge">NEW</span></a></li>
-            </ul>
+            <div class="agent-status online"></div>
         </div>
-        <!-- AI -->
-        <div class="nav-section">
-            <div class="nav-section-header" onclick="toggleNavSection(this)">
-                <span class="nav-section-label">&#x1F916; AI &#x667A;&#x80FD;&#x4F53;</span>
-                <span class="nav-section-arrow">&#x25BC;</span>
+        <div class="agent-card" data-agent="simulation" onclick="selectAgent('simulation', this)">
+            <div class="agent-icon" style="background:rgba(139,92,246,0.15)">🌊</div>
+            <div class="agent-info">
+                <div class="agent-name">仿真专家</div>
+                <div class="agent-role">CFD / FEM / 热力学</div>
             </div>
-            <ul class="nav-items">
-                <li><a class="nav-item" href="/ai-agent"><span class="nav-icon">&#x1F916;</span> AI Co-Pilot<span class="nav-badge" style="background:linear-gradient(135deg,#00b4d8,#7c3aed);color:#fff;">NEW</span></a></li>
-            </ul>
+            <div class="agent-status online"></div>
         </div>
-        <!-- System -->
-        <div class="nav-section">
-            <div class="nav-section-header" onclick="toggleNavSection(this)">
-                <span class="nav-section-label">&#x1F6E0; &#x7CFB;&#x7EDF;</span>
-                <span class="nav-section-arrow">&#x25BC;</span>
-            </div>
-            <ul class="nav-items">
-                <li><a class="nav-item" href="/docs"><span class="nav-icon">&#x1F4D6;</span> &#x6587;&#x6863;&#x4E0E;&#x5E2E;&#x52A9;</a></li>
-                <li><a class="nav-item admin-only" href="/admin" style="display:none"><span class="nav-icon">&#x1F465;</span> &#x540E;&#x53F0;&#x7BA1;&#x7406;</a></li>
-            </ul>
-        </div>
-    </nav>
-    <div class="sidebar-footer" id="sidebarFooter">
-        <div class="sidebar-user" id="sidebarUser" onclick="toggleUserMenu()">
-            <div class="sidebar-user-avatar" id="sidebarAvatar">?</div>
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name" id="sidebarUserName">未登录</div>
-                <div class="sidebar-user-role" id="sidebarUserRole">访客</div>
-            </div>
-        </div>
-        <div class="sidebar-user-menu" id="sidebarUserMenu">
-            <a href="/login" id="menuLogin">&#x1F511; 登录</a>
-            <a href="/cms_admin" class="admin-only" style="display:none" id="menuCms">&#x270F; 内容管理</a>
-            <a href="/admin" class="admin-only" style="display:none" id="menuAdmin">&#x1F465; 后台管理</a>
-            <button class="logout" onclick="logout()" id="menuLogout" style="display:none">&#x1F6AA; 退出登录</button>
-        </div>
+    </div>
+
+    <!-- Quick Modules -->
+    <div class="sidebar-section" style="padding-bottom:0.25rem">
+        <h3>快捷模块</h3>
+    </div>
+    <div class="module-grid-sidebar">
+        <a class="module-chip" href="/solenoid">电磁阀</a>
+        <a class="module-chip" href="/pressure_valve">减压阀</a>
+        <a class="module-chip" href="/check_valve">单向阀</a>
+        <a class="module-chip" href="/spring">弹簧设计</a>
+        <a class="module-chip" href="/oring">O形圈</a>
+        <a class="module-chip" href="/seal">密封副</a>
+        <a class="module-chip" href="/cfd">CFD仿真</a>
+        <a class="module-chip" href="/thermal">热力学</a>
+        <a class="module-chip" href="/structural">结构分析</a>
+        <a class="module-chip" href="/materials">材料库</a>
+        <a class="module-chip" href="/knowledge">知识库</a>
+        <a class="module-chip" href="/qj20156">QJ20156</a>
+        <a class="module-chip" href="/valve-process">🔧 加工工艺</a>
+        <a class="module-chip" href="/ai-agent">AI Agent</a>
+        <span style="display:block;font-size:0.6rem;color:var(--text-muted);padding:0.25rem 0.5rem;margin-top:0.3rem;">Avis 智能平台</span>
+        <a class="module-chip" href="/departments">部门协作</a>
+        <a class="module-chip" href="/projects">项目管理</a>
+        <a class="module-chip" href="/filesystem">文件系统</a>
+        <a class="module-chip" href="/cron">定时任务</a>
+        <a class="module-chip" href="/expert">专家系统</a>
+        <a class="module-chip" href="/multi-agent">多Agent协作</a>
+        <a class="module-chip" href="/product-structure">产品结构库</a>
+        <a class="module-chip" href="/auto-optimizer">⏱ 自动优化器</a>
+        <a class="module-chip" href="/knowledge-graph">知识图谱</a>
+        <a class="module-chip" href="/llm-status">🤖 LLM 状态</a>
+        <span style="display:block;font-size:0.6rem;color:var(--text-muted);padding:0.25rem 0.5rem;margin-top:0.3rem;">🔗 外部工具</span>
+        <a class="module-chip external" href="https://103.236.91.81" target="_blank">🌐 远程平台 ↗</a>
+        <a class="module-chip external" href="http://103.236.91.81:3100/" target="_blank">🤖 Avis 云端版 ↗</a>
+        <a class="module-chip external" href="http://103.236.91.81:9119/" target="_blank">🪽 Hermes 个人AI助手 ↗</a>
+    </div>
+
+    </div><!-- /sidebar-scroll -->
+
+    <!-- Footer (always visible) -->
+    <div class="sidebar-footer">
+        <button class="footer-btn classic" onclick="switchToClassic()" title="切换到经典仪表盘视图">
+            📊 经典仪表盘
+        </button>
     </div>
 </aside>
 
-<!-- ===== MAIN CONTENT ===== -->
-<div class="main-content">
-    <!-- Top Bar -->
-    <header class="topbar">
-        <div class="topbar-search">
-            <span class="search-icon">&#x1F50D;</span>
-            <input type="text" id="globalSearch" placeholder="搜索模块、文档、标准..." oninput="filterModules(this.value)">
-            <span class="search-shortcut">Ctrl+K</span>
+<!-- ===== MAIN ===== -->
+<div class="main">
+    <div class="main-header">
+        <div class="status-bar">
+            <span class="pulse-dot"></span>
+            <span style="font-size:0.8rem;font-weight:600;">Avis 引擎</span>
+            <span style="font-size:0.65rem;color:var(--text-muted);">v2.0</span>
         </div>
-        <div class="topbar-breadcrumb" id="breadcrumb">
-            <span>&#x1F4CA;</span> <span class="current">仪表盘</span>
-        </div>
-        <div class="topbar-actions">
-            <button class="topbar-btn" title="通知" onclick="alert('暂无新通知')">&#x1F514;</button>
-            <button class="topbar-btn" title="全屏" onclick="document.documentElement.requestFullscreen()">&#x26F6;</button>
-        </div>
-    </header>
-
-    <!-- Content -->
-    <div class="content-area" id="contentArea">
-        <h1 class="page-title">仪表盘</h1>
-        <p class="page-subtitle">航空航天阀门研发平台 — 专业级阀门设计、仿真、分析与知识管理一体化系统</p>
-
-        <!-- Quick Stats -->
-        <div class="quick-stats" id="quickStats">
-            <div class="quick-stat">
-                <div class="quick-stat-top">
-                    <div class="quick-stat-icon" style="background:rgba(0,180,216,0.12);color:var(--accent)">&#x2699;</div>
-                    <span class="quick-stat-trend trend-up">&#x25B2; 100%</span>
-                </div>
-                <div class="quick-stat-value">13</div>
-                <div class="quick-stat-label">功能模块</div>
-            </div>
-            <div class="quick-stat">
-                <div class="quick-stat-top">
-                    <div class="quick-stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-green)">&#x1F4CA;</div>
-                    <span class="quick-stat-trend trend-stable">&#x2014;</span>
-                </div>
-                <div class="quick-stat-value">48</div>
-                <div class="quick-stat-label">性能指标</div>
-            </div>
-            <div class="quick-stat">
-                <div class="quick-stat-top">
-                    <div class="quick-stat-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">&#x1F4CB;</div>
-                    <span class="quick-stat-trend trend-up">&#x25B2; 新</span>
-                </div>
-                <div class="quick-stat-value">27</div>
-                <div class="quick-stat-label">标准规范</div>
-            </div>
-            <div class="quick-stat">
-                <div class="quick-stat-top">
-                    <div class="quick-stat-icon" style="background:rgba(236,72,153,0.12);color:var(--accent-pink)">&#x1F52C;</div>
-                    <span class="quick-stat-trend trend-up">&#x25B2; 21</span>
-                </div>
-                <div class="quick-stat-value">21</div>
-                <div class="quick-stat-label">航空航天级材料</div>
-            </div>
-        </div>
-
-        <!-- Module Grid -->
-        <div id="modulesContainer">
-            <div class="section-header">
-                <span class="section-title">&#x2699; 设计计算</span>
-                <span class="section-count">5 个模块</span>
-            </div>
-            <div class="modules-grid" data-category="design">
-                <a class="module-card" href="/solenoid" style="--card-accent:linear-gradient(90deg,#00b4d8,#48cae4)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(0,180,216,0.12);color:var(--accent)">&#x26A1;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>电磁阀线圈优化</h3>
-                    <p>基于 PSO 粒子群优化算法，自动搜索最优 AWG 线径、匝数、电流等参数。支持自定义约束条件与多目标优化。</p>
-                    <div class="module-card-footer">
-                        <span>&#x26A1; PSO算法</span><span>&#x1F4D0; 多参数</span><span>&#x1F3AF; 24.5N</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/pressure_valve" style="--card-accent:linear-gradient(90deg,#f59e0b,#fbbf24)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-amber)">&#x1F527;</div>
-                        <span class="module-badge badge-new">新上线</span>
-                    </div>
-                    <h3>减压阀设计计算</h3>
-                    <p>完整减压阀设计工具，集成流体/材料数据库。支持 5 种介质、力平衡分析、弹簧设计与可靠性评估。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F6E2; 5种介质</span><span>&#x1F9EA; 5种材料</span><span>&#x1F4D0; 3组预设</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/check_valve" style="--card-accent:linear-gradient(90deg,#10b981,#34d399)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-green)">&#x1F529;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>单向阀设计计算</h3>
-                    <p>完整单向阀设计：弹簧设计、阀座密封、流动分析（Cv/气蚀）、阀体强度、动态响应。遵循 HB 6456/QJ 1142A。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4CF; 6子模块</span><span>&#x1F4D0; 4组预设</span><span>&#x1F4CB; HB/QJ标准</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/spring_design" style="--card-accent:linear-gradient(90deg,#6366f1,#818cf8)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(99,102,241,0.12);color:#818cf8">&#x1FA9D;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>弹簧设计</h3>
-                    <p>圆柱螺旋压缩弹簧迭代设计求解器。支持 4 种航空材料、疲劳/稳定性/共振校核，输出完整设计报告。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1FA9D; 4种材料</span><span>&#x1F4D0; 迭代求解</span><span>&#x2705; 疲劳校核</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/oring_design" style="--card-accent:linear-gradient(90deg,#ec4899,#f472b6)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(236,72,153,0.12);color:var(--accent-pink)">&#x2B55;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>O形密封圈设计</h3>
-                    <p>AS568/ISO 3601 标准。Mooney-Rivlin 接触应力、Roth 泄漏率模型、挤出间隙评估、挡圈判定。全谱系 O 形圈库。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4CF; AS568</span><span>&#x1F4D0; ISO 3601</span><span>&#x1F52C; Roth模型</span>
-                    </div>
-                </a>
-            </div>
-
-            <div class="section-header">
-                <span class="section-title">&#x1F30A; 仿真分析</span>
-                <span class="section-count">4 个模块</span>
-            </div>
-            <div class="modules-grid" data-category="simulation">
-                <a class="module-card" href="/cfd" style="--card-accent:linear-gradient(90deg,#0ea5e9,#38bdf8)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(14,165,233,0.12);color:#38bdf8">&#x1F4A7;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>流体仿真分析 CFD</h3>
-                    <p>计算流体动力学仿真工具。支持稳态/瞬态分析、湍流模型选择、压力分布与流场可视化。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F30A; 稳态/瞬态</span><span>&#x1F4D0; 湍流模型</span><span>&#x1F4CA; 可视化</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/thermal" style="--card-accent:linear-gradient(90deg,#ef4444,#f87171)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(239,68,68,0.12);color:var(--accent-red)">&#x1F321;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>热力学分析</h3>
-                    <p>阀门热传导、对流、辐射分析。支持稳态/瞬态热分析、温度场可视化与热应力计算。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F525; 热传导</span><span>&#x1F4A8; 对流</span><span>&#x2600; 辐射</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/structural" style="--card-accent:linear-gradient(90deg,#8b5cf6,#a78bfa)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">&#x1F3D7;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>结构强度分析 FEM</h3>
-                    <p>有限元结构强度分析工具。支持应力分布计算、疲劳寿命预测与安全系数评估。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F3D7; FEM</span><span>&#x1F4D0; 应力分析</span><span>&#x23F3; 疲劳预测</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/fluid_mechanics" style="--card-accent:linear-gradient(90deg,#06b6d4,#22d3ee)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee">&#x1F30A;</div>
-                        <span class="module-badge badge-new">新上线</span>
-                    </div>
-                    <h3>流体力学超级计算器</h3>
-                    <p>207 公式，21 大类：流体性质、静力学、伯努利、管流、明渠、可压缩流、孔板阀门、边界层、液压、水锤等。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4D0; 207公式</span><span>&#x1F3F7; 21大类</span><span>&#x1F30A; 14种流体</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/ai-agent" style="--card-accent:linear-gradient(90deg,#7c3aed,#a78bfa)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(124,58,237,0.12);color:#a78bfa">&#x1F916;</div>
-                        <span class="module-badge badge-new">新上线</span>
-                    </div>
-                    <h3>AI Co-Pilot v3</h3>
-                    <p>多代理协同 + 知识图谱 + 向量搜索。7个Agent并行，PAOR推理循环，实时相关知识与公式推荐。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F9E0; 10工具</span><span>&#x1F30D; 255实体</span><span>&#x1F504; 7 Agent</span>
-                    </div>
-                </a>
-            </div>
-
-            <div class="section-header">
-                <span class="section-title">&#x1F4CA; 数据与标准</span>
-                <span class="section-count">3 个模块</span>
-            </div>
-            <div class="modules-grid" data-category="data">
-                <a class="module-card" href="/materials" style="--card-accent:linear-gradient(90deg,#ec4899,#f472b6)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(236,72,153,0.12);color:var(--accent-pink)">&#x1F52C;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>材料数据库</h3>
-                    <p>7 大类 21 种航空航天级材料。导体、磁性、绝缘、结构材料全覆盖，支持智能推荐与绕组计算。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F52C; 7大类</span><span>&#x1F4D0; 21种材料</span><span>&#x1F916; 智能推荐</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/valve_metrics" style="--card-accent:linear-gradient(90deg,#8b5cf6,#a78bfa)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">&#x1F4C8;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>性能指标库</h3>
-                    <p>48 项指标定义、9 类阀门规格、8 大应用领域、6 级泄漏等级、27 部标准规范。系统权威完备。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4CA; 48项指标</span><span>&#x1F4CB; 27部标准</span><span>&#x1F3F7; 9类阀门</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/qj20156" style="--card-accent:linear-gradient(90deg,#f59e0b,#fbbf24)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-amber)">&#x1F4CB;</div>
-                        <span class="module-badge badge-new">新上线</span>
-                    </div>
-                    <h3>QJ 20156-2012 标准合规</h3>
-                    <p>空间系统气体减压阀通用规范。标准浏览器、30 项检验矩阵、热真空/热循环剖面生成器。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4CB; QJ 20156</span><span>&#x2705; 30项检验</span><span>&#x1F321; 热真空</span>
-                    </div>
-                </a>
-            </div>
-
-                        <div class="section-header">
-                <span class="section-title">&#x1F4D0; 研发模板库</span>
-                <span class="section-count">1 个模块</span>
-            </div>
-            <div class="modules-grid" data-category="templates">
-                
-                <a class="module-card" href="/seal_design" style="--card-accent:linear-gradient(90deg,#10b981,#34d399)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(16,185,129,0.12);color:#10b981">&#x1F9ED;</div>
-                        <span class="module-badge badge-new">NEW</span>
-                    </div>
-                    <h3>&#x5BC6;&#x5C01;&#x526F;&#x8BBE;&#x8BA1;&#x8BA1;&#x7B97;</h3>
-                    <p>&#x57FA;&#x4E8E;Hertz&#x5F39;&#x6027;&#x63A5;&#x89E6;&#x7406;&#x8BBA;&#x548C;Roth&#x5206;&#x5B50;&#x6D41;&#x6CC4;&#x6F0F;&#x6A21;&#x578B;&#xFF0C;&#x5B9E;&#x73B0;&#x63A5;&#x89E6;&#x529B;&#x5B66;&#x5206;&#x6790;&#x3001;&#x6D41;&#x6001;&#x5224;&#x65AD;&#x3001;&#x6CC4;&#x6F0F;&#x7387;&#x8BA1;&#x7B97;&#x3001;&#x5B89;&#x5168;&#x8BC4;&#x5B9A;&#x3001;&#x53EF;&#x9760;&#x6027;&#x9884;&#x4F30;&#x3002;&#x652F;&#x6301;4&#x79CD;&#x63A5;&#x89E6;&#x6784;&#x578B;&#x3001;10&#x79CD;&#x6750;&#x6599;&#x3001;6&#x79CD;&#x6C14;&#x4F53;&#x3002;</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F9F0; Hertz + Roth</span><span>&#x1F9F1; ISO 5208</span>
-                    </div>
-                </a><a class="module-card" href="/templates" style="--card-accent:linear-gradient(90deg,#00b4d8,#48cae4)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(0,180,216,0.12);color:var(--accent)">&#x1F4D0;</div>
-                        <span class="module-badge badge-new">NEW</span>
-                    </div>
-                    <h3>研发模板库</h3>
-                    <p>航空航天阀门专业报告模板库。涵盖设计计算、试验检验、技术方案、合格审定、分析评估 5 大类，10 套专业模板，支持预览、复制、下载。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4C2; 5大类</span><span>&#x1F4C4; 10模板</span><span>&#x1F4CB; 工业级</span>
-                    </div>
-                </a>
-            </div>
-
-<div class="section-header">
-                <span class="section-title">&#x1F4D6; 知识管理</span>
-                <span class="section-count">4 个模块</span>
-            </div>
-            <div class="modules-grid" data-category="knowledge">
-                <a class="module-card" href="https://avis8888.github.io/Avis/" target="_blank" rel="noopener" style="--card-accent:linear-gradient(90deg,#f59e0b,#fbbf24)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-yellow)">&#x1F3DB;</div>
-                        <span class="module-badge badge-active">外部链接</span>
-                    </div>
-                    <h3>Avis 研发智库</h3>
-                    <p>航空航天阀门系统工程知识体系大厦。57章60万字，覆盖设计/制造/试验/管理全生命周期。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4D6; 57章</span><span>&#x1F4DD; 60万字</span><span>&#x1F310; 独立站点</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/knowledge" style="--card-accent:linear-gradient(90deg,#0ea5e9,#38bdf8)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(14,165,233,0.12);color:#38bdf8">&#x1F4DA;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>专业知识库</h3>
-                    <p>航空航天阀门研发全链条知识体系。涵盖流体力学、热力学、材料科学、阀门设计、制造工艺等专业内容。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4DA; 15章</span><span>&#x1F4D6; 31,400字</span><span>&#x1F3F7; 197标签</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/knowledge_articles" style="--card-accent:linear-gradient(90deg,#10b981,#34d399)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-green)">&#x1F4F0;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>技术文章</h3>
-                    <p>航空航天阀门领域技术文章、标准解读、工程案例。支持分类浏览、全文搜索、标签导航。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F50D; 搜索</span><span>&#x1F3F7; 标签</span><span>&#x1F4C2; 分类</span>
-                    </div>
-                </a>
-                <a class="module-card" href="/cms_admin" style="--card-accent:linear-gradient(90deg,#8b5cf6,#a78bfa)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)">&#x270F;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>内容管理 CMS</h3>
-                    <p>专业级内容管理系统。文章创建/编辑/发布、分类管理、标签系统、Markdown 编辑与浏览统计。</p>
-                    <div class="module-card-footer">
-                        <span>&#x270F; Markdown</span><span>&#x1F4C2; 分类</span><span>&#x1F4CA; 统计</span>
-                    </div>
-                </a>
-            </div>
-
-            <div class="section-header">
-                <span class="section-title">&#x1F6E0; 系统</span>
-                <span class="section-count">1 个模块</span>
-            </div>
-            <div class="modules-grid" data-category="system">
-                <a class="module-card" href="/docs" style="--card-accent:linear-gradient(90deg,#6366f1,#818cf8)">
-                    <div class="module-card-header">
-                        <div class="module-card-icon" style="background:rgba(99,102,241,0.12);color:#818cf8">&#x1F4D6;</div>
-                        <span class="module-badge badge-active">已上线</span>
-                    </div>
-                    <h3>文档与帮助</h3>
-                    <p>平台使用文档、API 文档、教程视频与常见问题解答。帮助您快速上手平台各项功能。</p>
-                    <div class="module-card-footer">
-                        <span>&#x1F4D6; 使用文档</span><span>&#x1F50C; API文档</span><span>&#x2753; FAQ</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- No results -->
-        <div class="empty-state" id="noResults" style="display:none">
-            <div class="empty-state-icon">&#x1F50D;</div>
-            <h3>未找到匹配的模块</h3>
-            <p>请尝试其他关键词搜索</p>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <span class="session-badge" id="sessionBadge" style="display:none"></span>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="main-footer">
-        <span>&#x00A9; 2026 航空航天阀门研发平台 v1.0</span>
-        <span>开发者 <a href="#">QClaw</a> | 用户 <a href="#">张老师</a></span>
-    </footer>
+    <div class="chat-container" id="chatContainer">
+        <!-- Welcome -->
+        <div class="welcome" id="welcomeScreen">
+            <div class="welcome-icon">🛸</div>
+            <h2>航空航天阀门 AI 智能体协作平台</h2>
+            <p>
+                与专家级 AI Agent 直接对话：设计阀门、检查标准合规、推荐材料、运行仿真 — 
+                一切通过自然语言完成。使用 @设计大师 @标准官 指定专家。
+            </p>
+            <div class="quick-actions" id="quickActions">
+                <button class="quick-action" onclick="sendQuick('设计一个 10MPa 火箭煤油减压阀')">🛠️ 减压阀设计</button>
+                <button class="quick-action" onclick="sendQuick('@标准官 检查 5MPa 液氧电磁阀是否符合 QJ20156')">📋 标准合规检查</button>
+                <button class="quick-action" onclick="sendQuick('推荐 800°C 高温氢气环境下的密封材料')">🔬 材料推荐</button>
+                <button class="quick-action" onclick="sendQuick('设计一个 200N 力的压缩弹簧，行程 15mm')">⚙️ 弹簧设计</button>
+                <button class="quick-action" onclick="sendQuick('计算雷诺数，流速 2.5 m/s，管径 10mm')">📐 工程计算</button>
+                <button class="quick-action" onclick="sendQuick('O形圈沟槽设计，轴径 25mm，压力 20MPa')">🔘 O形圈设计</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+        <div class="input-row">
+            <span id="selectedAgentLabel">@总工程师</span>
+            <textarea id="userInput" placeholder="输入工程需求... (可用 @设计大师 @标准官 @材料专家 @仿真专家 指定)" rows="1"
+                      onkeydown="handleKeydown(event)" oninput="autoResize(this)"></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="发送">➤</button>
+        </div>
+    </div>
 </div>
 
 <script>
-// ===== Sidebar toggle =====
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-}
-function toggleNavSection(header) {
-    header.parentElement.classList.toggle('collapsed');
-}
-// ===== User menu toggle =====
-function toggleUserMenu() {
-    document.getElementById('sidebarUserMenu').classList.toggle('show');
-}
-document.addEventListener('click', function(e) {
-    var menu = document.getElementById('sidebarUserMenu');
-    var user = document.getElementById('sidebarUser');
-    if (!user.contains(e.target) && !menu.contains(e.target)) {
-        menu.classList.remove('show');
+    // ===== State =====
+    let sessionId = '';
+    let isLoading = false;
+    let selectedAgent = 'all';
+
+    // ===== Init =====
+    async function init() {
+        try {
+            const resp = await fetch('/api/avis/session', { method: 'POST' });
+            const data = await resp.json();
+            if (data.session_id) {
+                sessionId = data.session_id;
+                const badge = document.getElementById('sessionBadge');
+                badge.textContent = 'S:' + sessionId.slice(-8);
+                badge.style.display = 'inline-block';
+            }
+            // Check health
+            const h = await fetch('/api/avis/health');
+            const hd = await h.json();
+            if (hd.memory && hd.memory.enabled) {
+                console.log('Memory: ' + hd.memory.snapshot_count + ' snapshots, ' + hd.memory.experience_count + ' experiences');
+            }
+        } catch (e) {
+            console.warn('Avis backend not reachable, running in offline mode');
+            document.getElementById('sessionBadge').textContent = '离线';
+            document.getElementById('sessionBadge').style.display = 'inline-block';
+        }
     }
-});
 
-// ===== Search =====
-function filterModules(query) {
-    var q = query.toLowerCase().trim();
-    var cards = document.querySelectorAll('.module-card');
-    var sections = document.querySelectorAll('.section-header');
-    var noResults = document.getElementById('noResults');
-    var visibleCount = 0;
+    // ===== Agent Selection =====
+    function selectAgent(agentId, el) {
+        selectedAgent = agentId;
+        document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
 
-    sections.forEach(function(s) { s.style.display = q ? 'none' : ''; });
+        const labels = {
+            all: '@总工程师',
+            design: '@设计大师',
+            compliance: '@标准官',
+            material: '@材料专家',
+            simulation: '@仿真专家'
+        };
+        document.getElementById('selectedAgentLabel').textContent = labels[agentId] || '@总工程师';
+        document.getElementById('userInput').focus();
+    }
 
-    cards.forEach(function(card) {
-        var text = (card.innerText || '').toLowerCase();
-        var visible = !q || text.indexOf(q) !== -1;
-        card.style.display = visible ? '' : 'none';
-        if (visible) visibleCount++;
+    // ===== Sidebar Toggle =====
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // ===== Classic View =====
+    function switchToClassic() {
+        window.location.href = '/index_classic.html';
+    }
+
+    // ===== Send Message =====
+    async function sendMessage() {
+        if (isLoading) return;
+
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Hide welcome
+        const welcome = document.getElementById('welcomeScreen');
+        if (welcome) welcome.style.display = 'none';
+
+        // Add user message
+        addMessage('user', text);
+
+        // Show thinking
+        const thinkingId = addThinking();
+
+        input.value = '';
+        input.style.height = 'auto';
+        isLoading = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        try {
+            const body = { message: text };
+            if (selectedAgent !== 'all') {
+                body.agent = selectedAgent;
+            }
+
+            const resp = await fetch('/api/avis/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            const data = await resp.json();
+
+            // Remove thinking
+            removeThinking(thinkingId);
+
+            if (data.error) {
+                addMessage('assistant', '⚠️ 处理请求时出错: ' + data.error);
+            } else {
+                // Show agent response
+                let responseHtml = data.response || '';
+                if (!responseHtml && data.agents && data.agents.length) {
+                    responseHtml = '✅ 已调度 Agent: **' + data.agents.join(', ') + '**\n\n处理完成。';
+                }
+                addMessage('assistant', responseHtml, data.agents || []);
+
+                // Update session
+                if (data.session_id) {
+                    sessionId = data.session_id;
+                    const badge = document.getElementById('sessionBadge');
+                    badge.textContent = 'S:' + sessionId.slice(-8);
+                    badge.style.display = 'inline-block';
+                }
+            }
+        } catch (e) {
+            removeThinking(thinkingId);
+            addMessage('assistant', '⚠️ 无法连接到 Avis 引擎。请确认 Avis 后端服务已启动。');
+            console.error('Send error:', e);
+        } finally {
+            isLoading = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('userInput').focus();
+        }
+    }
+
+    function sendQuick(text) {
+        document.getElementById('userInput').value = text;
+        sendMessage();
+    }
+
+    function handleKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // ===== Message Rendering =====
+    function addMessage(role, content, agents) {
+        const container = document.getElementById('chatContainer');
+        const div = document.createElement('div');
+        div.className = 'msg ' + role;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'msg-avatar';
+        avatar.textContent = role === 'user' ? '👤' : '🤖';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+
+        if (role === 'assistant') {
+            bubble.innerHTML = formatMarkdown(content);
+        } else {
+            bubble.textContent = content;
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        meta.innerHTML = '<span>' + new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) + '</span>';
+
+        if (agents && agents.length) {
+            agents.forEach(a => {
+                const tag = document.createElement('span');
+                tag.className = 'agent-tag';
+                tag.textContent = a;
+                meta.appendChild(tag);
+            });
+        }
+
+        div.appendChild(avatar);
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(meta);
+        div.appendChild(wrapper);
+
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function addThinking() {
+        const container = document.getElementById('chatContainer');
+        const div = document.createElement('div');
+        div.className = 'msg assistant';
+        div.id = 'thinking-' + Date.now();
+
+        const avatar = document.createElement('div');
+        avatar.className = 'msg-avatar';
+        avatar.textContent = '🤖';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.innerHTML = '<div class="thinking-indicator"><span></span><span></span><span></span></div>';
+
+        div.appendChild(avatar);
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(bubble);
+        div.appendChild(wrapper);
+
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+        return div.id;
+    }
+
+    function removeThinking(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // ===== Simple Markdown Formatter =====
+    function formatMarkdown(text) {
+        if (!text) return '';
+        // Bold
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Italic
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        // Code blocks
+        text = text.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+        // Inline code
+        text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+        // Headers
+        text = text.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+        text = text.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+        // Horizontal rules
+        text = text.replace(/^-{3,}$/gm, '<hr>');
+        // Unordered lists
+        text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
+        text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+        // Links (simple)
+        text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent)">$1</a>');
+        // Line breaks
+        text = text.replace(/\n\n/g, '</p><p>');
+        text = text.replace(/\n/g, '<br>');
+
+        return '<p>' + text + '</p>';
+    }
+
+    // ===== Keyboard Shortcut =====
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            document.getElementById('userInput').focus();
+        }
     });
 
-    noResults.style.display = (q && visibleCount === 0) ? '' : 'none';
-}
-
-// Global search shortcut
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        document.getElementById('globalSearch').focus();
-    }
-});
-
-// ===== Auth state =====
-function updateAuthUI(user) {
-    document.getElementById('sidebarAvatar').textContent = user.real_name.charAt(0);
-    document.getElementById('sidebarUserName').textContent = user.real_name;
-    document.getElementById('sidebarUserRole').textContent = user.role;
-    document.getElementById('menuLogin').style.display = 'none';
-    document.getElementById('menuLogout').style.display = '';
-
-    if (user.role === '管理员' || user.role === '\u7ba1\u7406\u5458') {
-        var items = document.querySelectorAll('.admin-only');
-        for (var i = 0; i < items.length; i++) {
-            items[i].style.display = '';
+    // Click outside sidebar to close on mobile
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !e.target.closest('.mobile-toggle')) {
+            sidebar.classList.remove('open');
         }
-    }
-}
+    });
 
-function showLoginState() {
-    document.getElementById('menuLogin').style.display = '';
-}
-
-window.addEventListener('DOMContentLoaded', function() {
-    var token = localStorage.getItem('token');
-    var userStr = localStorage.getItem('user');
-
-    if (token && userStr) {
-        try {
-            var user = JSON.parse(userStr);
-            updateAuthUI(user);
-
-            // Verify token is still valid
-            fetch('/api/auth/verify', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            }).then(function(r) { return r.json(); }).then(function(d) {
-                if (!d.success || !d.user) throw new Error('invalid');
-                updateAuthUI(d.user);
-            }).catch(function() {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                showLoginState();
-            });
-        } catch(e) {
-            showLoginState();
-        }
-    } else {
-        showLoginState();
-    }
-});
-
-async function logout() {
-    var token = localStorage.getItem('token');
-    if (token) {
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-        } catch(e) {}
-    }
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    document.cookie = 'auth_token=; path=/; max-age=0';
-    window.location.reload();
-}
+    // Init on load
+    init();
 </script>
 </body>
 </html>

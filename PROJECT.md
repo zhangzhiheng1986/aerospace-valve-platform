@@ -1,9 +1,14 @@
-# 航空航天电磁阀优化平台 - 项目完整文档
+# Avis 航空航天阀门研发平台 - 项目完整文档
 
 ## 📋 项目概述
 
 ### 项目名称
-航空航天电磁阀线圈优化平台 (Aerospace Valve R&D Platform - Web Version)
+**Avis** (Aerospace Valve Intelligent Suite) - 航空航天阀门研发智能套件
+官方中文名: **Avis 航空航天阀门研发平台**
+
+### 项目代号
+- 正式代号: **Avis** (2026-06-19 起启用)
+- 历史代号: AV-RD (Aerospace Valve R&D Platform, 2026-05-29 ~ 2026-06-19)
 
 ### 项目目标
 将Tkinter桌面程序 (`solenoid_optimizer_gui_1.py`) 转换为Web平台的在线可视化工具，让用户可以通过浏览器进行电磁阀优化计算。

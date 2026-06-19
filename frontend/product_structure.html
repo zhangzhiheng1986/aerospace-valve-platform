@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Structure Library - Avis Platform</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1923; color: #e0e6ed; display: flex; height: 100vh; }
+:root {
+  --bg-primary: #0f1923; --bg-secondary: #1a2736; --bg-card: #1e2d3d;
+  --accent: #00b4d8; --accent-glow: rgba(0,180,216,0.15);
+  --text-primary: #e0e6ed; --text-secondary: #8899aa;
+  --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
+}
+.sidebar { width: 260px; background: var(--bg-secondary); border-right: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; padding: 16px; }
+.sidebar h2 { font-size: 16px; color: var(--accent); margin-bottom: 12px; }
+.sidebar .entity-list { list-style: none; max-height: 300px; overflow-y: auto; }
+.sidebar .entity-list li { padding: 8px 10px; cursor: pointer; border-radius: 4px; font-size: 13px; margin-bottom: 2px; border: 1px solid transparent; }
+.sidebar .entity-list li:hover { background: var(--bg-card); border-color: var(--border); }
+.sidebar .entity-list li.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+.sidebar .entity-list li .badge { float: right; font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--bg-card); color: var(--text-secondary); }
+.sidebar .section-title { font-size: 12px; text-transform: uppercase; color: var(--text-secondary); margin: 16px 0 8px; letter-spacing: 1px; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.header { padding: 12px 24px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header .stats { margin-left: auto; font-size: 13px; color: var(--text-secondary); }
+.header .stats span { color: var(--accent); font-weight: 600; margin: 0 8px; }
+.content { flex: 1; overflow-y: auto; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.panel.full { grid-column: 1 / -1; }
+.panel h3 { font-size: 15px; margin-bottom: 12px; color: var(--accent); }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; font-size: 13px; }
+.form-group textarea { resize: vertical; min-height: 50px; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 13px; background: var(--bg-secondary); color: var(--text-primary); }
+.btn:hover { border-color: var(--accent); }
+.btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-sm { padding: 3px 8px; font-size: 11px; }
+.bom-tree { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 13px; line-height: 1.8; white-space: pre; padding: 12px; background: var(--bg-primary); border-radius: 4px; max-height: 500px; overflow-y: auto; }
+.bom-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bom-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; font-size: 12px; }
+.bom-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.bom-table tr:hover td { background: rgba(0,180,216,0.05); }
+.level-0 { padding-left: 4px; }
+.level-1 { padding-left: 28px; color: var(--accent); }
+.level-2 { padding-left: 52px; }
+.level-3 { padding-left: 76px; color: var(--text-secondary); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-right: 4px; }
+.tag-draft { background: #3a3a1a; color: var(--warning); }
+.tag-review { background: #1a2a3a; color: var(--accent); }
+.tag-approved { background: #1a3a1a; color: var(--success); }
+.tag-obsolete { background: #3a1a1a; color: var(--danger); }
+.empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; width: 480px; max-height: 80vh; overflow-y: auto; }
+.modal h3 { color: var(--accent); margin-bottom: 16px; }
+.tabs { display: flex; gap: 2px; margin-bottom: 16px; }
+.tab { padding: 6px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 4px 4px 0 0; font-size: 13px; background: var(--bg-secondary); }
+.tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.assembly-link { cursor: pointer; color: var(--accent); text-decoration: underline; }
+.search-bar { margin-bottom: 12px; }
+.search-bar input { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>Product Structure</h2>
+  <div class="search-bar"><input type="text" id="searchInput" placeholder="Search..." oninput="doSearch()"></div>
+
+  <div class="section-title">Series</div>
+  <ul class="entity-list" id="seriesList"></ul>
+
+  <div class="section-title">Models</div>
+  <ul class="entity-list" id="modelList"></ul>
+
+  <div class="section-title">Assemblies</div>
+  <ul class="entity-list" id="assemblyList"></ul>
+
+  <div class="section-title">Components</div>
+  <ul class="entity-list" id="componentList"></ul>
+
+  <div style="margin-top:16px">
+    <button class="btn btn-primary" style="width:100%" onclick="openCreateModal()">+ New Entity</button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="header">
+    <h1>Product Structure Library</h1>
+    <div class="stats" id="headerStats">Loading...</div>
+  </div>
+
+  <div class="content" id="mainContent">
+    <div class="panel full empty-state"><div class="icon">Select an entity from the sidebar to view details</div></div>
+  </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h3>Create Entity</h3>
+    <div class="tabs">
+      <div class="tab active" data-tab="tab-series">Series</div>
+      <div class="tab" data-tab="tab-model">Model</div>
+      <div class="tab" data-tab="tab-assembly">Assembly</div>
+      <div class="tab" data-tab="tab-component">Component</div>
+    </div>
+    <div class="tab-content active" id="tab-series">
+      <div class="form-group"><label>Name</label><input id="cs_name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Code</label><input id="cs_code"></div>
+        <div class="form-group"><label>Valve Type</label><select id="cs_valve_type"><option value="">Select...</option><option value="solenoid">Solenoid</option><option value="pressure_reducing">Pressure Reducing</option><option value="check">Check</option><option value="ball">Ball</option><option value="butterfly">Butterfly</option></select></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="cs_desc"></textarea></div>
+      <button class="btn btn-primary" onclick="createSeries()">Create Series</button>
+    </div>
+    <div class="tab-content" id="tab-model">
+      <div class="form-group"><label>Model Name</label><input id="cm_name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Series</label><select id="cm_series"></select></div>
+        <div class="form-group"><label>Fluid Type</label><input id="cm_fluid" placeholder="e.g. LOX, GHe, GN2"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Pressure (MPa)</label><input id="cm_pressure" type="number" step="0.1"></div>
+        <div class="form-group"><label>Temperature (C)</label><input id="cm_temp" type="number" step="0.1"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nominal Size</label><input id="cm_size" placeholder="e.g. DN25"></div>
+        <div class="form-group"><label>Connection</label><input id="cm_conn" placeholder="e.g. flange"></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="cm_desc"></textarea></div>
+      <button class="btn btn-primary" onclick="createModel()">Create Model</button>
+    </div>
+    <div class="tab-content" id="tab-assembly">
+      <div class="form-group"><label>Name</label><input id="ca_name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Type</label><select id="ca_type"><option value="">Select...</option><option value="body_assembly">Body Assembly</option><option value="actuator_assembly">Actuator Assembly</option><option value="bonnet_assembly">Bonnet Assembly</option><option value="valve_assembly">Valve Assembly</option><option value="spring_assembly">Spring Assembly</option></select></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="ca_desc"></textarea></div>
+      <button class="btn btn-primary" onclick="createAssembly()">Create Assembly</button>
+    </div>
+    <div class="tab-content" id="tab-component">
+      <div class="form-group"><label>Name</label><input id="cc_name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Part Number</label><input id="cc_pn"></div>
+        <div class="form-group"><label>Material</label><input id="cc_mat"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Specification</label><input id="cc_spec"></div>
+        <div class="form-group"><label>Standard</label><input id="cc_std" placeholder="e.g. SAE AS568F"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Qty per Assembly</label><input id="cc_qty" type="number" value="1"></div>
+        <div class="form-group"><label>Mass (kg)</label><input id="cc_mass" type="number" step="0.001" value="0"></div>
+      </div>
+      <div class="form-group"><label>Supplier</label><input id="cc_supplier"></div>
+      <button class="btn btn-primary" onclick="createComponent()">Create Component</button>
+    </div>
+    <button class="btn" style="margin-top:12px" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const API = '/api/avis/ps';
+let currentSelection = null;
+
+// --- Init ---
+async function init() {
+  await loadStats();
+  await loadAll();
+}
+async function loadStats() {
+  const r = await fetch(API + '/stats'); const d = await r.json();
+  document.getElementById('headerStats').innerHTML =
+    `Series: <span>${d.series_count}</span> Models: <span>${d.model_count}</span> Assemblies: <span>${d.assembly_count}</span> Components: <span>${d.component_count}</span>`;
+}
+async function loadAll() {
+  const [series, models, assemblies, components] = await Promise.all([
+    fetch(API + '/series').then(r => r.json()),
+    fetch(API + '/models').then(r => r.json()),
+    fetch(API + '/assemblies').then(r => r.json()),
+    fetch(API + '/components').then(r => r.json())
+  ]);
+  renderList('seriesList', series, 'series_id', 'series_name', 'valve_type');
+  renderList('modelList', models, 'model_id', 'model_name', 'fluid_type');
+  renderList('assemblyList', assemblies, 'assembly_id', 'name', 'assembly_type');
+  renderList('componentList', components, 'component_id', 'name', 'material');
+}
+function renderList(listId, items, idKey, nameKey, badgeKey) {
+  const el = document.getElementById(listId);
+  el.innerHTML = items.map(i =>
+    `<li data-id="${i[idKey]}" data-type="${listId.replace('List','')}" onclick="selectEntity('${i[idKey]}', '${listId.replace('List','')}')">
+      ${i[nameKey] || i[idKey]}
+      <span class="badge">${i[badgeKey] || ''}</span>
+    </li>`
+  ).join('');
+}
+async function doSearch() {
+  const q = document.getElementById('searchInput').value;
+  if (!q) { await loadAll(); return; }
+  const r = await fetch(API + '/search?q=' + encodeURIComponent(q)); const d = await r.json();
+  renderList('seriesList', d.series || [], 'series_id', 'series_name', 'valve_type');
+  renderList('modelList', d.models || [], 'model_id', 'model_name', 'fluid_type');
+  renderList('assemblyList', d.assemblies || [], 'assembly_id', 'name', 'assembly_type');
+  renderList('componentList', d.components || [], 'component_id', 'name', 'material');
+}
+
+// --- Selection ---
+async function selectEntity(id, type) {
+  currentSelection = { id, type };
+  document.querySelectorAll('.entity-list li').forEach(li => li.classList.remove('active'));
+  document.querySelector(`[data-id="${id}"]`)?.classList.add('active');
+
+  const main = document.getElementById('mainContent');
+  if (type === 'series') {
+    const s = await fetch(API + '/series/' + id).then(r => r.json());
+    const models = await fetch(API + '/models?series_id=' + id).then(r => r.json());
+    main.innerHTML = `
+      <div class="panel">
+        <h3>${s.series_name} <span class="tag tag-approved">${s.valve_type || 'N/A'}</span></h3>
+        <p style="color:var(--text-secondary);margin:8px 0">${s.description || 'No description'}</p>
+        <p style="font-size:12px;color:var(--text-secondary)">Code: ${s.series_code || 'N/A'} | ID: ${id}</p>
+        <div style="margin-top:12px">
+          <button class="btn btn-danger btn-sm" onclick="deleteEntity('series','${id}')">Delete</button>
+          <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="seedPresets()">Seed Presets</button>
+        </div>
+      </div>
+      <div class="panel"><h3>Models in Series</h3>${models.length ? models.map(m => `<div style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;color:var(--accent)" onclick="selectEntity('${m.model_id}','model')">${m.model_name} <span class="tag tag-${m.status}">${m.status}</span></div>`).join('') : '<p class="empty-state">No models yet</p>'}</div>`;
+  } else if (type === 'model') {
+    const m = await fetch(API + '/models/' + id).then(r => r.json());
+    const tree = await fetch(API + '/bom/tree/' + id).then(r => r.json());
+    const flat = await fetch(API + '/bom/flat/' + id).then(r => r.json());
+    main.innerHTML = `
+      <div class="panel full">
+        <h3>${m.model_name} <span class="tag tag-${m.status}">${m.status}</span> <span style="font-size:12px;color:var(--text-secondary)">Rev ${m.revision}</span></h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0;font-size:13px">
+          <div><span style="color:var(--text-secondary)">Fluid:</span> ${m.fluid_type || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Pressure:</span> ${m.design_pressure_mpa || 0} MPa</div>
+          <div><span style="color:var(--text-secondary)">Temp:</span> ${m.design_temperature_c || 20} C</div>
+          <div><span style="color:var(--text-secondary)">Size:</span> ${m.nominal_size || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Connection:</span> ${m.connection_type || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Total Mass:</span> ${m.total_mass_kg || 0} kg</div>
+          <div><span style="color:var(--text-secondary)">Items:</span> ${flat.item_count}</div>
+          <div><span style="color:var(--text-secondary)">ID:</span> ${id}</div>
+        </div>
+        <div style="margin-top:8px">
+          <button class="btn btn-sm" onclick="selectEntity('${id}','bom')">BOM Tree</button>
+          <button class="btn btn-sm" onclick="selectEntity('${id}','bomflat')">Flat BOM</button>
+          <button class="btn btn-sm" onclick="exportCSV('${id}')">CSV</button>
+          <button class="btn btn-sm" onclick="exportJSON('${id}')">JSON</button>
+          <button class="btn btn-sm" onclick="cloneModel('${id}')">Clone</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEntity('model','${id}')">Delete</button>
+        </div>
+      </div>
+      <div class="panel"><h3>Assemblies</h3>${m.top_assemblies && m.top_assemblies.length ? m.top_assemblies.map(a => `<div style="padding:4px 0;cursor:pointer;color:var(--accent)" onclick="selectEntity('${a}','assembly')">${a}</div>`).join('') : '<p class="empty-state">No assemblies</p>'}</div>
+      <div class="panel"><h3>BOM Summary</h3><table class="bom-table"><tr><th>Level</th><th>Type</th><th>Name</th><th>Qty</th></tr>${flat.items.map(i => `<tr><td class="level-${i.level}">${i.level}</td><td>${i.entity_type}</td><td>${i.name}</td><td>${i.quantity}</td></tr>`).join('')}</table></div>`;
+  } else if (type === 'assembly') {
+    const a = await fetch(API + '/assemblies/' + id).then(r => r.json());
+    main.innerHTML = `
+      <div class="panel full">
+        <h3>${a.name} <span class="badge">${a.assembly_type || 'assembly'}</span></h3>
+        <p style="color:var(--text-secondary);margin:8px 0">${a.description || 'No description'}</p>
+        <p style="font-size:12px;color:var(--text-secondary)">ID: ${id} | Qty: ${a.quantity}</p>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary btn-sm" onclick="addComponent('${id}')">+ Component</button>
+          <button class="btn btn-sm" onclick="addChildAssembly('${id}')">+ Sub-Assembly</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEntity('assembly','${id}')">Delete</button>
+        </div>
+      </div>
+      <div class="panel"><h3>Components</h3>${a.components && a.components.length ? a.components.map(c => `<div style="padding:4px 0;cursor:pointer;color:var(--accent)" onclick="selectEntity('${c}','component')">${c}</div>`).join('') : '<p class="empty-state">No components</p>'}</div>
+      <div class="panel"><h3>Sub-Assemblies</h3>${a.child_assemblies && a.child_assemblies.length ? a.child_assemblies.map(ca => `<div style="padding:4px 0;cursor:pointer;color:var(--accent)" onclick="selectEntity('${ca}','assembly')">${ca}</div>`).join('') : '<p class="empty-state">No child assemblies</p>'}</div>`;
+  } else if (type === 'component') {
+    const c = await fetch(API + '/components/' + id).then(r => r.json());
+    main.innerHTML = `
+      <div class="panel full">
+        <h3>${c.name} <span class="badge">component</span></h3>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0;font-size:13px">
+          <div><span style="color:var(--text-secondary)">Part Number:</span> ${c.part_number || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Material:</span> ${c.material || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Spec:</span> ${c.specification || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Standard:</span> ${c.standard || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Qty/Assy:</span> ${c.quantity_per_assembly}</div>
+          <div><span style="color:var(--text-secondary)">Mass:</span> ${c.mass_kg} kg</div>
+          <div><span style="color:var(--text-secondary)">Supplier:</span> ${c.supplier || 'N/A'}</div>
+          <div><span style="color:var(--text-secondary)">Unit:</span> ${c.unit}</div>
+          <div><span style="color:var(--text-secondary)">ID:</span> ${id}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="deleteEntity('component','${id}')">Delete</button>
+      </div>`;
+  } else if (type === 'bom') {
+    const tree = await fetch(API + '/bom/tree/' + id).then(r => r.json());
+    main.innerHTML = `<div class="panel full"><h3>BOM Tree</h3><div class="bom-tree">${formatTree(tree)}</div></div>`;
+  } else if (type === 'bomflat') {
+    const flat = await fetch(API + '/bom/flat/' + id).then(r => r.json());
+    main.innerHTML = `<div class="panel full"><h3>Flat BOM - ${flat.model_name} (${flat.item_count} items, ${flat.total_mass_kg} kg)</h3><table class="bom-table"><tr><th>Level</th><th>Type</th><th>Name</th><th>Qty</th><th>Part No.</th><th>Material</th><th>Mass (kg)</th></tr>${flat.items.map(i => `<tr><td>${i.level}</td><td>${i.entity_type}</td><td>${i.name}</td><td>${i.quantity}</td><td>${(i.metadata||{}).part_number||''}</td><td>${(i.metadata||{}).material||''}</td><td>${(i.metadata||{}).mass_kg||''}</td></tr>`).join('')}</table></div>`;
+  }
+}
+
+function formatTree(node, prefix = '') {
+  const icon = {model: 'Box', assembly: 'Package', component: 'Cog'};
+  let result = `${prefix}${icon[node.entity_type]||'?'} ${node.name} (x${node.quantity})\n`;
+  (node.children || []).forEach((child, i) => {
+    const isLast = i === node.children.length - 1;
+    result += formatTree(child, prefix + (isLast ? '  L-- ' : '  |-- '));
+  });
+  return result;
+}
+
+// --- CRUD ---
+async function deleteEntity(type, id) {
+  if (!confirm('Delete ' + type + ' ' + id + '?')) return;
+  await fetch(API + '/' + type + (type === 'series' ? '' : 's') + '/' + id, { method: 'DELETE' });
+  currentSelection = null;
+  await loadAll();
+  await loadStats();
+  document.getElementById('mainContent').innerHTML = '<div class="panel full empty-state">Deleted. Select another entity.</div>';
+}
+async function seedPresets() {
+  await fetch(API + '/seed', { method: 'POST' });
+  await loadAll();
+  await loadStats();
+}
+async function cloneModel(id) {
+  const name = prompt('New variant name:');
+  if (!name) return;
+  await fetch(API + '/models/' + id + '/clone', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({new_name: name}) });
+  await loadAll();
+  await loadStats();
+}
+async function exportCSV(id) {
+  window.open(API + '/bom/export/csv/' + id, '_blank');
+}
+async function exportJSON(id) {
+  window.open(API + '/bom/export/json/' + id, '_blank');
+}
+
+// --- Create Modal ---
+function openCreateModal() { document.getElementById('createModal').classList.add('show'); loadSeriesOptions(); }
+function closeModal() { document.getElementById('createModal').classList.remove('show'); }
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+async function loadSeriesOptions() {
+  const r = await fetch(API + '/series'); const d = await r.json();
+  document.getElementById('cm_series').innerHTML = '<option value="">Select...</option>' + d.map(s => `<option value="${s.series_id}">${s.series_name}</option>`).join('');
+}
+async function createSeries() {
+  const body = { name: document.getElementById('cs_name').value, code: document.getElementById('cs_code').value, valve_type: document.getElementById('cs_valve_type').value, description: document.getElementById('cs_desc').value };
+  await fetch(API + '/series', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeModal(); await loadAll(); await loadStats();
+}
+async function createModel() {
+  const body = { model_name: document.getElementById('cm_name').value, series_id: document.getElementById('cm_series').value, fluid_type: document.getElementById('cm_fluid').value, design_pressure_mpa: parseFloat(document.getElementById('cm_pressure').value)||0, design_temperature_c: parseFloat(document.getElementById('cm_temp').value)||20, nominal_size: document.getElementById('cm_size').value, connection_type: document.getElementById('cm_conn').value, description: document.getElementById('cm_desc').value };
+  await fetch(API + '/models', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeModal(); await loadAll(); await loadStats();
+}
+async function createAssembly() {
+  const body = { name: document.getElementById('ca_name').value, assembly_type: document.getElementById('ca_type').value, description: document.getElementById('ca_desc').value };
+  await fetch(API + '/assemblies', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeModal(); await loadAll(); await loadStats();
+}
+async function createComponent() {
+  const body = { name: document.getElementById('cc_name').value, part_number: document.getElementById('cc_pn').value, material: document.getElementById('cc_mat').value, specification: document.getElementById('cc_spec').value, standard: document.getElementById('cc_std').value, quantity_per_assembly: parseInt(document.getElementById('cc_qty').value)||1, mass_kg: parseFloat(document.getElementById('cc_mass').value)||0, supplier: document.getElementById('cc_supplier').value };
+  await fetch(API + '/components', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeModal(); await loadAll(); await loadStats();
+}
+
+// --- Assembly operations ---
+async function addComponent(assyId) {
+  const comps = await fetch(API + '/components').then(r => r.json());
+  const cid = prompt('Component ID:\n' + comps.map(c => `${c.component_id}: ${c.name}`).join('\n'));
+  if (cid) await fetch(API + '/assemblies/' + assyId + '/components', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({component_id: cid}) });
+  await selectEntity(assyId, 'assembly');
+}
+async function addChildAssembly(assyId) {
+  const assys = await fetch(API + '/assemblies').then(r => r.json());
+  const cid = prompt('Sub-Assembly ID:\n' + assys.map(a => `${a.assembly_id}: ${a.name}`).join('\n'));
+  if (cid) await fetch(API + '/assemblies/' + assyId + '/children/' + cid, { method: 'POST' });
+  await selectEntity(assyId, 'assembly');
+}
+
+// --- Init ---
+init();
+</script>
+</body>
+</html>

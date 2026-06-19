@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Graph - Avis Platform</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #0d1321;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0, 180, 216, 0.15);
+  --accent2: #64ffda;
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --text-muted: #5a6a7a;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --orange: #ff9f43;
+  --sidebar-width: 320px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header h2 {
+  font-size: 1.1rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-search {
+  padding: 0.75rem 1rem;
+}
+
+.sidebar-search input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.sidebar-search input:focus {
+  border-color: var(--accent);
+}
+
+.entity-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.entity-list::-webkit-scrollbar { width: 4px; }
+.entity-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.entity-item {
+  padding: 0.6rem 0.75rem;
+  margin: 0.15rem 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.entity-item:hover { background: rgba(255,255,255,0.05); }
+.entity-item.selected { background: var(--accent-glow); border-left: 3px solid var(--accent); }
+
+.entity-item .type-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.type-material { background: rgba(255,159,67,0.2); color: var(--orange); }
+.type-standard { background: rgba(100,255,218,0.2); color: var(--accent2); }
+.type-component { background: rgba(81,207,102,0.2); color: var(--success); }
+.type-concept { background: rgba(0,180,216,0.2); color: var(--accent); }
+.type-rule { background: rgba(255,107,107,0.2); color: var(--danger); }
+.type-parameter { background: rgba(255,212,59,0.2); color: var(--warning); }
+
+.entity-item .name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+}
+
+.topbar .back-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.topbar .back-link:hover { color: var(--accent); background: var(--accent-glow); }
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+/* Canvas */
+#graph-canvas {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* Entity Detail */
+.detail-panel {
+  max-width: 800px;
+}
+
+.detail-header {
+  margin-bottom: 1.5rem;
+}
+
+.detail-header h2 {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.detail-header .detail-type {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.detail-props {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.prop-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.prop-card .prop-key {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.prop-card .prop-val {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.neighbor-section {
+  margin-bottom: 1.25rem;
+}
+
+.neighbor-section h3 {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.neighbor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.neighbor-chip {
+  padding: 0.3rem 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.neighbor-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* Path Finder */
+.path-finder {
+  max-width: 600px;
+}
+
+.path-finder .input-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.path-finder select, .path-finder input {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  flex: 1;
+  outline: none;
+}
+
+.path-finder select:focus, .path-finder input:focus {
+  border-color: var(--accent);
+}
+
+.path-result {
+  margin-top: 1rem;
+}
+
+.path-node {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+}
+
+.path-arrow {
+  color: var(--accent);
+  font-size: 1.2rem;
+  margin: 0 0.5rem;
+}
+
+.path-edge-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+/* Compliance Checker */
+.compliance-panel { max-width: 700px; }
+
+.standard-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.standard-card .standard-icon {
+  font-size: 1.5rem;
+}
+
+.standard-card .standard-info { flex: 1; }
+.standard-card .standard-name { font-weight: 600; }
+.standard-card .standard-meta { font-size: 0.75rem; color: var(--text-muted); }
+.standard-card .standard-weight {
+  padding: 0.15rem 0.5rem;
+  background: var(--accent-glow);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+/* Material Explorer */
+.material-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.material-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.material-card h4 { color: var(--orange); margin-bottom: 0.5rem; }
+
+.alt-chip {
+  padding: 0.2rem 0.5rem;
+  background: rgba(255,159,67,0.1);
+  border: 1px solid rgba(255,159,67,0.3);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--orange);
+  margin: 0.15rem;
+  display: inline-block;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-card .stat-num {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-card .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+
+.btn:hover { background: var(--accent-glow); }
+.btn-primary { background: var(--accent); color: var(--bg-primary); font-weight: 600; }
+.btn-primary:hover { box-shadow: 0 0 15px var(--accent-glow); }
+.btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  animation: slideIn 0.3s ease;
+  z-index: 1000;
+}
+
+.toast-success { background: rgba(81,207,102,0.2); border: 1px solid var(--success); color: var(--success); }
+.toast-error { background: rgba(255,107,107,0.2); border: 1px solid var(--danger); color: var(--danger); }
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Tooltip style hover info */
+.hover-info {
+  position: absolute;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.78rem;
+  pointer-events: none;
+  z-index: 100;
+  max-width: 250px;
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>&#x1F52C; Knowledge Graph</h2>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" id="search-input" placeholder="Search entities..." oninput="debounceSearch()">
+  </div>
+  <div class="entity-list" id="entity-list">
+    <div class="loading">Loading entities...</div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="topbar">
+    <a href="/" class="back-link">&#x2190; Dashboard</a>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="graph">Graph</button>
+      <button class="tab-btn" data-tab="detail">Detail</button>
+      <button class="tab-btn" data-tab="paths">Path Finder</button>
+      <button class="tab-btn" data-tab="compliance">Compliance</button>
+      <button class="tab-btn" data-tab="materials">Materials</button>
+      <button class="tab-btn" data-tab="stats">Stats</button>
+    </div>
+  </div>
+  <div class="content-area" id="content-area">
+    <!-- Graph tab -->
+    <div id="tab-graph" style="height:100%;">
+      <canvas id="graph-canvas"></canvas>
+    </div>
+    <!-- Detail tab -->
+    <div id="tab-detail" class="detail-panel" style="display:none;">
+      <div class="empty-state">
+        <div class="empty-icon">&#x1F50D;</div>
+        <p>Select an entity from the sidebar to view details</p>
+      </div>
+    </div>
+    <!-- Paths tab -->
+    <div id="tab-paths" class="path-finder" style="display:none;">
+      <h3 style="margin-bottom:1rem;">Path Finder</h3>
+      <div class="input-row">
+        <select id="path-from"><option value="">From entity...</option></select>
+        <span style="color:var(--accent);font-size:1.2rem;">&#x2192;</span>
+        <select id="path-to"><option value="">To entity...</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="findPath()">Find Paths</button>
+      <div id="path-results"></div>
+    </div>
+    <!-- Compliance tab -->
+    <div id="tab-compliance" class="compliance-panel" style="display:none;">
+      <h3 style="margin-bottom:1rem;">Compliance Checker</h3>
+      <select id="compliance-component" style="padding:0.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;width:300px;" onchange="checkCompliance()">
+        <option value="">Select component type...</option>
+        <option value="solenoid">Solenoid Valve</option>
+        <option value="pressure">Pressure Reducing Valve</option>
+        <option value="check">Check Valve</option>
+        <option value="ball">Ball Valve</option>
+        <option value="butterfly">Butterfly Valve</option>
+      </select>
+      <div id="compliance-results" style="margin-top:1rem;"></div>
+    </div>
+    <!-- Materials tab -->
+    <div id="tab-materials" style="display:none;">
+      <h3 style="margin-bottom:1rem;">Material Alternatives Explorer</h3>
+      <div class="material-list" id="material-list">
+        <div class="loading">Loading materials...</div>
+      </div>
+    </div>
+    <!-- Stats tab -->
+    <div id="tab-stats" style="display:none;">
+      <h3 style="margin-bottom:1rem;">Graph Statistics</h3>
+      <div class="stats-grid" id="stats-grid"></div>
+      <button class="btn" onclick="runReasoning()" style="margin-right:0.5rem;">Run Inference</button>
+      <button class="btn btn-danger btn-sm" onclick="seedGraph()">Re-seed Graph</button>
+      <div id="reasoning-result" style="margin-top:1rem;"></div>
+      <h4 style="margin-top:1.5rem;margin-bottom:0.5rem;color:var(--text-secondary);">Consistency Validation</h4>
+      <div id="consistency-result"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ---- State ----
+let entities = [];
+let selectedEntityId = null;
+let searchTimeout = null;
+
+// ---- API helpers ----
+const API = {
+  async fetch(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  },
+  async post(url, body) {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  }
+};
+
+// ---- Init ----
+async function init() {
+  await loadEntities();
+  loadStats();
+  loadMaterials();
+  populateEntitySelects();
+  drawGraph();
+  setupTabs();
+}
+
+async function loadEntities(q) {
+  try {
+    let url = '/api/avis/kg/entities';
+    if (q) url += '?q=' + encodeURIComponent(q);
+    const data = await API.fetch(url);
+    entities = data.results || [];
+    renderEntityList();
+  } catch (e) {
+    console.error('Failed to load entities:', e);
+    document.getElementById('entity-list').innerHTML =
+      '<div class="loading">Failed to load. Is the backend running?</div>';
+  }
+}
+
+function renderEntityList() {
+  const el = document.getElementById('entity-list');
+  if (!entities.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem;"><p>No entities found</p></div>';
+    return;
+  }
+  el.innerHTML = entities.map(e => {
+    const typeClass = 'type-' + e.entity_type;
+    return `<div class="entity-item${e.entity_id === selectedEntityId ? ' selected' : ''}"
+                onclick="selectEntity('${e.entity_id}')" title="${e.name}">
+              <span class="type-badge ${typeClass}">${e.entity_type}</span>
+              <span class="name">${escHtml(e.name)}</span>
+            </div>`;
+  }).join('');
+}
+
+async function selectEntity(eid) {
+  selectedEntityId = eid;
+  renderEntityList();
+  switchTab('detail');
+  try {
+    const data = await API.fetch('/api/avis/kg/entity/' + eid);
+    renderDetail(data);
+  } catch (e) {
+    document.getElementById('tab-detail').innerHTML =
+      '<div class="loading">Failed to load entity details</div>';
+  }
+}
+
+function renderDetail(data) {
+  const entity = data.entity;
+  const context = data.context;
+  let html = `
+    <div class="detail-header">
+      <h2>${escHtml(entity.name)}</h2>
+      <div class="detail-type">${entity.entity_type} &middot; ${entity.entity_id}</div>
+    </div>
+    <div class="detail-props">
+      ${Object.entries(entity.properties || {}).map(([k,v]) => `
+        <div class="prop-card">
+          <div class="prop-key">${escHtml(k)}</div>
+          <div class="prop-val">${typeof v === 'object' ? JSON.stringify(v) : escHtml(String(v))}</div>
+        </div>
+      `).join('') || '<div class="prop-card"><div class="prop-key">No properties</div></div>'}
+    </div>
+    <h4 style="color:var(--text-secondary);margin-bottom:0.75rem;">Relationships (${data.neighbor_count})</h4>
+  `;
+
+  for (const [relType, items] of Object.entries(context)) {
+    if (!items || !items.length) continue;
+    html += `
+      <div class="neighbor-section">
+        <h3>${relType.replace(/_/g, ' ')}</h3>
+        <div class="neighbor-chips">
+          ${items.map(i => `
+            <span class="neighbor-chip" onclick="selectEntity('${i.entity.entity_id}')"
+                  title="weight: ${i.weight}">
+              ${escHtml(i.entity.name)} (${i.entity.entity_type})
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('tab-detail').innerHTML = html;
+}
+
+// ---- Path Finding ----
+function populateEntitySelects() {
+  const opts = entities.map(e =>
+    `<option value="${e.entity_id}">${escHtml(e.name)} (${e.entity_type})</option>`
+  ).join('');
+  document.getElementById('path-from').innerHTML = '<option value="">From entity...</option>' + opts;
+  document.getElementById('path-to').innerHTML = '<option value="">To entity...</option>' + opts;
+}
+
+async function findPath() {
+  const from = document.getElementById('path-from').value;
+  const to = document.getElementById('path-to').value;
+  if (!from || !to) return;
+
+  try {
+    const data = await API.fetch(`/api/avis/kg/path?from=${from}&to=${to}`);
+    const paths = data.paths || [];
+    const container = document.getElementById('path-results');
+    if (!paths.length) {
+      container.innerHTML = '<div class="empty-state"><p>No path found</p></div>';
+      return;
+    }
+    container.innerHTML = paths.map((p, pi) => {
+      const steps = p.map((step, si) => {
+        const [src, rel, tgt] = step;
+        const srcEntity = findEntityName(src);
+        const tgtEntity = findEntityName(tgt);
+        let html = `<div class="path-node"><span>${escHtml(srcEntity)}</span> <span style="color:var(--text-muted);font-size:0.7rem;">(${src})</span></div>`;
+        html += `<div class="path-edge-label">&#x2193; ${rel}</div>`;
+        if (si === p.length - 1) {
+          html += `<div class="path-node"><span>${escHtml(tgtEntity)}</span> <span style="color:var(--text-muted);font-size:0.7rem;">(${tgt})</span></div>`;
+        }
+        return html;
+      }).join('');
+      return `<div style="margin-bottom:1.5rem;"><p style="color:var(--accent);font-size:0.8rem;">Path ${pi + 1} (${p.length} steps)</p>${steps}</div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('path-results').innerHTML = '<div class="loading">Error finding path</div>';
+  }
+}
+
+function findEntityName(eid) {
+  const e = entities.find(en => en.entity_id === eid);
+  return e ? e.name : eid;
+}
+
+// ---- Compliance ----
+async function checkCompliance() {
+  const comp = document.getElementById('compliance-component').value;
+  if (!comp) return;
+  try {
+    const data = await API.fetch('/api/avis/kg/compliance/' + comp);
+    const results = data.results || [];
+    const container = document.getElementById('compliance-results');
+    if (!results.length) {
+      container.innerHTML = '<div class="empty-state"><p>No compliance data found</p></div>';
+      return;
+    }
+    container.innerHTML = results.map(r => `
+      <div style="margin-bottom:1rem;">
+        <h4 style="color:var(--accent);margin-bottom:0.5rem;">${escHtml(r.component.name)}</h4>
+        ${r.applicable_standards.map(s => `
+          <div class="standard-card">
+            <div class="standard-icon">&#x1F4DC;</div>
+            <div class="standard-info">
+              <div class="standard-name">${escHtml(s.standard.name)} (${s.standard.entity_type})</div>
+              <div class="standard-meta">${escHtml(s.relationship)} &middot; ${s.standard.properties?.org || ''} ${s.standard.properties?.year || ''}</div>
+              ${s.standard.properties?.description ? `<div class="standard-meta">${escHtml(s.standard.properties.description)}</div>` : ''}
+            </div>
+            <div class="standard-weight">${(s.weight * 100).toFixed(0)}%</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('compliance-results').innerHTML = '<div class="loading">Error loading compliance data</div>';
+  }
+}
+
+// ---- Materials ----
+async function loadMaterials() {
+  try {
+    const data = await API.fetch('/api/avis/kg/entities?type=material');
+    const mats = data.results || [];
+    const container = document.getElementById('material-list');
+    if (!mats.length) {
+      container.innerHTML = '<div class="empty-state"><p>No materials found</p></div>';
+      return;
+    }
+    // Load alternatives for each
+    const cards = await Promise.all(mats.map(async m => {
+      try {
+        const altData = await API.fetch('/api/avis/kg/materials/' + encodeURIComponent(m.name) + '/alternatives');
+        const alts = altData.results?.[0]?.alternatives || [];
+        return { material: m, alternatives: alts };
+      } catch { return { material: m, alternatives: [] }; }
+    }));
+
+    container.innerHTML = cards.map(c => `
+      <div class="material-card">
+        <h4>${escHtml(c.material.name)}</h4>
+        ${Object.entries(c.material.properties || {}).slice(0, 4).map(([k,v]) =>
+          `<div style="font-size:0.75rem;color:var(--text-muted);">${k}: ${v}</div>`
+        ).join('')}
+        ${c.alternatives.length ? `
+          <div style="margin-top:0.5rem;">
+            <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.25rem;">Alternatives:</div>
+            ${c.alternatives.map(a =>
+              `<span class="alt-chip" title="${a.relationship} (${(a.weight*100).toFixed(0)}%)"
+                     onclick="selectEntity('${a.material.entity_id}')" style="cursor:pointer;">
+                 ${escHtml(a.material.name)}
+               </span>`
+            ).join('')}
+          </div>
+        ` : '<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.5rem;">No alternatives</div>'}
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('material-list').innerHTML = '<div class="loading">Error loading materials</div>';
+  }
+}
+
+// ---- Stats ----
+async function loadStats() {
+  try {
+    const data = await API.fetch('/api/avis/kg/stats');
+    const grid = document.getElementById('stats-grid');
+    let html = `
+      <div class="stat-card"><div class="stat-num">${data.total_entities}</div><div class="stat-label">Entities</div></div>
+      <div class="stat-card"><div class="stat-num">${data.total_relationships}</div><div class="stat-label">Relationships</div></div>
+    `;
+    for (const [t, c] of Object.entries(data.entity_types || {})) {
+      html += `<div class="stat-card"><div class="stat-num">${c}</div><div class="stat-label">${t} entities</div></div>`;
+    }
+    grid.innerHTML = html;
+  } catch (e) {
+    document.getElementById('stats-grid').innerHTML = '<div class="loading">Error loading stats</div>';
+  }
+}
+
+async function runReasoning() {
+  try {
+    const data = await API.post('/api/avis/kg/reason');
+    document.getElementById('reasoning-result').innerHTML = `
+      <div class="toast toast-success" style="position:static;display:block;">
+        Inference complete: ${data.total_rules_fired} rules fired in ${data.iterations} iterations.
+      </div>
+    `;
+    loadStats();
+  } catch (e) {
+    document.getElementById('reasoning-result').innerHTML = `
+      <div class="toast toast-error" style="position:static;display:block;">Error running inference</div>
+    `;
+  }
+}
+
+async function seedGraph() {
+  if (!confirm('Re-seed the knowledge graph? This will reset all data.')) return;
+  try {
+    await API.post('/api/avis/kg/seed');
+    showToast('Graph re-seeded successfully', 'success');
+    await init();
+  } catch (e) {
+    showToast('Failed to re-seed graph', 'error');
+  }
+}
+
+// ---- Canvas Graph ----
+function drawGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+
+  if (!entities.length) {
+    ctx.fillStyle = '#8899aa';
+    ctx.font = '14px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('No entities loaded. Check backend connection.', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  // Simple force-directed layout
+  const nodes = entities.map((e, i) => {
+    const angle = (i / entities.length) * Math.PI * 2;
+    const radius = Math.min(canvas.width, canvas.height) * 0.35;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    return {
+      ...e,
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+      radius: 18 + (e.entity_type === 'component' ? 6 : 0),
+    };
+  });
+
+  // Type colors
+  const typeColors = {
+    material: '#ff9f43',
+    standard: '#64ffda',
+    component: '#51cf66',
+    concept: '#00b4d8',
+    rule: '#ff6b6b',
+    parameter: '#ffd43b',
+  };
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const color = typeColors[n.entity_type] || '#8899aa';
+
+    // Glow
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = color + '20';
+    ctx.fill();
+
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e2d3d';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Icon (first char of type)
+    const icons = { material: 'M', standard: 'S', component: 'C', concept: 'I', rule: 'R', parameter: 'P' };
+    ctx.fillStyle = color;
+    ctx.font = 'bold 10px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(icons[n.entity_type] || '?', n.x, n.y - 4);
+
+    // Label
+    ctx.fillStyle = '#e0e6ed';
+    ctx.font = '9px system-ui';
+    ctx.fillText(n.name.length > 18 ? n.name.slice(0, 16) + '..' : n.name, n.x, n.y + n.radius + 12);
+  });
+
+  // Draw edges (sample - show connections between entity types)
+  ctx.strokeStyle = '#2a3a4a';
+  ctx.lineWidth = 0.5;
+  nodes.forEach((n, i) => {
+    nodes.forEach((m, j) => {
+      if (i < j && Math.random() < 0.15) {
+        ctx.beginPath();
+        ctx.moveTo(n.x, n.y);
+        ctx.lineTo(m.x, m.y);
+        ctx.stroke();
+      }
+    });
+  });
+}
+
+// ---- Tabs ----
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.tab-btn[data-tab="${name}"]`)?.classList.add('active');
+
+  document.querySelectorAll('#content-area > div').forEach(d => d.style.display = 'none');
+  const tab = document.getElementById('tab-' + name);
+  if (tab) tab.style.display = '';
+
+  if (name === 'graph') {
+    setTimeout(drawGraph, 100);
+  }
+}
+
+// ---- Search ----
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const q = document.getElementById('search-input').value.trim();
+    loadEntities(q || null);
+  }, 300);
+}
+
+// ---- Utility ----
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// Handle canvas resize
+window.addEventListener('resize', () => {
+  const tab = document.querySelector('.tab-btn.active');
+  if (tab && tab.dataset.tab === 'graph') {
+    drawGraph();
+  }
+});
+
+// Init
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

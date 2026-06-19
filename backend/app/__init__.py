@@ -10,6 +10,32 @@ from app.extensions import init_extensions, cors
 from app.middleware.error_handler import register_error_handlers
 
 
+def _load_env_file():
+    """Load secrets/.env into os.environ at Flask startup."""
+    import os
+    # Compute secrets/.env path relative to the backend directory
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env_path = os.path.join(backend_dir, '..', 'secrets', '.env')
+    env_path = os.path.normpath(env_path)
+    if not os.path.exists(env_path):
+        # Try workspace-level path
+        workspace = os.path.dirname(backend_dir)
+        env_path = os.path.join(workspace, 'secrets', '.env')
+        env_path = os.path.normpath(env_path)
+    if not os.path.exists(env_path):
+        # Try avis-platform/secrets/.env
+        workspace = os.path.dirname(backend_dir)
+        env_path = os.path.join(workspace, 'avis-platform', 'secrets', '.env')
+        env_path = os.path.normpath(env_path)
+    if os.path.exists(env_path):
+        with open(env_path, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+
+
 def create_app(config_name=None):
     """
     Create and configure the Flask application.
@@ -24,6 +50,9 @@ def create_app(config_name=None):
 
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', default_config)
+
+    # ── Load secrets/.env into os.environ before anything else ──
+    _load_env_file()
 
     app = Flask(__name__,
                 static_folder='../../frontend',
@@ -82,9 +111,19 @@ def create_app(config_name=None):
     from app.blueprints.search import search_bp
     app.register_blueprint(search_bp)
     
-    # Sprint 7: Knowledge Graph
-    from app.blueprints.graph import graph_bp
-    app.register_blueprint(graph_bp, url_prefix='/api/graph')
+    # Sprint 7: Knowledge Graph (migrated to avis_bp at /api/avis/kg/*)
+    # Legacy graph_bp removed - superseded by avis knowledge_graph endpoints
+
+    # Sprint 11: Avis Intelligent Agent Platform
+    try:
+        from app.blueprints.avis_bp import avis_bp
+        app.register_blueprint(avis_bp)
+    except ImportError:
+        app.logger.warning('Avis blueprint not available - skipping')
+
+    # Sprint 12: Valve Process Module (manufacturing process library)
+    from app.blueprints.valve_process import valve_process_bp
+    app.register_blueprint(valve_process_bp)
 
     # Auto-import any new news markdown files on startup
     _auto_import_news(app)
@@ -132,6 +171,30 @@ def _register_page_routes(app):
     @app.route('/docs')
     def docs_page():
         return render_template('docs.html')
+
+    @app.route('/avis')
+    def avis_dashboard_page():
+        """Serve the Avis Intelligent Agent Platform dashboard."""
+        from flask import request, redirect, send_from_directory
+        from auth_system import auth
+        import os as _os
+        # Check auth
+        token = request.cookies.get('auth_token', '')
+        if not token:
+            return redirect('/login?redirect=/avis')
+        is_valid, user = auth.verify_session(token)
+        if not is_valid:
+            return redirect('/login?redirect=/avis')
+        # Serve dashboard from avis-platform/dashboard/
+        dashboard_path = _os.path.join(
+            _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__)))),
+            'avis-platform', 'dashboard', 'index.html'
+        )
+        if _os.path.exists(dashboard_path):
+            return send_from_directory(_os.path.dirname(dashboard_path),
+                                       _os.path.basename(dashboard_path))
+        return render_template('avis_dashboard.html', auth_token=token,
+                              user_name=user.get('username', 'Engineer'))
 
     @app.route('/ai-agent')
     def ai_agent_page():

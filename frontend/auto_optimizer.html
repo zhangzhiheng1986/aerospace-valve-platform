@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto-Optimizer | Avis Design Platform</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0, 180, 216, 0.15);
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --info: #4dabf7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { font-size: 1.4rem; color: var(--accent); }
+header .subtitle { color: var(--text-secondary); font-size: 0.85rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.card h3 {
+  color: var(--accent);
+  font-size: 1rem;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-primary { background: linear-gradient(135deg, var(--accent), #0096c7); color: #fff; }
+.btn-primary:hover { box-shadow: 0 0 15px var(--accent-glow); transform: translateY(-1px); }
+.btn-success { background: linear-gradient(135deg, var(--success), #2f9e44); color: #fff; }
+.btn-warning { background: linear-gradient(135deg, var(--warning), #fab005); color: #0f1923; }
+.btn-danger { background: linear-gradient(135deg, var(--danger), #e03131); color: #fff; }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+svg.chart { width: 100%; background: var(--bg-primary); border-radius: 4px; }
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.status-ok { background: rgba(81, 207, 102, 0.15); color: var(--success); }
+.status-warn { background: rgba(255, 212, 59, 0.15); color: var(--warning); }
+.status-err { background: rgba(255, 107, 107, 0.15); color: var(--danger); }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+th, td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+td { color: var(--text-primary); }
+.loading { text-align: center; padding: 30px; color: var(--text-secondary); }
+.spinner {
+  display: inline-block;
+  width: 24px; height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.spec-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.timeline { margin-top: 16px; }
+.history-item {
+  padding: 10px 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.history-item:hover { border-color: var(--accent); }
+.history-item .method { font-weight: 600; color: var(--accent); }
+.history-item .fitness { color: var(--success); }
+.history-item .time { color: var(--text-secondary); font-size: 0.8rem; }
+#specFormFields { max-height: 400px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Auto-Optimizer</h1>
+    <span class="subtitle">Aviation valve design optimization engine</span>
+  </div>
+  <div>
+    <a href="/" style="color:var(--text-secondary);text-decoration:none;">&larr; Dashboard</a>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Design Type & Spec -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>1. Design Configuration</h3>
+      <div class="form-group">
+        <label>Design Type</label>
+        <select id="designType" onchange="onDesignTypeChange()">
+          <option value="solenoid">Solenoid Valve</option>
+          <option value="spring">Spring Design</option>
+          <option value="seal">Seal Design</option>
+          <option value="pressure_reducing">Pressure Reducing Valve</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Solver Method</label>
+        <select id="solverMethod">
+          <option value="pso">PSO (Particle Swarm)</option>
+          <option value="ga">GA (Genetic Algorithm)</option>
+          <option value="random">Random Search</option>
+          <option value="grid">Grid Search</option>
+          <option value="compare">Compare All Methods</option>
+        </select>
+      </div>
+      <div class="grid-2" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label>Max Iterations</label>
+          <input type="number" id="maxIter" value="100" min="10" max="1000">
+        </div>
+        <div class="form-group">
+          <label>Population Size</label>
+          <input type="number" id="population" value="50" min="10" max="500">
+        </div>
+      </div>
+      <h4 style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:10px;">Target Specifications (Optional)</h4>
+      <div id="specFormFields" class="spec-fields"></div>
+      <div class="btn-group" style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="runOptimization()">Run Optimization</button>
+        <button class="btn btn-warning" onclick="showTemplates()">View Templates</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>2. Convergence Chart</h3>
+      <div id="chartContainer" style="min-height:300px;">
+        <svg id="convergenceChart" class="chart" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div id="progressInfo" class="hidden">
+        <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.75rem;color:var(--text-secondary);">
+          <span id="iterLabel">Iter: 0</span>
+          <span id="fitnessLabel">Fitness: --</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card hidden" id="resultsPanel">
+    <h3>3. Optimization Results</h3>
+    <div class="grid-2">
+      <div>
+        <h4 style="color:var(--accent);font-size:0.85rem;margin-bottom:8px;">Best Design Solution</h4>
+        <div id="solutionTable" class="table-wrap"></div>
+        <div style="margin-top:12px;">
+          <span id="feasibilityBadge"></span>
+          <span style="color:var(--text-secondary);font-size:0.8rem;margin-left:8px;" id="elapsedLabel"></span>
+        </div>
+      </div>
+      <div>
+        <h4 style="color:var(--accent);font-size:0.85rem;margin-bottom:8px;">Constraint Satisfaction</h4>
+        <div id="constraintPanel" class="table-wrap"></div>
+      </div>
+    </div>
+    <div id="paretoPanel" class="hidden" style="margin-top:16px;">
+      <h4 style="color:var(--accent);font-size:0.85rem;margin-bottom:8px;">Pareto Front</h4>
+      <div id="paretoContent"></div>
+    </div>
+  </div>
+
+  <!-- Comparison Results -->
+  <div class="card hidden" id="comparePanel">
+    <h3>Method Comparison</h3>
+    <div class="table-wrap" id="compareTable"></div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h3>Optimization History</h3>
+    <div id="historyList"></div>
+    <div id="historyPlaceholder" style="color:var(--text-secondary);text-align:center;padding:20px;">
+      No history yet. Run an optimization to start.
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// State
+// ============================================================
+let currentProblem = null;
+let currentRunId = null;
+let pollTimer = null;
+
+// ============================================================
+// Dynamic Spec Fields
+// ============================================================
+const specFieldDefs = {
+  solenoid: [
+    {key:'target_force_n', label:'Target Force (N)', type:'number', placeholder:'100', step:'any'},
+    {key:'burst_pressure_mpa', label:'Burst Pressure (MPa)', type:'number', placeholder:'30', step:'any'},
+    {key:'safety_factor', label:'Safety Factor', type:'number', placeholder:'2.0', step:'any'},
+    {key:'leak_rate_pa_m3_s', label:'Leak Rate (Pa*m3/s)', type:'number', placeholder:'1e-7', step:'any'},
+    {key:'temp_min_c', label:'Temp Min (C)', type:'number', placeholder:'-196'},
+    {key:'temp_max_c', label:'Temp Max (C)', type:'number', placeholder:'200'},
+    {key:'max_mass_kg', label:'Max Mass (kg)', type:'number', placeholder:'3.0', step:'any'},
+    {key:'max_diameter_mm', label:'Max Diameter (mm)', type:'number', placeholder:'80'},
+    {key:'max_length_mm', label:'Max Length (mm)', type:'number', placeholder:'150'},
+  ],
+  spring: [
+    {key:'target_stiffness', label:'Target Stiffness (N/mm)', type:'number', placeholder:'20', step:'any'},
+    {key:'fatigue_cycles', label:'Fatigue Life (cycles)', type:'number', placeholder:'20000'},
+    {key:'max_mass_kg', label:'Max Mass (kg)', type:'number', placeholder:'0.5', step:'any'},
+    {key:'temp_min_c', label:'Temp Min (C)', type:'number', placeholder:'-196'},
+    {key:'temp_max_c', label:'Temp Max (C)', type:'number', placeholder:'350'},
+    {key:'max_diameter_mm', label:'Max Diameter (mm)', type:'number', placeholder:'60'},
+    {key:'max_length_mm', label:'Max Length (mm)', type:'number', placeholder:'120'},
+  ],
+  seal: [
+    {key:'burst_pressure_mpa', label:'Burst Pressure (MPa)', type:'number', placeholder:'30', step:'any'},
+    {key:'leak_rate_pa_m3_s', label:'Leak Rate (Pa*m3/s)', type:'number', placeholder:'1e-7', step:'any'},
+    {key:'temp_min_c', label:'Temp Min (C)', type:'number', placeholder:'-196'},
+    {key:'temp_max_c', label:'Temp Max (C)', type:'number', placeholder:'300'},
+    {key:'max_cost_yuan', label:'Max Cost (yuan)', type:'number', placeholder:'5000'},
+  ],
+  pressure_reducing: [
+    {key:'burst_pressure_mpa', label:'Burst Pressure (MPa)', type:'number', placeholder:'30', step:'any'},
+    {key:'safety_factor', label:'Safety Factor', type:'number', placeholder:'2.0', step:'any'},
+    {key:'temp_min_c', label:'Temp Min (C)', type:'number', placeholder:'-196'},
+    {key:'temp_max_c', label:'Temp Max (C)', type:'number', placeholder:'400'},
+    {key:'max_mass_kg', label:'Max Mass (kg)', type:'number', placeholder:'10.0', step:'any'},
+    {key:'max_diameter_mm', label:'Max Diameter (mm)', type:'number', placeholder:'200'},
+    {key:'max_length_mm', label:'Max Length (mm)', type:'number', placeholder:'400'},
+  ],
+};
+
+function onDesignTypeChange() {
+  const dt = document.getElementById('designType').value;
+  const fields = specFieldDefs[dt] || [];
+  let html = '';
+  for (const f of fields) {
+    html += `<div class="form-group">
+      <label>${f.label}</label>
+      <input type="${f.type}" id="spec_${f.key}" placeholder="${f.placeholder}" step="${f.step || 'any'}">
+    </div>`;
+  }
+  document.getElementById('specFormFields').innerHTML = html;
+}
+
+// Initialize
+onDesignTypeChange();
+
+// ============================================================
+// API Helpers
+// ============================================================
+async function apiCall(method, url, body = null) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function collectSpecs() {
+  const dt = document.getElementById('designType').value;
+  const fields = specFieldDefs[dt] || [];
+  const specs = {};
+  for (const f of fields) {
+    const el = document.getElementById('spec_' + f.key);
+    if (el && el.value) {
+      specs[f.key] = parseFloat(el.value);
+    }
+  }
+  return specs;
+}
+
+// ============================================================
+// Optimization Flow
+// ============================================================
+async function runOptimization() {
+  const method = document.getElementById('solverMethod').value;
+  const maxIter = parseInt(document.getElementById('maxIter').value) || 100;
+  const population = parseInt(document.getElementById('population').value) || 50;
+  const designType = document.getElementById('designType').value;
+  const specs = collectSpecs();
+
+  // Show loading
+  document.getElementById('resultsPanel').classList.add('hidden');
+  document.getElementById('comparePanel').classList.add('hidden');
+  document.getElementById('progressInfo').classList.remove('hidden');
+  document.getElementById('progressFill').style.width = '0%';
+
+  try {
+    if (method === 'compare') {
+      await runCompare(designType, specs, maxIter, population);
+    } else {
+      await runSingleOptimization(designType, specs, method, maxIter, population);
+    }
+    await loadHistory();
+  } catch (err) {
+    alert('Optimization failed: ' + err.message);
+    document.getElementById('progressInfo').classList.add('hidden');
+  }
+}
+
+async function runSingleOptimization(designType, specs, method, maxIter, population) {
+  // Step 1: Create problem
+  const createResp = await apiCall('POST', '/api/avis/optimize/create', {
+    design_type: designType,
+    specs: specs,
+  });
+  currentProblem = createResp.problem;
+  currentRunId = null;
+
+  // Step 2: Run optimization
+  const runResp = await apiCall('POST', '/api/avis/optimize/run', {
+    problem: currentProblem,
+    method: method,
+    max_iter: maxIter,
+    population: population,
+  });
+  currentRunId = runResp.run_id;
+
+  // Step 3: Poll for results (simulate real-time with convergence data)
+  let pollCount = 0;
+  pollTimer = setInterval(async () => {
+    pollCount++;
+    try {
+      const resultResp = await apiCall('GET', '/api/avis/optimize/result/' + currentRunId);
+      const conv = resultResp.result.convergence_history || [];
+      const iter = resultResp.result.iterations || 0;
+
+      // Update progress
+      const progress = Math.min(100, (conv.length / Math.max(1, maxIter)) * 100);
+      document.getElementById('progressFill').style.width = progress + '%';
+      document.getElementById('iterLabel').textContent = `Iter: ${conv.length}/${maxIter}`;
+      document.getElementById('fitnessLabel').textContent =
+        `Fitness: ${resultResp.result.best_fitness ? resultResp.result.best_fitness.toExponential(4) : '--'}`;
+
+      // Update chart
+      drawConvergenceChart(conv, resultResp.result.solution_dict || {});
+
+      // Check complete
+      if (pollCount >= 50 || conv.length >= maxIter || resultResp.result.best_fitness !== undefined) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        displayResults(resultResp.result);
+        document.getElementById('progressInfo').classList.add('hidden');
+      }
+    } catch (e) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }, 500);
+}
+
+async function runCompare(designType, specs, maxIter, population) {
+  const resp = await apiCall('POST', '/api/avis/optimize/compare', {
+    design_type: designType,
+    specs: specs,
+    max_iter: maxIter,
+    population: population,
+  });
+  document.getElementById('progressInfo').classList.add('hidden');
+  displayComparison(resp);
+}
+
+function displayResults(result) {
+  document.getElementById('resultsPanel').classList.remove('hidden');
+
+  // Solution table
+  const sol = result.solution_dict || {};
+  let solHtml = '<table><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>';
+  for (const [name, value] of Object.entries(sol)) {
+    solHtml += `<tr><td>${name}</td><td>${typeof value === 'number' ? value.toFixed(4) : value}</td></tr>`;
+  }
+  solHtml += '</tbody></table>';
+  document.getElementById('solutionTable').innerHTML = solHtml;
+
+  // Feasibility
+  document.getElementById('feasibilityBadge').innerHTML = result.feasible
+    ? '<span class="status-badge status-ok">Feasible</span>'
+    : '<span class="status-badge status-err">Infeasible</span>';
+  document.getElementById('elapsedLabel').textContent =
+    `Time: ${result.elapsed_seconds ? result.elapsed_seconds.toFixed(3) : '--'}s | Method: ${result.method || '--'}`;
+
+  // Constraint table
+  const constraints = result.constraint_violations || {};
+  let cHtml = '<table><thead><tr><th>Constraint</th><th>Satisfaction</th></tr></thead><tbody>';
+  for (const [name, score] of Object.entries(constraints)) {
+    const cls = score >= 1.0 ? 'status-ok' : (score > 0 ? 'status-warn' : 'status-err');
+    cHtml += `<tr><td>${name}</td><td><span class="status-badge ${cls}">${typeof score === 'number' ? score.toFixed(4) : score}</span></td></tr>`;
+  }
+  if (Object.keys(constraints).length === 0) {
+    cHtml += '<tr><td colspan="2">No constraints defined</td></tr>';
+  }
+  cHtml += '</tbody></table>';
+  document.getElementById('constraintPanel').innerHTML = cHtml;
+
+  // Pareto front
+  const pareto = result.pareto_front;
+  if (pareto && pareto.length > 0) {
+    document.getElementById('paretoPanel').classList.remove('hidden');
+    document.getElementById('paretoContent').textContent = JSON.stringify(pareto, null, 2);
+  } else {
+    document.getElementById('paretoPanel').classList.add('hidden');
+  }
+}
+
+function displayComparison(resp) {
+  document.getElementById('comparePanel').classList.remove('hidden');
+  const ranked = resp.ranked || [];
+  let html = '<table><thead><tr><th>Rank</th><th>Method</th><th>Fitness</th><th>Feasible</th><th>Time (s)</th></tr></thead><tbody>';
+  for (const r of ranked) {
+    html += `<tr>
+      <td>#${r.rank}</td>
+      <td><strong>${r.method.toUpperCase()}</strong></td>
+      <td>${typeof r.fitness === 'number' ? r.fitness.toExponential(4) : r.fitness}</td>
+      <td>${r.feasible ? '<span class="status-badge status-ok">Yes</span>' : '<span class="status-badge status-err">No</span>'}</td>
+      <td>${r.elapsed_seconds ? r.elapsed_seconds.toFixed(3) : '--'}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('compareTable').innerHTML = html;
+
+  // Also show best solution
+  if (ranked.length > 0 && resp.results) {
+    const bestMethod = ranked[0].method;
+    const bestResult = resp.results[bestMethod];
+    if (bestResult && bestResult.result) {
+      displayResults(bestResult.result);
+    }
+  }
+}
+
+// ============================================================
+// Chart
+// ============================================================
+function drawConvergenceChart(history, solution) {
+  const svg = document.getElementById('convergenceChart');
+  if (!history || history.length < 2) {
+    svg.innerHTML = '<text x="300" y="150" text-anchor="middle" fill="#8899aa" font-size="14">Collecting data...</text>';
+    return;
+  }
+
+  const W = 600, H = 300, pad = {t:20, r:20, b:40, l:70};
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  // Find min/max, skip infinity
+  const valid = history.filter(h => isFinite(h) && h < 1e10);
+  if (valid.length < 2) {
+    svg.innerHTML = '<text x="300" y="150" text-anchor="middle" fill="#8899aa" font-size="14">No valid data</text>';
+    return;
+  }
+  const yMin = Math.max(0, Math.min(...valid) * 0.9);
+  const yMax = Math.max(...valid) * 1.1;
+  const yRange = yMax - yMin || 1;
+
+  // Build SVG
+  let svgContent = '';
+
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ph * i / 4);
+    svgContent += `<line x1="${pad.l}" y1="${y}" x2="${W - pad.r}" y2="${y}" stroke="#2a3a4a" stroke-width="0.5"/>`;
+    svgContent += `<text x="${pad.l - 8}" y="${y + 4}" text-anchor="end" fill="#8899aa" font-size="10">${(yMax - (yRange * i / 4)).toExponential(1)}</text>`;
+  }
+
+  // X axis labels
+  const nLabels = 5;
+  for (let i = 0; i <= nLabels; i++) {
+    const x = pad.l + (pw * i / nLabels);
+    const iter = Math.round((valid.length - 1) * i / nLabels);
+    svgContent += `<text x="${x}" y="${H - pad.b + 18}" text-anchor="middle" fill="#8899aa" font-size="10">${iter}</text>`;
+  }
+
+  // Line path
+  let path = '';
+  for (let i = 0; i < valid.length; i++) {
+    const x = pad.l + (pw * i / (valid.length - 1));
+    const y = pad.t + ph - ((valid[i] - yMin) / yRange * ph);
+    path += (i === 0 ? 'M' : 'L') + `${x},${y} `;
+  }
+  svgContent += `<path d="${path}" fill="none" stroke="#00b4d8" stroke-width="2"/>`;
+
+  // Best point
+  if (valid.length > 0) {
+    const bestIdx = valid.indexOf(Math.min(...valid));
+    const bx = pad.l + (pw * bestIdx / (valid.length - 1));
+    const by = pad.t + ph - ((valid[bestIdx] - yMin) / yRange * ph);
+    svgContent += `<circle cx="${bx}" cy="${by}" r="5" fill="#51cf66"/>`;
+    svgContent += `<text x="${bx + 8}" y="${by - 8}" fill="#51cf66" font-size="11">Best: ${valid[bestIdx].toExponential(3)}</text>`;
+  }
+
+  // Solution values text
+  if (solution && Object.keys(solution).length > 0) {
+    const entries = Object.entries(solution);
+    svgContent += `<text x="${W - pad.r}" y="${pad.t + 10}" text-anchor="end" fill="#e0e6ed" font-size="11">`;
+    for (let i = 0; i < entries.length; i++) {
+      svgContent += `<tspan x="${W - pad.r}" dy="${i === 0 ? 0 : 14}">${entries[i][0]}: ${entries[i][1].toFixed(3)}</tspan>`;
+    }
+    svgContent += `</text>`;
+  }
+
+  // Axes
+  svgContent += `<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H - pad.b}" stroke="#8899aa" stroke-width="1"/>`;
+  svgContent += `<line x1="${pad.l}" y1="${H - pad.b}" x2="${W - pad.r}" y2="${H - pad.b}" stroke="#8899aa" stroke-width="1"/>`;
+
+  svg.innerHTML = svgContent;
+}
+
+// ============================================================
+// History
+// ============================================================
+async function loadHistory() {
+  try {
+    const resp = await apiCall('GET', '/api/avis/optimize/history');
+    const runs = resp.runs || [];
+    if (runs.length === 0) {
+      document.getElementById('historyPlaceholder').classList.remove('hidden');
+      document.getElementById('historyList').classList.add('hidden');
+      return;
+    }
+    document.getElementById('historyPlaceholder').classList.add('hidden');
+    document.getElementById('historyList').classList.remove('hidden');
+
+    let html = '';
+    for (const run of runs.reverse()) {
+      html += `<div class="history-item" onclick="loadResult('${run.run_id}')">
+        <div><span class="method">${(run.method || '').toUpperCase()}</span> &mdash; ${run.problem_name || ''}</div>
+        <div><span class="fitness">Fitness: ${run.best_fitness ? run.best_fitness.toExponential(4) : '--'}</span>
+        <span class="time"> | ${run.timestamp || ''}</span></div>
+      </div>`;
+    }
+    document.getElementById('historyList').innerHTML = html;
+  } catch (e) {
+    // Silently ignore
+  }
+}
+
+async function loadResult(runId) {
+  try {
+    const resp = await apiCall('GET', '/api/avis/optimize/result/' + runId);
+    displayResults(resp.result);
+    if (resp.result.convergence_history) {
+      drawConvergenceChart(resp.result.convergence_history, resp.result.solution_dict || {});
+    }
+    document.getElementById('progressInfo').classList.add('hidden');
+  } catch (e) {
+    alert('Failed to load result: ' + e.message);
+  }
+}
+
+// ============================================================
+// Templates
+// ============================================================
+async function showTemplates() {
+  try {
+    const resp = await apiCall('GET', '/api/avis/optimize/templates');
+    const tmpl = resp.templates || [];
+    let msg = 'Available Design Types:\n\n';
+    for (const t of tmpl) {
+      msg += `${t.id}\n  ${t.description}\n  Variables: ${t.variable_count}\n\n`;
+    }
+    alert(msg);
+  } catch (e) {
+    alert('Failed: ' + e.message);
+  }
+}
+
+// Load history on page load
+loadHistory();
+</script>
+</body>
+</html>

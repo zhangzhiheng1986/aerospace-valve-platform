@@ -135,6 +135,28 @@ def chat(current_user=None):
         # Build human-readable response from PAOR result
         response_text = _format_paor_response(paor_result)
 
+        # ── LLM Enhancement: try LLM chat if available ──
+        llm_used = False
+        try:
+            from avis_platform.core.llm_service import get_llm_service
+            svc = get_llm_service()
+            if svc and svc.enabled:
+                history = [
+                    {'role': msg.get('role', 'user'), 'content': msg.get('content', '')}
+                    for msg in (engine.sessions.get_session(session_id).get('messages', []) if engine.sessions.get_session(session_id) else [])
+                    if msg.get('role') in ('user', 'agent')
+                ][-10:]
+                llm_response = svc.agent_chat('general', history, message)
+                if llm_response:
+                    # Prepend LLM response as a natural-language summary
+                    response_text = (
+                        '## 🤖 LLM 智能回复\n\n' + llm_response + '\n\n---\n\n'
+                        '### 📐 PAOR 推理详情\n\n' + response_text
+                    )
+                    llm_used = True
+        except Exception:
+            pass  # Graceful fallback to PAOR response
+
         # Store in session
         engine.sessions.add_message(session_id, 'agent', response_text, {
             'paor': paor_result,
@@ -147,6 +169,7 @@ def chat(current_user=None):
                 'text': response_text,
                 'intent': paor_result['intent'],
                 'paor_trace': paor_result['trace'],
+                'llm_used': llm_used,
             },
         })
 

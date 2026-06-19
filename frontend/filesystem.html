@@ -1,0 +1,1528 @@
+<!--
+filesystem.html — Avis File System Browser
+Avis Intelligent Agent Platform
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avis 文件系统 | 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #0d1321;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0,180,216,0.15);
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h3 { font-size: 1rem; color: var(--accent); margin-bottom:4px; }
+.sidebar-header .version-badge {
+  font-size: 0.62rem;
+  background: rgba(0,180,216,0.15);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,180,216,0.25);
+}
+.sidebar-nav {
+  flex: 1; overflow-y: auto; padding: 10px 0;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover, .nav-item.active {
+  color: var(--text-primary);
+  background: var(--accent-glow);
+  border-left-color: var(--accent);
+}
+.nav-item .badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.sidebar-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.sidebar-footer a { color: var(--accent); text-decoration: none; }
+
+/* ---- MAIN ---- */
+.main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.toolbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.toolbar h2 { font-size: 1.15rem; margin-right: auto; }
+.btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-glow); }
+.btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight:600; }
+.btn-accent:hover { opacity: 0.85; }
+.btn-sm { padding: 4px 10px; font-size: 0.7rem; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: rgba(255,107,107,0.1); }
+.btn-success { border-color: var(--success); color: var(--success); }
+.btn-success:hover { background: rgba(81,207,102,0.1); }
+.btn-warning { border-color: var(--warning); color: var(--warning); }
+.btn-warning:hover { background: rgba(255,212,59,0.1); }
+
+.content {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+}
+
+/* ---- PANELS ---- */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ---- FILE BROWSER ---- */
+.browser-layout {
+  display: flex; gap: 20px; height: calc(100vh - 140px);
+}
+.dir-tree {
+  width: 260px; min-width: 260px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px 0;
+}
+.tree-node {
+  padding: 4px 12px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.12s;
+  user-select: none;
+}
+.tree-node:hover { background: var(--bg-secondary); }
+.tree-node.active { background: var(--accent-glow); border-left: 2px solid var(--accent); }
+.tree-node .icon { width: 18px; text-align: center; flex-shrink: 0; }
+.tree-indent { display: inline-block; width: 16px; flex-shrink: 0; }
+.tree-arrow {
+  width: 16px; text-align: center; cursor: pointer; flex-shrink: 0;
+  transition: transform 0.15s;
+  color: var(--text-secondary); font-size: 0.65rem;
+}
+.tree-arrow.expanded { transform: rotate(90deg); }
+.tree-children { overflow: hidden; }
+.file-preview-area {
+  flex:1;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.breadcrumb {
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 4px;
+  flex-wrap: wrap;
+}
+.breadcrumb span { cursor: pointer; color: var(--accent); }
+.breadcrumb span:hover { text-decoration: underline; }
+.breadcrumb .sep { color: var(--text-secondary); cursor: default; }
+
+.file-content {
+  flex: 1; padding: 16px; overflow-y: auto;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  margin: 12px;
+  border-radius: var(--radius-sm);
+}
+.file-placeholder {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); font-size: 0.85rem;
+  flex-direction: column; gap: 10px;
+}
+.file-placeholder .emoji { font-size: 3rem; }
+
+.toolbar-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+.toolbar-row input {
+  flex:1; padding: 7px 10px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-secondary);
+  color: var(--text-primary); font-size: 0.78rem;
+  outline: none;
+}
+.toolbar-row input:focus { border-color: var(--accent); }
+
+/* ---- BOOTSTRAP CARDS ---- */
+.bootstrap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+}
+.bs-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.15s;
+}
+.bs-card:hover { border-color: var(--accent); }
+.bs-card-header {
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.bs-card-header h4 { font-size: 0.88rem; flex:1; }
+.bs-card-header .status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.bs-card-header .status-dot.present { background: var(--success); }
+.bs-card-header .status-dot.missing { background: var(--danger); }
+.bs-card-body { padding: 12px 16px; }
+.bs-card-body textarea {
+  width: 100%; min-height: 140px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+}
+.bs-card-body textarea:focus { border-color: var(--accent); }
+.bs-card-actions {
+  padding: 10px 16px;
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* ---- DAILY NOTES ---- */
+.daily-layout {
+  display: flex; gap: 20px;
+}
+.daily-editor {
+  flex: 1.5;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 16px;
+}
+.daily-editor h3 { font-size: 0.95rem; margin-bottom: 12px; }
+.daily-editor textarea {
+  width: 100%; min-height: 300px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+.daily-editor textarea:focus { border-color: var(--accent); }
+.daily-actions {
+  margin-top: 12px; display: flex; gap: 8px;
+}
+.daily-list {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+}
+.daily-list h3 { font-size: 0.85rem; margin-bottom: 10px; color: var(--text-secondary); }
+.daily-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background 0.12s;
+  border: 1px solid transparent;
+}
+.daily-item:hover { background: var(--bg-secondary); border-color: var(--border); }
+.daily-item .date { font-weight: 600; color: var(--accent); }
+.daily-item .size { margin-left: auto; font-size: 0.65rem; color: var(--text-secondary); }
+
+.date-input {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  outline: none;
+  margin-right: 10px;
+}
+.date-input:focus { border-color: var(--accent); }
+
+/* ---- SEARCH ---- */
+.search-area {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.search-bar {
+  display: flex; gap: 10px; margin-bottom: 20px;
+}
+.search-bar input {
+  flex:1; padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+}
+.search-bar input:focus { border-color: var(--accent); }
+.search-hint {
+  font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 20px;
+}
+.result-item {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.result-item:hover { border-color: var(--accent); }
+.result-path {
+  font-size: 0.82rem; font-weight: 600; color: var(--accent);
+  margin-bottom: 6px;
+}
+.result-meta {
+  font-size: 0.7rem; color: var(--text-secondary);
+  display: flex; gap: 16px;
+}
+.result-context {
+  font-size: 0.75rem; color: var(--text-secondary);
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  white-space: pre-wrap;
+  max-height: 80px; overflow-y: auto;
+}
+
+/* ---- STATS ---- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  text-align: center;
+}
+.stat-card .stat-value {
+  font-size: 2rem; font-weight: 700; color: var(--accent);
+}
+.stat-card .stat-label {
+  font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;
+}
+.bootstrap-status {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+.bootstrap-status h4 { font-size: 0.9rem; margin-bottom: 14px; }
+.bootstrap-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.bootstrap-row:last-child { border-bottom: none; }
+.bs-status-badge {
+  font-size: 0.65rem; padding: 2px 8px; border-radius: 4px;
+}
+.bs-status-badge.ok { background: rgba(81,207,102,0.15); color: var(--success); border: 1px solid rgba(81,207,102,0.3); }
+.bs-status-badge.missing { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); }
+
+/* ---- DIALOGS ---- */
+.dialog-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 999;
+  align-items: center; justify-content: center;
+}
+.dialog-overlay.show { display: flex; }
+.dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px;
+  min-width: 440px;
+  max-width: 550px;
+}
+.dialog h3 { margin-bottom: 18px; font-size: 1rem; }
+.dialog label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; }
+.dialog input, .dialog textarea {
+  width: 100%; padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.dialog input:focus, .dialog textarea:focus { border-color: var(--accent); }
+.dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  z-index: 1000;
+  animation: toastIn 0.3s ease;
+  max-width: 360px;
+}
+.toast.success { background: rgba(81,207,102,0.15); border: 1px solid var(--success); color: var(--success); }
+.toast.error { background: rgba(255,107,107,0.15); border: 1px solid var(--danger); color: var(--danger); }
+.toast.info { background: rgba(0,180,216,0.15); border: 1px solid var(--accent); color: var(--accent); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- LOADING ---- */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px; color: var(--text-secondary);
+  gap: 10px;
+}
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .browser-layout { flex-direction: column; height: auto; }
+  .dir-tree { width: 100%; max-height: 200px; }
+  .daily-layout { flex-direction: column; }
+  .bootstrap-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h3>📂 Avis 文件系统</h3>
+    <span class="version-badge">v1.0</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-panel="browser" data-action="switch-panel">
+      📂 文件浏览
+    </a>
+    <a class="nav-item" data-panel="bootstrap" data-action="switch-panel">
+      📝 Bootstrap 文件
+    </a>
+    <a class="nav-item" data-panel="daily" data-action="switch-panel">
+      📅 每日笔记
+    </a>
+    <a class="nav-item" data-panel="search" data-action="switch-panel">
+      🔍 搜索文件
+    </a>
+    <a class="nav-item" data-panel="stats" data-action="switch-panel">
+      📊 统计信息
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/">← 返回主页</a> &nbsp;|&nbsp;
+    <a href="/classic">📊 经典仪表盘</a>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="toolbar" id="mainToolbar">
+    <h2 id="panelTitle">📂 文件浏览</h2>
+    <span id="toolbarExtras"></span>
+  </div>
+
+  <div class="content" id="contentArea">
+    <!-- PANEL: 文件浏览 -->
+    <div class="panel active" id="panel-browser">
+      <div class="browser-layout">
+        <div class="dir-tree" id="dirTree">
+          <div class="loading"><div class="spinner"></div> 加载目录树...</div>
+        </div>
+        <div class="file-preview-area">
+          <div class="breadcrumb" id="breadcrumb">
+            <span data-action="nav-breadcrumb" data-path="">📂 /</span>
+          </div>
+          <div class="file-placeholder" id="filePreview">
+            <span class="emoji">📂</span>
+            <span>选择一个文件查看内容</span>
+          </div>
+          <div class="toolbar-row">
+            <button class="btn btn-accent btn-sm" data-action="new-file">📄 新建文件</button>
+            <button class="btn btn-sm" data-action="new-folder">📁 新建目录</button>
+            <button class="btn btn-sm" data-action="upload-file">📤 上传</button>
+            <button class="btn btn-sm" data-action="refresh-browser">🔄 刷新</button>
+            <button class="btn btn-sm btn-danger" data-action="delete-current" style="margin-left:auto;display:none;" id="btnDeleteFile">🗑️ 删除</button>
+            <button class="btn btn-sm" data-action="rename-current" style="display:none;" id="btnRenameFile">✏️ 重命名</button>
+            <button class="btn btn-sm btn-accent" data-action="edit-current" style="display:none;" id="btnEditFile">💾 编辑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Bootstrap 文件 -->
+    <div class="panel" id="panel-bootstrap">
+      <div class="bootstrap-grid" id="bootstrapGrid">
+        <div class="loading"><div class="spinner"></div> 加载中...</div>
+      </div>
+      <div style="margin-top:20px;text-align:center;">
+        <button class="btn btn-accent" data-action="rebuild-bootstrap">🔄 重建 Bootstrap</button>
+      </div>
+    </div>
+
+    <!-- PANEL: 每日笔记 -->
+    <div class="panel" id="panel-daily">
+      <div class="daily-layout">
+        <div class="daily-editor">
+          <h3 id="dailyTitle">📅 今日笔记</h3>
+          <input type="date" class="date-input" id="dailyDate" data-action="daily-date-change">
+          <textarea id="dailyContent" placeholder="在此撰写今日笔记... (支持 Markdown)"></textarea>
+          <div class="daily-actions">
+            <button class="btn btn-accent" data-action="daily-save">💾 保存</button>
+            <button class="btn btn-success" data-action="daily-append">📎 追加</button>
+            <button class="btn btn-warning" data-action="daily-preview">👁️ 预览</button>
+          </div>
+        </div>
+        <div class="daily-list" id="dailyList">
+          <h3>📋 最近笔记</h3>
+          <div class="loading"><div class="spinner"></div> 加载中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: 搜索文件 -->
+    <div class="panel" id="panel-search">
+      <div class="search-area">
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="输入搜索关键词..." data-action="search-input">
+          <button class="btn btn-accent" data-action="search-submit">🔍 搜索</button>
+        </div>
+        <div class="search-hint">搜索文件名和文件内容。支持部分匹配。</div>
+        <div id="searchResults">
+          <p style="color:var(--text-secondary);text-align:center;padding:40px;">输入关键词开始搜索</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: 统计信息 -->
+    <div class="panel" id="panel-stats">
+      <div class="stats-grid" id="statsCards">
+        <div class="loading"><div class="spinner"></div> 加载统计...</div>
+      </div>
+      <div class="bootstrap-status" id="statsBootstrap">
+        <h4>📋 Bootstrap 文件状态</h4>
+        <div class="loading"><div class="spinner"></div> 加载中...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ NEW FILE DIALOG ============ -->
+<div class="dialog-overlay" id="newFileDialog">
+  <div class="dialog">
+    <h3 id="dialogTitle">📄 新建文件</h3>
+    <label>文件名</label>
+    <input type="text" id="dialogFileName" placeholder="例如: readme.md">
+    <label>内容</label>
+    <textarea id="dialogFileContent" rows="6" placeholder="文件内容... (可选)"></textarea>
+    <div class="dialog-actions">
+      <button class="btn" data-action="dialog-cancel">取消</button>
+      <button class="btn btn-accent" data-action="dialog-confirm">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EDIT FILE DIALOG ============ -->
+<div class="dialog-overlay" id="editFileDialog">
+  <div class="dialog" style="max-width:700px;">
+    <h3 id="editDialogTitle">✏️ 编辑文件</h3>
+    <label>文件路径</label>
+    <input type="text" id="editFilePath" readonly style="color:var(--accent);">
+    <label>内容</label>
+    <textarea id="editFileContent" rows="16" placeholder="文件内容..."></textarea>
+    <div class="dialog-actions">
+      <button class="btn" data-action="dialog-cancel">取消</button>
+      <button class="btn btn-accent" data-action="dialog-save-edit">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PREVIEW DIALOG ============ -->
+<div class="dialog-overlay" id="previewDialog">
+  <div class="dialog" style="max-width:800px;max-height:80vh;overflow-y:auto;">
+    <h3 id="previewDialogTitle">👁️ 预览</h3>
+    <div id="previewDialogContent" style="font-family:monospace;font-size:0.78rem;line-height:1.5;white-space:pre-wrap;"></div>
+    <div class="dialog-actions">
+      <button class="btn" data-action="dialog-cancel">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// Global State
+// =====================================================================
+const API = '/api/avis/fs';
+let currentPanel = 'browser';
+let currentPath = '';
+let selectedFilePath = null;
+let treeData = {};
+let bootstrapFiles = {};
+let dialogMode = null; // 'new-file', 'new-folder'
+
+// =====================================================================
+// Init
+// =====================================================================
+function init() {
+  setTodayDate();
+  loadTree();
+  loadBootstrap();
+  loadDailyList();
+}
+
+// =====================================================================
+// Panel Switching
+// =====================================================================
+document.addEventListener('click', e => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+  const act = action.dataset.action;
+
+  switch (act) {
+    case 'switch-panel':
+      switchPanel(action.dataset.panel, action);
+      break;
+    case 'nav-breadcrumb':
+      navigateTo(action.dataset.path);
+      break;
+    case 'new-file':
+      openNewFileDialog();
+      break;
+    case 'new-folder':
+      openNewFolderDialog();
+      break;
+    case 'upload-file':
+      uploadFile();
+      break;
+    case 'refresh-browser':
+      loadTree(currentPath);
+      break;
+    case 'delete-current':
+      deleteCurrentFile();
+      break;
+    case 'rename-current':
+      renameCurrentFile();
+      break;
+    case 'edit-current':
+      openEditDialog();
+      break;
+    case 'rebuild-bootstrap':
+      rebuildBootstrap();
+      break;
+    case 'daily-date-change':
+      loadDailyNote();
+      break;
+    case 'daily-save':
+      saveDailyNote('write');
+      break;
+    case 'daily-append':
+      saveDailyNote('append');
+      break;
+    case 'daily-preview':
+      previewDailyNote();
+      break;
+    case 'search-input':
+      // handled by keypress
+      break;
+    case 'search-submit':
+      doSearch();
+      break;
+    case 'dialog-cancel':
+      closeAllDialogs();
+      break;
+    case 'dialog-confirm':
+      confirmDialog();
+      break;
+    case 'dialog-save-edit':
+      saveEditDialog();
+      break;
+  }
+});
+
+// Keyboard: Enter in search
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAllDialogs();
+  if (e.key === 'Enter' && document.activeElement === document.getElementById('searchInput')) {
+    doSearch();
+  }
+});
+
+function switchPanel(panelId, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  currentPanel = panelId;
+
+  // Update panel display
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const panelEl = document.getElementById('panel-' + panelId);
+  if (panelEl) panelEl.classList.add('active');
+
+  // Update title & toolbar
+  const titles = {
+    browser: '📂 文件浏览', bootstrap: '📝 Bootstrap 文件',
+    daily: '📅 每日笔记', search: '🔍 搜索文件', stats: '📊 统计信息'
+  };
+  document.getElementById('panelTitle').textContent = titles[panelId] || '';
+
+  // Load data for panel
+  if (panelId === 'bootstrap') loadBootstrap();
+  if (panelId === 'stats') loadStats();
+  if (panelId === 'daily') { setTodayDate(); loadDailyList(); }
+}
+
+// =====================================================================
+// Directory Tree
+// =====================================================================
+async function loadTree(path) {
+  const treeEl = document.getElementById('dirTree');
+  treeEl.innerHTML = '<div class="loading"><div class="spinner"></div> 加载中...</div>';
+
+  try {
+    let r;
+    if (path) {
+      r = await fetch(`${API}/list/${encodeURIComponent(path)}`);
+    } else {
+      r = await fetch(`${API}/list`);
+    }
+    if (!r.ok) throw new Error('请求失败');
+    const data = await r.json();
+    treeData = data;
+    renderTree(treeData, '.');
+  } catch (e) {
+    treeEl.innerHTML = '<p style="color:var(--danger);padding:20px;">⚠️ 加载失败: ' + e.message + '</p>';
+  }
+}
+
+function renderTree(items, basePath) {
+  const treeEl = document.getElementById('dirTree');
+  if (!items || !items.length) {
+    treeEl.innerHTML = '<p style="padding:20px;color:var(--text-secondary);text-align:center;">空目录</p>';
+    return;
+  }
+
+  // Sort: directories first, then files
+  items.sort((a, b) => {
+    const aIsDir = a.is_dir !== undefined ? a.is_dir : a.type === 'directory';
+    const bIsDir = b.is_dir !== undefined ? b.is_dir : b.type === 'directory';
+    if (aIsDir && !bIsDir) return -1;
+    if (!aIsDir && bIsDir) return 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  treeEl.innerHTML = items.map(item => {
+    const isDir = item.is_dir !== undefined ? item.is_dir : item.type === 'directory';
+    const icon = isDir ? '📁' : '📄';
+    const itemPath = item.path || (basePath + '/' + (item.name || ''));
+    const name = item.name || itemPath;
+
+    if (isDir) {
+      return `<div>
+        <div class="tree-node" data-action="toggle-dir" data-path="${escHtml(itemPath)}">
+          <span class="tree-arrow" id="arrow-${escHtml(itemPath)}">▶</span>
+          <span class="icon">${icon}</span>
+          <span>${escHtml(name)}</span>
+        </div>
+        <div class="tree-children" id="children-${escHtml(itemPath)}" style="display:none;"></div>
+      </div>`;
+    } else {
+      return `<div class="tree-node" data-action="select-file" data-path="${escHtml(itemPath)}" data-name="${escHtml(name)}">
+        <span class="tree-indent"></span><span class="tree-arrow" style="visibility:hidden;">▶</span>
+        <span class="icon">${icon}</span>
+        <span>${escHtml(name)}</span>
+      </div>`;
+    }
+  }).join('');
+
+  // Attach click handlers for tree nodes
+  treeEl.querySelectorAll('[data-action="toggle-dir"]').forEach(node => {
+    node.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const dirPath = node.dataset.path;
+      const childrenEl = document.getElementById('children-' + CSS.escape(dirPath));
+      const arrowEl = document.getElementById('arrow-' + CSS.escape(dirPath));
+
+      if (childrenEl.style.display === 'none' || !childrenEl.style.display) {
+        arrowEl.classList.add('expanded');
+        childrenEl.style.display = 'block';
+        // Load children
+        if (!childrenEl.dataset.loaded) {
+          try {
+            const r = await fetch(`${API}/list/${encodeURIComponent(dirPath)}`);
+            const data = await r.json();
+            if (data && data.length) {
+              childrenEl.innerHTML = data.map(child => {
+                const cIsDir = child.is_dir !== undefined ? child.is_dir : child.type === 'directory';
+                const cIcon = cIsDir ? '📁' : '📄';
+                const cPaths = child.path || (dirPath + '/' + (child.name || ''));
+                const cName = child.name || cPaths;
+                if (cIsDir) {
+                  return `<div>
+                    <div class="tree-node" data-action="toggle-dir" data-path="${escHtml(cPaths)}" style="padding-left:${(dirPath.match(/\//g)||[]).length * 16 + 20}px">
+                      <span class="tree-arrow" id="arrow-${escHtml(cPaths)}">▶</span>
+                      <span class="icon">${cIcon}</span>
+                      <span>${escHtml(cName)}</span>
+                    </div>
+                    <div class="tree-children" id="children-${escHtml(cPaths)}" style="display:none;"></div>
+                  </div>`;
+                } else {
+                  return `<div class="tree-node" data-action="select-file" data-path="${escHtml(cPaths)}" data-name="${escHtml(cName)}" style="padding-left:${(dirPath.match(/\//g)||[]).length * 16 + 20}px">
+                    <span class="tree-indent"></span><span class="tree-arrow" style="visibility:hidden;">▶</span>
+                    <span class="icon">${cIcon}</span>
+                    <span>${escHtml(cName)}</span>
+                  </div>`;
+                }
+              }).join('');
+              // Re-bind new nodes
+              bindTreeEvents(childrenEl);
+            }
+            childrenEl.dataset.loaded = '1';
+          } catch (e) {
+            childrenEl.innerHTML = '<p style="color:var(--danger);padding:4px 20px;font-size:0.7rem;">加载失败</p>';
+          }
+        }
+      } else {
+        arrowEl.classList.remove('expanded');
+        childrenEl.style.display = 'none';
+      }
+    });
+  });
+
+  treeEl.querySelectorAll('[data-action="select-file"]').forEach(f => {
+    f.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      selectFile(f.dataset.path, f.dataset.name);
+    });
+  });
+}
+
+function bindTreeEvents(container) {
+  container.querySelectorAll('[data-action="toggle-dir"]').forEach(node => {
+    node.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const dirPath = node.dataset.path;
+      const childrenEl = document.getElementById('children-' + CSS.escape(dirPath));
+      const arrowEl = document.getElementById('arrow-' + CSS.escape(dirPath));
+      if (!childrenEl || !arrowEl) return;
+
+      if (childrenEl.style.display === 'none' || !childrenEl.style.display) {
+        arrowEl.classList.add('expanded');
+        childrenEl.style.display = 'block';
+        if (!childrenEl.dataset.loaded) {
+          try {
+            const r = await fetch(`${API}/list/${encodeURIComponent(dirPath)}`);
+            const data = await r.json();
+            if (data && data.length) {
+              childrenEl.innerHTML = data.map(child => {
+                const cIsDir = child.is_dir !== undefined ? child.is_dir : child.type === 'directory';
+                const cIcon = cIsDir ? '📁' : '📄';
+                const cPaths = child.path || (dirPath + '/' + (child.name || ''));
+                const cName = child.name || cPaths;
+                const indent = dirPath.split('/').filter(Boolean).length * 16;
+                if (cIsDir) {
+                  return `<div>
+                    <div class="tree-node" data-action="toggle-dir" data-path="${escHtml(cPaths)}" style="padding-left:${indent + 20}px">
+                      <span class="tree-arrow" id="arrow-${escHtml(cPaths)}">▶</span>
+                      <span class="icon">${cIcon}</span>
+                      <span>${escHtml(cName)}</span>
+                    </div>
+                    <div class="tree-children" id="children-${escHtml(cPaths)}" style="display:none;"></div>
+                  </div>`;
+                } else {
+                  return `<div class="tree-node" data-action="select-file" data-path="${escHtml(cPaths)}" data-name="${escHtml(cName)}" style="padding-left:${indent + 36}px">
+                    <span class="icon">${cIcon}</span>
+                    <span>${escHtml(cName)}</span>
+                  </div>`;
+                }
+              }).join('');
+              bindTreeEvents(childrenEl);
+            }
+            childrenEl.dataset.loaded = '1';
+          } catch (e) {
+            childrenEl.innerHTML = '<p style="color:var(--danger);padding:4px 20px;font-size:0.7rem;">加载失败</p>';
+          }
+        }
+      } else {
+        arrowEl.classList.remove('expanded');
+        childrenEl.style.display = 'none';
+      }
+    });
+  });
+
+  container.querySelectorAll('[data-action="select-file"]').forEach(f => {
+    f.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      selectFile(f.dataset.path, f.dataset.name);
+    });
+  });
+}
+
+// =====================================================================
+// File Selection & Preview
+// =====================================================================
+async function selectFile(path, name) {
+  selectedFilePath = path;
+  currentPath = path;
+
+  // Highlight active
+  document.querySelectorAll('.tree-node.active').forEach(n => n.classList.remove('active'));
+  const nodes = document.querySelectorAll(`[data-path="${CSS.escape(path)}"]`);
+  nodes.forEach(n => n.classList.add('active'));
+
+  // Update breadcrumb
+  updateBreadcrumb(path);
+
+  // Show action buttons
+  document.getElementById('btnDeleteFile').style.display = 'inline-block';
+  document.getElementById('btnRenameFile').style.display = 'inline-block';
+  document.getElementById('btnEditFile').style.display = 'inline-block';
+
+  // Load file content
+  const previewEl = document.getElementById('filePreview');
+  try {
+    const r = await fetch(`${API}/read/${encodeURIComponent(path)}`);
+    if (!r.ok) throw new Error('读取失败');
+    const data = await r.json();
+    const content = data.content || data.data || '';
+    previewEl.innerHTML = '';
+    previewEl.className = 'file-content';
+    previewEl.textContent = content;
+  } catch (e) {
+    previewEl.innerHTML = '';
+    previewEl.className = 'file-placeholder';
+    previewEl.innerHTML = `<span class="emoji">⚠️</span><span>无法读取文件: ${e.message}</span>`;
+  }
+}
+
+function updateBreadcrumb(path) {
+  const bc = document.getElementById('breadcrumb');
+  if (!path) {
+    bc.innerHTML = '<span data-action="nav-breadcrumb" data-path="">📂 /</span>';
+    return;
+  }
+  const parts = path.split('/').filter(Boolean);
+  let cum = '';
+  let html = '<span data-action="nav-breadcrumb" data-path="">📂 /</span>';
+  parts.forEach((p, i) => {
+    cum += '/' + p;
+    html += `<span class="sep"> / </span>`;
+    html += `<span data-action="nav-breadcrumb" data-path="${escHtml(cum)}">${escHtml(p)}</span>`;
+  });
+  bc.innerHTML = html;
+}
+
+async function navigateTo(path) {
+  currentPath = path || '';
+  selectedFilePath = null;
+  document.getElementById('filePreview').className = 'file-placeholder';
+  document.getElementById('filePreview').innerHTML = '<span class="emoji">📂</span><span>选择一个文件查看内容</span>';
+  document.getElementById('btnDeleteFile').style.display = 'none';
+  document.getElementById('btnRenameFile').style.display = 'none';
+  document.getElementById('btnEditFile').style.display = 'none';
+  updateBreadcrumb(path);
+  await loadTree(path);
+}
+
+// =====================================================================
+// File Operations
+// =====================================================================
+function openNewFileDialog() {
+  dialogMode = 'new-file';
+  document.getElementById('dialogTitle').textContent = '📄 新建文件';
+  document.getElementById('dialogFileName').value = '';
+  document.getElementById('dialogFileContent').value = '';
+  document.getElementById('newFileDialog').classList.add('show');
+  document.getElementById('dialogFileName').focus();
+}
+
+function openNewFolderDialog() {
+  dialogMode = 'new-folder';
+  document.getElementById('dialogTitle').textContent = '📁 新建目录';
+  document.getElementById('dialogFileName').value = '';
+  document.getElementById('dialogFileContent').value = '';
+  document.getElementById('newFileDialog').classList.add('show');
+  document.getElementById('dialogFileName').focus();
+}
+
+async function confirmDialog() {
+  const name = document.getElementById('dialogFileName').value.trim();
+  if (!name) return toast('请输入名称', 'error');
+
+  const fullPath = currentPath ? currentPath + '/' + name : name;
+
+  try {
+    if (dialogMode === 'new-folder') {
+      // Create folder by writing empty marker
+      const r = await fetch(`${API}/write/${encodeURIComponent(fullPath + '/.keep')}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({content: ''})
+      });
+      if (!r.ok) throw new Error((await r.json()).error || '创建失败');
+      toast('目录已创建', 'success');
+    } else {
+      const content = document.getElementById('dialogFileContent').value;
+      const r = await fetch(`${API}/write/${encodeURIComponent(fullPath)}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({content})
+      });
+      if (!r.ok) throw new Error((await r.json()).error || '创建失败');
+      toast('文件已创建', 'success');
+    }
+    closeAllDialogs();
+    loadTree(currentPath);
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function openEditDialog() {
+  if (!selectedFilePath) return toast('请先选择一个文件', 'info');
+  document.getElementById('editDialogTitle').textContent = '✏️ 编辑文件';
+  document.getElementById('editFilePath').value = selectedFilePath;
+
+  try {
+    const r = await fetch(`${API}/read/${encodeURIComponent(selectedFilePath)}`);
+    const data = await r.json();
+    document.getElementById('editFileContent').value = data.content || data.data || '';
+    document.getElementById('editFileDialog').classList.add('show');
+  } catch (e) {
+    toast('读取文件失败: ' + e.message, 'error');
+  }
+}
+
+async function saveEditDialog() {
+  const content = document.getElementById('editFileContent').value;
+  const path = document.getElementById('editFilePath').value;
+  try {
+    const r = await fetch(`${API}/write/${encodeURIComponent(path)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({content})
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '保存失败');
+    toast('文件已保存', 'success');
+    closeAllDialogs();
+    selectFile(path, path.split('/').pop());
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function deleteCurrentFile() {
+  if (!selectedFilePath) return;
+  if (!confirm('确定删除 ' + selectedFilePath + ' ?')) return;
+  try {
+    const r = await fetch(`${API}/delete/${encodeURIComponent(selectedFilePath)}`, {
+      method: 'DELETE'
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '删除失败');
+    toast('已删除', 'success');
+    selectedFilePath = null;
+    document.getElementById('filePreview').className = 'file-placeholder';
+    document.getElementById('filePreview').innerHTML = '<span class="emoji">📂</span><span>选择一个文件查看内容</span>';
+    document.getElementById('btnDeleteFile').style.display = 'none';
+    document.getElementById('btnRenameFile').style.display = 'none';
+    document.getElementById('btnEditFile').style.display = 'none';
+    loadTree(currentPath);
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function renameCurrentFile() {
+  if (!selectedFilePath) return;
+  const newName = prompt('新名称:', selectedFilePath.split('/').pop());
+  if (!newName || newName === selectedFilePath.split('/').pop()) return;
+  const parentDir = selectedFilePath.split('/').slice(0, -1).join('/');
+  const newPath = parentDir ? parentDir + '/' + newName : newName;
+  try {
+    // Read old content
+    const r1 = await fetch(`${API}/read/${encodeURIComponent(selectedFilePath)}`);
+    const data = await r1.json();
+    // Write new
+    const r2 = await fetch(`${API}/write/${encodeURIComponent(newPath)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({content: data.content || data.data || ''})
+    });
+    if (!r2.ok) throw new Error('重命名失败');
+    // Delete old
+    await fetch(`${API}/delete/${encodeURIComponent(selectedFilePath)}`, {method: 'DELETE'});
+    toast('已重命名为: ' + newName, 'success');
+    selectFile(newPath, newName);
+    loadTree(parentDir);
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function uploadFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const fullPath = currentPath ? currentPath + '/' + file.name : file.name;
+      try {
+        const r = await fetch(`${API}/write/${encodeURIComponent(fullPath)}`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({content: reader.result})
+        });
+        if (!r.ok) throw new Error('上传失败');
+        toast('文件已上传: ' + file.name, 'success');
+        loadTree(currentPath);
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// =====================================================================
+// Bootstrap Files
+// =====================================================================
+async function loadBootstrap() {
+  const grid = document.getElementById('bootstrapGrid');
+  const defaultFiles = ['AGENTS.md', 'SOUL.md', 'USER.md', 'TOOLS.md', 'HEARTBEAT.md'];
+
+  try {
+    const r = await fetch(`${API}/bootstrap`);
+    const data = await r.json();
+    bootstrapFiles = data.files || {};
+
+    grid.innerHTML = defaultFiles.map(fname => {
+      const info = bootstrapFiles[fname] || {};
+      const exists = info.exists || info.present;
+      const content = info.content || '';
+      const size = info.size ? ` (${formatSize(info.size)})` : '';
+      return `
+        <div class="bs-card">
+          <div class="bs-card-header">
+            <span class="status-dot ${exists ? 'present' : 'missing'}"></span>
+            <h4>📄 ${escHtml(fname)}</h4>
+            <span style="font-size:0.65rem;color:var(--text-secondary)">${exists ? '存在' + size : '缺失'}</span>
+          </div>
+          <div class="bs-card-body">
+            <textarea id="bs-content-${escHtml(fname)}" ${exists ? '' : 'placeholder="文件不存在，编辑后将创建"'}>${escHtml(content)}</textarea>
+          </div>
+          <div class="bs-card-actions">
+            <button class="btn btn-sm" data-action="bs-reset" data-file="${escHtml(fname)}">🔄 重置</button>
+            <button class="btn btn-sm btn-accent" data-action="bs-save" data-file="${escHtml(fname)}">💾 保存</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Bind bootstrap actions
+    grid.querySelectorAll('[data-action="bs-save"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const fname = btn.dataset.file;
+        const content = document.getElementById('bs-content-' + CSS.escape(fname))?.value || '';
+        try {
+          const r = await fetch(`${API}/write/${encodeURIComponent(fname)}`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({content})
+          });
+          if (!r.ok) throw new Error((await r.json()).error || '保存失败');
+          toast(fname + ' 已保存', 'success');
+          loadBootstrap();
+        } catch (e) {
+          toast(e.message, 'error');
+        }
+      });
+    });
+
+    grid.querySelectorAll('[data-action="bs-reset"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const fname = btn.dataset.file;
+        try {
+          const r = await fetch(`${API}/read/${encodeURIComponent(fname)}`);
+          const data = await r.json();
+          const ta = document.getElementById('bs-content-' + CSS.escape(fname));
+          if (ta) ta.value = data.content || data.data || '';
+          toast(fname + ' 已重置', 'info');
+        } catch (e) {
+          const ta = document.getElementById('bs-content-' + CSS.escape(fname));
+          if (ta) ta.value = '';
+          toast('文件不存在，已清空', 'info');
+        }
+      });
+    });
+
+  } catch (e) {
+    grid.innerHTML = '<p style="color:var(--danger);padding:20px;">加载失败: ' + e.message + '</p>';
+  }
+}
+
+async function rebuildBootstrap() {
+  try {
+    const r = await fetch(`${API}/bootstrap`, {method: 'POST'});
+    if (!r.ok) throw new Error('重建失败');
+    toast('Bootstrap 文件已重建', 'success');
+    loadBootstrap();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+// =====================================================================
+// Daily Notes
+// =====================================================================
+function setTodayDate() {
+  const today = new Date().toISOString().slice(0, 10);
+  const dateInput = document.getElementById('dailyDate');
+  if (dateInput) dateInput.value = today;
+  loadDailyNote();
+}
+
+async function loadDailyNote() {
+  const date = document.getElementById('dailyDate')?.value;
+  if (!date) return;
+  document.getElementById('dailyTitle').textContent = '📅 ' + date + ' 笔记';
+
+  try {
+    const r = await fetch(`${API}/read/memory/${encodeURIComponent(date)}.md`);
+    if (r.ok) {
+      const data = await r.json();
+      document.getElementById('dailyContent').value = data.content || data.data || '';
+    } else {
+      document.getElementById('dailyContent').value = '';
+    }
+  } catch (e) {
+    document.getElementById('dailyContent').value = '';
+  }
+}
+
+async function saveDailyNote(mode) {
+  const date = document.getElementById('dailyDate')?.value;
+  const content = document.getElementById('dailyContent').value;
+  if (!date) return toast('请选择日期', 'error');
+
+  const notePath = 'memory/' + date + '.md';
+  try {
+    const body = {content, mode: mode === 'append' ? 'append' : 'overwrite'};
+    const r = await fetch(`${API}/daily-note`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({date, content, mode})
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '保存失败');
+    toast('笔记已保存', 'success');
+    loadDailyList();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function previewDailyNote() {
+  const content = document.getElementById('dailyContent').value;
+  document.getElementById('previewDialogTitle').textContent = '👁️ 笔记预览';
+  document.getElementById('previewDialogContent').innerHTML = simpleMarkdown(content);
+  document.getElementById('previewDialog').classList.add('show');
+}
+
+async function loadDailyList() {
+  const listEl = document.getElementById('dailyList');
+  try {
+    const r = await fetch(`${API}/list/memory`);
+    if (!r.ok) throw new Error('加载失败');
+    const data = await r.json();
+    const items = data.items || data || [];
+    const notes = items.filter(i => (i.name || i.path || '').endsWith('.md')).slice(0, 15);
+    listEl.innerHTML = '<h3>📋 最近笔记</h3>';
+    if (!notes.length) {
+      listEl.innerHTML += '<p style="color:var(--text-secondary);padding:10px;">暂无笔记</p>';
+    } else {
+      notes.forEach(n => {
+        const nName = n.name || n.path || '';
+        const nSize = n.size ? formatSize(n.size) : '';
+        listEl.innerHTML += `
+          <div class="daily-item" data-action="load-daily" data-date="${escHtml(nName.replace('.md',''))}">
+            <span class="date">📄 ${escHtml(nName)}</span>
+            <span class="size">${escHtml(nSize)}</span>
+          </div>`;
+      });
+      // Bind click
+      listEl.querySelectorAll('[data-action="load-daily"]').forEach(item => {
+        item.addEventListener('click', () => {
+          document.getElementById('dailyDate').value = item.dataset.date;
+          loadDailyNote();
+        });
+      });
+    }
+  } catch (e) {
+    listEl.innerHTML = '<h3>📋 最近笔记</h3><p style="color:var(--danger);">加载失败</p>';
+  }
+}
+
+// =====================================================================
+// Search
+// =====================================================================
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return toast('请输入搜索关键词', 'info');
+
+  const resultsEl = document.getElementById('searchResults');
+  resultsEl.innerHTML = '<div class="loading"><div class="spinner"></div> 搜索中...</div>';
+
+  try {
+    const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+    if (!r.ok) throw new Error('搜索失败');
+    const data = await r.json();
+    const results = data.results || data || [];
+
+    if (!results.length) {
+      resultsEl.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px;">未找到匹配的文件</p>';
+      return;
+    }
+
+    resultsEl.innerHTML = results.map(item => {
+      const path = item.path || item.file || '';
+      const size = item.size ? formatSize(item.size) : '';
+      const context = item.context || item.match || item.preview || '';
+      const modified = item.modified || item.mtime || '';
+      return `
+        <div class="result-item" data-action="open-search-result" data-path="${escHtml(path)}">
+          <div class="result-path">📄 ${escHtml(path)}</div>
+          <div class="result-meta">
+            <span>📏 ${escHtml(size) || 'N/A'}</span>
+            ${modified ? '<span>🕐 ' + escHtml(modified) + '</span>' : ''}
+          </div>
+          ${context ? '<div class="result-context">' + escHtml(context) + '</div>' : ''}
+        </div>`;
+    }).join('');
+
+    // Bind results click
+    resultsEl.querySelectorAll('[data-action="open-search-result"]').forEach(item => {
+      item.addEventListener('click', async () => {
+        const filePath = item.dataset.path;
+        switchPanel('browser', document.querySelector('[data-panel="browser"]'));
+        // Delay to let panel render, then navigate and select
+        setTimeout(async () => {
+          const parentDir = filePath.split('/').slice(0, -1).join('/');
+          await navigateTo(parentDir);
+          await selectFile(filePath, filePath.split('/').pop());
+        }, 100);
+      });
+    });
+
+  } catch (e) {
+    resultsEl.innerHTML = '<p style="color:var(--danger);text-align:center;padding:40px;">搜索失败: ' + e.message + '</p>';
+  }
+}
+
+// =====================================================================
+// Stats
+// =====================================================================
+async function loadStats() {
+  const cardsEl = document.getElementById('statsCards');
+  const bsEl = document.getElementById('statsBootstrap');
+
+  try {
+    const r = await fetch(`${API}/stats`);
+    const data = await r.json();
+    const stats = data.stats || data;
+
+    cardsEl.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value">${stats.total_files || stats.files || 0}</div>
+        <div class="stat-label">📄 文件总数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${stats.total_dirs || stats.dirs || 0}</div>
+        <div class="stat-label">📁 目录总数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${formatSize(stats.total_size || stats.size || 0)}</div>
+        <div class="stat-label">💾 总大小</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${stats.latest_note || '—'}</div>
+        <div class="stat-label">📅 最新笔记</div>
+      </div>`;
+
+    // Bootstrap status
+    const bsFiles = stats.bootstrap || data.bootstrap || {};
+    const defaultFiles = ['AGENTS.md', 'SOUL.md', 'USER.md', 'TOOLS.md', 'HEARTBEAT.md'];
+    bsEl.innerHTML = `
+      <h4>📋 Bootstrap 文件状态</h4>
+      ${defaultFiles.map(f => {
+        const info = bsFiles[f] || {};
+        const present = info.present || info.exists || false;
+        const size = info.size ? formatSize(info.size) : '';
+        return `<div class="bootstrap-row">
+          <span>${present ? '✅' : '❌'}</span>
+          <span>${escHtml(f)}</span>
+          <span style="margin-left:auto;" class="bs-status-badge ${present ? 'ok' : 'missing'}">${present ? '已存在' + (size ? ' ' + size : '') : '缺失'}</span>
+        </div>`;
+      }).join('')}`;
+
+  } catch (e) {
+    cardsEl.innerHTML = '<p style="color:var(--danger);">加载统计失败: ' + e.message + '</p>';
+    bsEl.innerHTML = '<p style="color:var(--danger);">加载 Bootstrap 状态失败</p>';
+  }
+}
+
+// =====================================================================
+// Utilities
+// =====================================================================
+function formatSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024;
+    i++;
+  }
+  return size.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function simpleMarkdown(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:var(--bg-secondary);padding:2px 6px;border-radius:3px;">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function closeAllDialogs() {
+  document.querySelectorAll('.dialog-overlay').forEach(d => d.classList.remove('show'));
+}
+
+// Close dialogs on overlay click
+document.querySelectorAll('.dialog-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// =====================================================================
+// Boot
+// =====================================================================
+init();
+</script>
+
+</body>
+</html>

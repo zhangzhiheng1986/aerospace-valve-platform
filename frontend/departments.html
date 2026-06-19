@@ -1,0 +1,910 @@
+<!--
+departments.html — 多部门协作页面
+Aerospace Valve R&D Enterprise Collaboration Dashboard
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多部门协作 | 航空航天阀门研发平台</title>
+<style>
+:root {
+  --bg-primary: #0f1923;
+  --bg-secondary: #1a2736;
+  --bg-card: #1e2d3d;
+  --bg-sidebar: #0d1321;
+  --accent: #00b4d8;
+  --accent-glow: rgba(0,180,216,0.15);
+  --text-primary: #e0e6ed;
+  --text-secondary: #8899aa;
+  --border: #2a3a4a;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h3 { font-size: 1rem; color: var(--accent); margin-bottom:4px; }
+.sidebar-header span { font-size: 0.7rem; color: var(--text-secondary); }
+.sidebar-nav {
+  flex: 1; overflow-y: auto; padding: 10px 0;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover, .nav-item.active {
+  color: var(--text-primary);
+  background: var(--accent-glow);
+  border-left-color: var(--accent);
+}
+.nav-item .badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.sidebar-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.sidebar-footer a { color: var(--accent); text-decoration: none; }
+
+/* ---- MAIN ---- */
+.main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.toolbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.toolbar h2 { font-size: 1.15rem; margin-right: auto; }
+.btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-glow); }
+.btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight:600; }
+.btn-accent:hover { opacity: 0.85; }
+.btn-sm { padding: 4px 10px; font-size: 0.7rem; }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-success { border-color: var(--success); color: var(--success); }
+
+.content {
+  flex: 1; overflow-y: auto; padding: 24px;
+}
+
+/* ---- ORG CHART ---- */
+.org-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+.dept-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.dept-card:hover { border-color: var(--accent); }
+.dept-header {
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.dept-color { width: 4px; border-radius: 2px; align-self: stretch; flex-shrink: 0; }
+.dept-icon { font-size: 1.5rem; }
+.dept-info { flex:1; }
+.dept-info h4 { font-size: 0.9rem; margin-bottom: 2px; }
+.dept-info span { font-size: 0.7rem; color: var(--text-secondary); }
+.dept-code {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 700;
+}
+.agent-list { padding: 0 16px 14px; }
+.agent-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.agent-row:hover { background: var(--bg-secondary); }
+.agent-row.busy::after {
+  content: '●'; color: var(--warning);
+  font-size: 0.55rem; margin-left: auto;
+}
+.agent-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+.agent-name { font-weight: 500; }
+.agent-rank {
+  margin-left: auto;
+  font-size: 0.6rem;
+  color: var(--accent);
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.agent-tags {
+  padding: 0 16px 12px;
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.tag {
+  font-size: 0.62rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* ---- WORKFLOW CARDS ---- */
+.wf-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.wf-card:hover { border-color: var(--accent); }
+.wf-card.active { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+.wf-card-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.wf-icon { font-size: 1.6rem; }
+.wf-info { flex: 1; }
+.wf-info h4 { font-size: 0.85rem; margin-bottom: 2px; }
+.wf-info span { font-size: 0.7rem; color: var(--text-secondary); }
+.wf-meta {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 0.7rem; color: var(--text-secondary);
+}
+
+/* ---- STAGE PIPELINE ---- */
+.stage-pipeline {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 12px;
+}
+.stage-node {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  opacity: 0.5;
+}
+.stage-node.active { opacity: 1; border-color: var(--accent); }
+.stage-node.done { opacity: 0.7; border-color: var(--success); }
+.stage-node.current {
+  opacity: 1; border-color: var(--warning);
+  box-shadow: 0 0 10px rgba(255,212,59,0.2);
+}
+.stage-connector {
+  font-size: 0.7rem; color: var(--text-secondary);
+  display: flex; align-items: center;
+}
+
+/* ---- RUN DETAIL ---- */
+.run-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.run-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px;
+}
+.run-status {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.run-status.running { background: rgba(255,212,59,0.2); color: var(--warning); }
+.run-status.review { background: rgba(255,107,107,0.2); color: var(--danger); }
+.run-status.completed { background: rgba(81,207,102,0.2); color: var(--success); }
+.run-status.created { background: rgba(136,153,170,0.2); color: var(--text-secondary); }
+
+.run-progress {
+  height: 6px; background: var(--bg-secondary); border-radius: 3px;
+  margin-bottom: 14px; overflow: hidden;
+}
+.run-progress-bar {
+  height: 100%; border-radius: 3px;
+  transition: width 0.3s;
+}
+.run-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+
+/* ---- HANDOFF LOG ---- */
+.handoff-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.handoff-from { color: var(--text-secondary); font-weight: 600; }
+.handoff-arrow { color: var(--accent); font-size: 0.9rem; }
+.handoff-to { font-weight: 600; }
+.handoff-time { margin-left: auto; font-size: 0.65rem; color: var(--text-secondary); }
+
+/* ---- DIALOG ---- */
+.dialog-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 999;
+  align-items: center; justify-content: center;
+}
+.dialog-overlay.show { display: flex; }
+.dialog {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px;
+  min-width: 440px;
+  max-width: 520px;
+}
+.dialog h3 { margin-bottom: 18px; font-size: 1rem; }
+.dialog label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; }
+.dialog input, .dialog textarea, .dialog select {
+  width: 100%; padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.dialog input:focus, .dialog textarea:focus { border-color: var(--accent); }
+.dialog textarea { min-height: 80px; resize: vertical; }
+.dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  z-index: 1000;
+  animation: toastIn 0.3s ease;
+  max-width: 360px;
+}
+.toast.success { background: rgba(81,207,102,0.15); border: 1px solid var(--success); color: var(--success); }
+.toast.error { background: rgba(255,107,107,0.15); border: 1px solid var(--danger); color: var(--danger); }
+.toast.info { background: rgba(0,180,216,0.15); border: 1px solid var(--accent); color: var(--accent); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- TABS ---- */
+.tabs {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 10px 20px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .org-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h3>🏢 多部门协作</h3>
+    <span>Aerospace Valve R&D Center</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-panel="org" onclick="switchPanel('org', this)">
+      🏛️ 组织架构
+      <span class="badge" id="deptCount">7</span>
+    </a>
+    <a class="nav-item" data-panel="workflows" onclick="switchPanel('workflows', this)">
+      🔄 协作流程
+    </a>
+    <a class="nav-item" data-panel="runs" onclick="switchPanel('runs', this)">
+      ⚡ 进行中的任务
+      <span class="badge" id="runCount" style="background:var(--warning)">0</span>
+    </a>
+    <a class="nav-item" data-panel="routing" onclick="switchPanel('routing', this)">
+      🎯 智能路由
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/classic">📊 经典仪表盘</a> &nbsp;|&nbsp;
+    <a href="/">🤖 AI 协作</a> &nbsp;|&nbsp;
+    <a href="/projects">🚀 项目管理</a>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+  <div class="toolbar">
+    <h2 id="panelTitle">🏛️ 组织架构</h2>
+    <button class="btn btn-accent" onclick="openCreateRunDialog()">+ 发起协作任务</button>
+    <button class="btn" onclick="refreshData()">🔄 刷新</button>
+  </div>
+
+  <div class="content" id="contentArea"></div>
+</main>
+
+<!-- ============ CREATE RUN DIALOG ============ -->
+<div class="dialog-overlay" id="createDialog">
+  <div class="dialog">
+    <h3>🚀 发起部门协作任务</h3>
+    <label>任务描述</label>
+    <textarea id="taskDesc" placeholder="描述需要协作完成的任务，系统将自动推荐最佳流程和部门..."></textarea>
+    <label>协作流程</label>
+    <select id="wfSelect"></select>
+    <label>智能推荐</label>
+    <div id="routeSuggestion" style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:12px;">
+      输入任务描述后自动推荐...
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" onclick="closeDialog()">取消</button>
+      <button class="btn btn-accent" id="createBtn" onclick="createRun()">发起协作</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+const API = '/api/avis';
+let departments = [];
+let workflows = [];
+let activeRuns = [];
+
+// =====================================================================
+// Init
+// =====================================================================
+async function refreshData() {
+  await Promise.all([loadDepartments(), loadWorkflows(), loadRuns()]);
+  render();
+}
+
+async function loadDepartments() {
+  try {
+    const r = await fetch(`${API}/departments`);
+    const d = await r.json();
+    departments = d.departments || [];
+    document.getElementById('deptCount').textContent = departments.length;
+  } catch(e) { console.error(e); }
+}
+
+async function loadWorkflows() {
+  try {
+    const r = await fetch(`${API}/workflows`);
+    const d = await r.json();
+    workflows = d.workflows || [];
+    const sel = document.getElementById('wfSelect');
+    sel.innerHTML = workflows.map(w =>
+      `<option value="${w.id}">${w.icon} ${w.name} (${w.estimated_duration})</option>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadRuns() {
+  try {
+    const r = await fetch(`${API}/collab/runs`);
+    const d = await r.json();
+    activeRuns = d.runs || [];
+    document.getElementById('runCount').textContent = d.count || 0;
+  } catch(e) { console.error(e); }
+}
+
+// =====================================================================
+// Panel switching
+// =====================================================================
+function switchPanel(panelId, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const titles = {org:'🏛️ 组织架构', workflows:'🔄 协作流程', runs:'⚡ 进行中的任务', routing:'🎯 智能路由'};
+  document.getElementById('panelTitle').textContent = titles[panelId] || '';
+  renderPanel(panelId);
+}
+
+function renderPanel(panelId) {
+  const area = document.getElementById('contentArea');
+  switch(panelId) {
+    case 'org': area.innerHTML = renderOrgChart(); break;
+    case 'workflows': area.innerHTML = renderWorkflows(); break;
+    case 'runs': area.innerHTML = renderRuns(); break;
+    case 'routing': area.innerHTML = renderRouting(); break;
+  }
+}
+
+function render() {
+  const active = document.querySelector('.nav-item.active');
+  if (active) renderPanel(active.dataset.panel);
+}
+
+// =====================================================================
+// Org Chart
+// =====================================================================
+function renderOrgChart() {
+  if (!departments.length) return '<p style="color:var(--text-secondary)">加载中...</p>';
+
+  return `<div class="org-grid">${departments.map(d => `
+    <div class="dept-card">
+      <div class="dept-header">
+        <div class="dept-color" style="background:${d.color}"></div>
+        <div class="dept-icon">${d.icon}</div>
+        <div class="dept-info">
+          <h4>${d.name} <span style="font-size:0.65rem;color:${d.color}">${d.code}</span></h4>
+          <span>${d.description}</span>
+        </div>
+        <div class="dept-code" style="background:${d.color}22;color:${d.color};border:1px solid ${d.color}44">
+          ${d.code}
+        </div>
+      </div>
+      <div class="agent-list">
+        ${(d.agents || []).map(a => `
+          <div class="agent-row" title="${a.persona || a.role}">
+            <span class="agent-icon">${a.icon}</span>
+            <span class="agent-name">${a.name}</span>
+            <span class="agent-rank">${a.rank}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+// =====================================================================
+// Workflows
+// =====================================================================
+async function renderWorkflows() {
+  // Fetch full workflow details
+  const fullWf = await Promise.all(workflows.map(w =>
+    fetch(`${API}/workflows/${w.id}`).then(r => r.json())
+  ));
+
+  return `
+    <div style="display:grid;gap:20px;">
+      ${fullWf.map(wf => `
+        <div class="wf-card" id="wf-${wf.name_en}">
+          <div class="wf-card-header">
+            <div class="wf-icon">${wf.icon || '📋'}</div>
+            <div class="wf-info">
+              <h4>${wf.name}</h4>
+              <span>${wf.description || ''}</span>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:0.7rem;color:var(--text-secondary)">预计周期</div>
+              <div style="font-weight:600;color:var(--accent)">${wf.estimated_duration || 'N/A'}</div>
+            </div>
+          </div>
+          <div class="stage-pipeline">
+            ${(wf.stages || []).map((s, i) => {
+              const dept = departments.find(d => d.id === s.dept) || {};
+              return `
+                ${i > 0 ? '<span class="stage-connector">→</span>' : ''}
+                <div class="stage-node" title="${s.action}" style="border-color:${dept.color || 'var(--border)'}">
+                  <span>${s.agent_icon || '👤'}</span>
+                  <span>${s.phase}</span>
+                  <span style="font-size:0.6rem;color:${dept.color || 'var(--text-secondary)'}">${dept.code || s.dept}</span>
+                  ${s.review_required ? '<span title="需评审">🔍</span>' : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.7rem;color:var(--text-secondary)">
+              ${wf.stages ? wf.stages.length : 0} 个阶段 · 
+              ${wf.stages ? wf.stages.filter(s => s.review_required).length : 0} 个评审门
+            </span>
+            <button class="btn btn-sm btn-accent" onclick="quickCreateRun('${wf.name_en}')">
+              🚀 发起此流程
+            </button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+// =====================================================================
+// Runs
+// =====================================================================
+function renderRuns() {
+  if (!activeRuns.length) {
+    return `<div style="text-align:center;padding:60px;color:var(--text-secondary)">
+      <div style="font-size:3rem;margin-bottom:16px;">📋</div>
+      <h3>暂无进行中的协作任务</h3>
+      <p style="margin-top:8px;">点击右上角「发起协作任务」开始跨部门协作</p>
+    </div>`;
+  }
+
+  return activeRuns.map(run => {
+    const pct = run.progress ? parseInt(run.progress) : 0;
+    return `
+    <div class="run-card">
+      <div class="run-header">
+        <span>${run.workflow_icon || '📋'}</span>
+        <strong>${run.workflow_name}</strong>
+        <span class="run-status ${run.status}">${statusLabel(run.status)}</span>
+        <span style="margin-left:auto;font-size:0.65rem;color:var(--text-secondary)">${run.run_id}</span>
+      </div>
+      <div style="font-size:0.82rem;margin-bottom:8px;color:var(--text-secondary)">${run.task}</div>
+      <div class="run-progress">
+        <div class="run-progress-bar" style="width:${pct}%;background:${run.status==='completed'?'var(--success)':'var(--accent)'}"></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:10px">
+        进度: ${run.progress} · ${run.created_at ? new Date(run.created_at).toLocaleString('zh-CN') : ''}
+      </div>
+      <div class="run-actions">
+        <button class="btn btn-sm" onclick="viewRun('${run.run_id}')">📋 查看详情</button>
+        ${run.status === 'review' ? `
+          <button class="btn btn-sm btn-success" onclick="approveRun('${run.run_id}')">✅ 批准</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectRun('${run.run_id}')">❌ 驳回</button>
+        ` : ''}
+        ${run.status === 'running' ? `
+          <button class="btn btn-sm btn-accent" onclick="advanceRun('${run.run_id}')">⏭️ 推进</button>
+        ` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function statusLabel(s) {
+  const map = { created:'已创建', running:'进行中', review:'待评审', completed:'已完成', failed:'失败' };
+  return map[s] || s;
+}
+
+// =====================================================================
+// Smart Routing
+// =====================================================================
+function renderRouting() {
+  return `
+    <div style="max-width:600px;">
+      <h3 style="margin-bottom:16px;">🎯 智能任务路由</h3>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:20px;">
+        输入任务描述，系统将分析关键词并推荐最合适的协作流程和部门。
+      </p>
+      <label>任务描述</label>
+      <textarea id="routeTask" placeholder="例如：设计一个高压液氧电磁阀，需要符合QJ20156标准..."
+        style="min-height:100px"
+        oninput="debounceRoute()"></textarea>
+      <button class="btn btn-accent" onclick="doRoute()">🔍 分析路由</button>
+      <div id="routeResult" style="margin-top:16px;"></div>
+    </div>`;
+}
+
+let routeTimer;
+function debounceRoute() {
+  clearTimeout(routeTimer);
+  routeTimer = setTimeout(doRoute, 500);
+}
+
+async function doRoute() {
+  const task = document.getElementById('routeTask')?.value.trim();
+  if (!task) return;
+
+  try {
+    const r = await fetch(`${API}/collab/route`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({task})
+    });
+    const d = await r.json();
+    const recs = d.recommendations || [];
+    document.getElementById('routeResult').innerHTML = `
+      <h4 style="margin-bottom:12px;">📋 推荐结果</h4>
+      ${recs.map((rec, i) => `
+        <div class="wf-card ${i===0?'active':''}" style="margin-bottom:10px;cursor:pointer"
+             onclick="quickCreateRun('${rec.workflow}')">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span style="font-size:1.5rem">${i===0?'⭐':'📋'}</span>
+            <div style="flex:1">
+              <strong>${getWorkflowName(rec.workflow)}</strong>
+              <div style="font-size:0.7rem;color:var(--text-secondary)">${rec.reason}</div>
+            </div>
+            <span style="font-size:0.7rem;color:var(--accent)">置信度 ${Math.round(rec.confidence*100)}%</span>
+          </div>
+          <div style="font-size:0.7rem;color:var(--accent)">
+            优先部门: ${getDeptName(rec.priority_dept)}
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } catch(e) { console.error(e); }
+}
+
+function getWorkflowName(id) {
+  const wf = workflows.find(w => w.id === id);
+  return wf ? `${wf.icon} ${wf.name}` : id;
+}
+
+function getDeptName(id) {
+  const d = departments.find(d => d.id === id);
+  return d ? `${d.icon} ${d.name} (${d.code})` : id;
+}
+
+// =====================================================================
+// Run Actions
+// =====================================================================
+async function createRun() {
+  const task = document.getElementById('taskDesc').value.trim();
+  const wfId = document.getElementById('wfSelect').value;
+  if (!task || !wfId) return toast('请填写任务描述并选择流程', 'error');
+
+  try {
+    const r = await fetch(`${API}/collab/runs`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({task, workflow_id: wfId})
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '创建失败');
+    const d = await r.json();
+    toast(`协作任务已创建: ${d.run_id}`, 'success');
+    closeDialog();
+    await loadRuns();
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const runsTab = document.querySelector('[data-panel="runs"]');
+    if (runsTab) runsTab.classList.add('active');
+    document.getElementById('panelTitle').textContent = '⚡ 进行中的任务';
+    renderPanel('runs');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function quickCreateRun(wfId) {
+  document.getElementById('wfSelect').value = wfId;
+  document.getElementById('taskDesc').value = document.getElementById('routeTask')?.value || '';
+  document.getElementById('taskDesc').focus();
+  document.getElementById('createDialog').classList.add('show');
+  // Auto-route
+  const task = document.getElementById('routeTask')?.value;
+  if (task) {
+    try {
+      const r = await fetch(`${API}/collab/route`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({task})
+      });
+      const d = await r.json();
+      document.getElementById('routeSuggestion').innerHTML =
+        `💡 推荐流程: <strong>${getWorkflowName(d.best_match.workflow)}</strong> — ${d.best_match.reason}`;
+    } catch(e) {}
+  }
+}
+
+async function viewRun(runId) {
+  try {
+    const r = await fetch(`${API}/collab/runs/${runId}`);
+    const d = await r.json();
+    if (d.error) return toast(d.error, 'error');
+
+    // Show run detail as overlay
+    showRunDetail(d);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function showRunDetail(run) {
+  const pct = run.progress_pct || 0;
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay show';
+  overlay.innerHTML = `
+    <div class="dialog" style="min-width:550px;max-width:700px;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <span style="font-size:1.5rem">${getWorkflowIcon(run.workflow_id)}</span>
+        <strong style="font-size:1rem">${getWorkflowName(run.workflow_id)}</strong>
+        <span class="run-status ${run.status}">${statusLabel(run.status)}</span>
+        <span style="margin-left:auto;font-size:0.65rem;color:var(--text-secondary)">${run.run_id}</span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:14px">${run.task}</div>
+      <div class="run-progress">
+        <div class="run-progress-bar" style="width:${pct}%"></div>
+      </div>
+
+      <h4 style="margin:16px 0 10px;font-size:0.85rem">📋 执行阶段</h4>
+      <div class="stage-pipeline" style="flex-direction:column;gap:6px;">
+        ${(run.stages || []).map((s, i) => {
+          let cls = 'stage-node';
+          if (s.status === 'completed') cls += ' done';
+          if (s.status === 'in_progress') cls += ' current';
+          if (s.status === 'pending') cls += '';
+          const dept = departments.find(d => d.code === s.dept_code) || {};
+          return `
+            <div class="${cls}" style="justify-content:flex-start; opacity:1; padding:10px 14px; border-color:${s.dept_color || dept.color || 'var(--border)'}">
+              <span style="font-size:1.1rem;width:28px">${s.agent_icon || '👤'}</span>
+              <div style="flex:1">
+                <div style="font-weight:500">${s.seq}. ${s.phase}</div>
+                <div style="font-size:0.65rem;color:var(--text-secondary)">${s.dept} · ${s.agent} · ${s.action}</div>
+                ${s.deliverable ? `<div style="font-size:0.6rem;color:var(--accent)">📦 ${s.deliverable}</div>` : ''}
+              </div>
+              <span style="font-size:0.6rem;padding:2px 8px;border-radius:4px;">${statusLabel(s.status)}</span>
+              ${s.review_required ? '<span title="需评审">🔍</span>' : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      ${run.handoff_log && run.handoff_log.length ? `
+        <h4 style="margin:16px 0 10px;font-size:0.85rem">🔄 交接记录</h4>
+        ${run.handoff_log.map(h => `
+          <div class="handoff-item">
+            <span class="handoff-from">${h.from_dept} ${h.from_agent}</span>
+            <span class="handoff-arrow">→</span>
+            <span class="handoff-to">${h.to_dept} ${h.to_agent}</span>
+            <span style="font-size:0.65rem;margin-left:auto;color:var(--text-secondary)">📦 ${h.deliverable}</span>
+          </div>
+        `).join('')}
+      ` : ''}
+
+      <div class="dialog-actions" style="margin-top:18px">
+        ${run.status === 'review' ? `
+          <button class="btn btn-success" onclick="approveRun('${run.run_id}');this.closest('.dialog-overlay').remove()">✅ 批准</button>
+          <button class="btn btn-danger" onclick="rejectRun('${run.run_id}');this.closest('.dialog-overlay').remove()">❌ 驳回</button>
+        ` : ''}
+        ${run.status === 'running' ? `
+          <button class="btn btn-accent" onclick="advanceRun('${run.run_id}');this.closest('.dialog-overlay').remove()">⏭️ 推进</button>
+        ` : ''}
+        <button class="btn" onclick="this.closest('.dialog-overlay').remove()">关闭</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function getWorkflowIcon(id) {
+  const wf = workflows.find(w => w.id === id);
+  return wf ? wf.icon : '📋';
+}
+
+async function approveRun(runId) {
+  try {
+    const r = await fetch(`${API}/collab/runs/${runId}/approve`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({reviewer:'总设计师',notes:'批准通过'})
+    });
+    const d = await r.json();
+    toast('✅ 评审已批准，进入下一阶段', 'success');
+    await loadRuns();
+    render();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function rejectRun(runId) {
+  const reason = prompt('驳回原因:');
+  if (!reason) return;
+  try {
+    const r = await fetch(`${API}/collab/runs/${runId}/reject`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({reviewer:'总设计师',reason})
+    });
+    await r.json();
+    toast('❌ 已驳回，退回重新执行', 'info');
+    await loadRuns();
+    render();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function advanceRun(runId) {
+  try {
+    const r = await fetch(`${API}/collab/runs/${runId}/advance`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({notes:'手动推进'})
+    });
+    const d = await r.json();
+    if (d.action === 'workflow_completed') {
+      toast('🎉 协作流程全部完成!', 'success');
+    } else if (d.action === 'review_required') {
+      toast('🔍 进入评审阶段，等待审批', 'info');
+    } else {
+      toast(`⏭️ 进入: ${d.phase || d.stage || '下一阶段'}`, 'success');
+    }
+    await loadRuns();
+    render();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// =====================================================================
+// Dialog
+// =====================================================================
+function openCreateRunDialog() {
+  document.getElementById('taskDesc').value = '';
+  document.getElementById('routeSuggestion').innerHTML = '输入任务描述后自动推荐...';
+  document.getElementById('createDialog').classList.add('show');
+  document.getElementById('taskDesc').focus();
+}
+
+function closeDialog() {
+  document.getElementById('createDialog').classList.remove('show');
+}
+
+// =====================================================================
+// Toast
+// =====================================================================
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// =====================================================================
+// Keyboard
+// =====================================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDialog();
+    document.querySelectorAll('.dialog-overlay').forEach(d => d.remove());
+  }
+});
+
+// =====================================================================
+// Boot
+// =====================================================================
+refreshData();
+</script>
+</body>
+</html>

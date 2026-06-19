@@ -173,6 +173,26 @@ class IntentParser:
                 'improve', 'reduce', 'increase', 'best',
             ],
         },
+        'process': {
+            'keywords_cn': [
+                '工艺', '加工', '制造', '生产', '车间',
+                '热处理', '时效', '退火', '固溶', '淬火', '堆焊',
+                '阳极化', '钝化', '喷丸', '涂层',
+                '车削', '铣削', '磨削', '线切割', '电火花',
+                '钎焊', '熔焊', '氩弧焊', '电子束', '激光焊',
+                '装配', '紧固', '定力矩', '洁净度', '气密',
+                '工艺路线', '工序', '工时', '设备选型',
+            ],
+            'keywords_en': [
+                'process', 'manufacturing', 'machining', 'fabrication',
+                'heat treatment', 'aging', 'anneal', 'solution', 'quench',
+                'weld', 'brazing', 'electron beam', 'laser weld', 'tig',
+                'anodize', 'passivation', 'shot peening', 'coating',
+                'turning', 'milling', 'grinding', 'edm', 'wire edm',
+                'assembly', 'fastening', 'torque', 'leak test',
+                'process route', 'workflow', 'cycle time',
+            ],
+        },
     }
     
     @classmethod
@@ -290,6 +310,31 @@ class AIAgentEngine:
             self._tool_compare_designs,
             'Compare multiple design scenarios for trade-off analysis.',
             {'scenarios': 'array of design parameter sets'}
+        )
+        # Sprint 12: Manufacturing process tools
+        self.tools.register(
+            'list_processes',
+            self._tool_list_processes,
+            'List manufacturing processes (machining, heat treatment, surface, welding, assembly).',
+            {'category': 'string (optional: machining/heat_treatment/surface_treatment/welding/assembly)'}
+        )
+        self.tools.register(
+            'get_process_detail',
+            self._tool_get_process_detail,
+            'Get full parameters for a specific manufacturing process (cutting speed, temp, time, etc.).',
+            {'process_id': 'string (e.g. titanium_turning, aluminum_t6)'}
+        )
+        self.tools.register(
+            'recommend_process',
+            self._tool_recommend_process,
+            'Recommend a complete manufacturing process package for a given material and valve type.',
+            {'material': 'string (e.g. Inconel 718, 316L, TC4)', 'valve_type': 'string (e.g. relief, solenoid, check)'}
+        )
+        self.tools.register(
+            'get_process_route',
+            self._tool_get_process_route,
+            'Get a step-by-step process route (work instruction) for a specific valve component.',
+            {'route_id': 'string (e.g. solenoid_valve_body, relief_valve_seat)'}
         )
     
     # ---- Tool Implementations ----
@@ -519,6 +564,38 @@ class AIAgentEngine:
                     'error': str(e),
                 })
         return {'success': True, 'type': 'comparison', 'results': results}
+
+    def _tool_list_processes(self, **kwargs) -> Dict:
+        """List manufacturing processes (machining/HT/surface/welding/assembly)."""
+        try:
+            from tool_bridge import get_tool_handler
+            return get_tool_handler('list_processes')(kwargs)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def _tool_get_process_detail(self, **kwargs) -> Dict:
+        """Get full parameters for a specific process."""
+        try:
+            from tool_bridge import get_tool_handler
+            return get_tool_handler('get_process_detail')(kwargs)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def _tool_recommend_process(self, **kwargs) -> Dict:
+        """Recommend process route based on material and valve type."""
+        try:
+            from tool_bridge import get_tool_handler
+            return get_tool_handler('recommend_process')(kwargs)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def _tool_get_process_route(self, **kwargs) -> Dict:
+        """Get full process route (step-by-step instructions)."""
+        try:
+            from tool_bridge import get_tool_handler
+            return get_tool_handler('get_process_route')(kwargs)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
     
     # ---- Main Processing Pipeline ----
     
@@ -534,6 +611,14 @@ class AIAgentEngine:
             # Step 1: Parse intent
             intents = IntentParser.parse(message)
             primary_intent = max(intents, key=intents.get) if any(v > 0 for v in intents.values()) else 'knowledge'
+            # Process intent priority: if strong process signals present, override
+            process_signals = ['工艺', '加工', '制造', '热处理', '车削', '铣削',
+                               '阳极', '钝化', '喷丸', '电子束', '钎焊', '堆焊',
+                               'process', 'machining', 'manufacturing', 'weld',
+                               'anodize', 'passivation', 'brazing']
+            msg_lower = message.lower()
+            if intents.get('process', 0) > 0 and any(s.lower() in msg_lower for s in process_signals):
+                primary_intent = 'process'
             
             # Step 2: Extract parameters from message
             params = self._extract_parameters(message)
@@ -638,6 +723,8 @@ class AIAgentEngine:
             response = self._handle_compare(message, params, response, session)
         elif primary_intent == 'optimize':
             response = self._handle_optimize(message, params, response)
+        elif primary_intent == 'process':
+            response = self._handle_process(message, params, response)
         else:
             response = self._handle_knowledge(message, params, response)
         
@@ -990,6 +1077,141 @@ class AIAgentEngine:
             '请指定需要优化的对象和约束条件。'
         )
         response['suggestions'] = ['优化电磁阀线径', '优化弹簧圈数', '优化密封压缩比']
+        return response
+
+    def _handle_process(self, message: str, params: Dict, response: Dict) -> Dict:
+        """Handle manufacturing process intent (Sprint 12).
+
+        Strategy:
+        1. If message asks for a specific process (e.g. 'titanium turning params')
+           -> call get_process_detail
+        2. If user mentions a material + valve type (e.g. 'Inconel 718 relief valve process')
+           -> call recommend_process
+        3. If user asks for a route (e.g. 'how to make solenoid valve body')
+           -> call get_process_route
+        4. Otherwise -> list all process categories
+        """
+        msg_lower = message.lower()
+        # Detect material keywords
+        material = None
+        mat_keywords = {
+            'inconel 718': 'Inconel 718', 'inconel718': 'Inconel 718',
+            'inconel': 'Inconel', 'monel': 'Monel',
+            '316l': '316L', '17-4ph': '17-4PH', '17-4': '17-4PH',
+            'stainless': 'Stainless Steel', 'stainless steel': 'Stainless Steel',
+            'titanium': 'TC4', 'tc4': 'TC4', 'ta15': 'TA15',
+            'aluminum': 'Aluminum', 'aluminium': 'Aluminum', '6061': 'Aluminum',
+            '7075': 'Aluminum', 'stellite': 'Stellite',
+        }
+        for kw, mat in mat_keywords.items():
+            if kw in msg_lower:
+                material = mat
+                break
+        # Detect valve type
+        valve_type = None
+        vt_keywords = {
+            'solenoid': 'solenoid', 'electromagnetic': 'solenoid',
+            'check': 'check', 'one-way': 'check', 'one way': 'check',
+            'relief': 'relief', 'pressure reducing': 'relief', 'reducing': 'relief',
+            'regulating': 'regulating', 'shutoff': 'shutoff', 'shut-off': 'shutoff',
+            'ball': 'ball', 'butterfly': 'butterfly',
+        }
+        for kw, vt in vt_keywords.items():
+            if kw in msg_lower:
+                valve_type = vt
+                break
+        # Detect if user wants a specific process detail
+        process_keywords = [
+            'titanium_turning', 'titanium_milling', 'aluminum_turning', 'aluminum_t6',
+            'stainless_turning', 'nickel_alloy_turning', 'cobalt_alloy_turning',
+            'stainless_milling', 'edm_wire_cutting',
+            'titanium_aging', 'stainless_17_4ph_h900', 'stainless_316l_annealing',
+            'inconel_718_aging', 'stellite_overlay',
+            'aluminum_anodize_hard', 'aluminum_chemical_conv', 'titanium_nitriding',
+            'stainless_passivation', 'inconel_shot_peening', 'ptfe_coating',
+            'inconel_718_ebw', 'stainless_316l_tig', 'titanium_tc4_lbw', 'stellite_braze',
+            'thread_lubricant', 'torque_control', 'cleanliness', 'leak_test',
+        ]
+        specific_process = None
+        for pid in process_keywords:
+            if pid in msg_lower or pid.replace('_', ' ') in msg_lower:
+                specific_process = pid
+                break
+        # Decision tree
+        if specific_process:
+            response['action'] = 'get_process_detail'
+            response['tool_results'] = self._tool_get_process_detail(process_id=specific_process)
+            d = response['tool_results']
+            if d.get('success'):
+                params_lines = []
+                for k, v in d.items():
+                    if k in ('success', '_tool', 'id', 'category'):
+                        continue
+                    if v is None or v == '':
+                        continue
+                    if isinstance(v, list) and len(v) == 2 and isinstance(v[0], (int, float)):
+                        params_lines.append(f'  {k}: {v[0]} - {v[1]}')
+                    else:
+                        params_lines.append(f'  {k}: {v}')
+                response['text'] = (
+                    f"=== {d.get('name', specific_process)} ===\n\n"
+                    f"Category: {d.get('category', '-')}\n"
+                    f"Standard: {d.get('std', '-')}\n"
+                    f"Applicability: {d.get('applicability', '-')}\n\n"
+                    f"Parameters:\n" + "\n".join(params_lines)
+                )
+            response['suggestions'] = ['查 Inconel 718 EBW 焊接参数', '查 316L 钝化规范', '查钛合金时效处理']
+        elif material and valve_type:
+            response['action'] = 'recommend_process'
+            response['tool_results'] = self._tool_recommend_process(material=material, valve_type=valve_type)
+            r = response['tool_results']
+            if r.get('success'):
+                procs = r.get('process_details', [])
+                proc_list = "\n".join([f"  {i+1}. {p['name']} ({p['category']})"
+                                       for i, p in enumerate(procs)]) or '  (No process match)'
+                route = r.get('route_suggestion', 'None')
+                kp = "\n".join([f"  - {k}" for k in r.get('key_points', [])])
+                response['text'] = (
+                    f"=== {material} / {valve_type} 工艺推荐 ===\n\n"
+                    f"Recommended Processes:\n{proc_list}\n\n"
+                    f"Suggested Route: {route}\n\n"
+                    f"Key Points:\n{kp}"
+                )
+            response['suggestions'] = [f'查 {material} 加工参数', f'查 {valve_type} 工艺路线', '生成车间作业指导书']
+        elif material:
+            response['action'] = 'recommend_process'
+            response['tool_results'] = self._tool_recommend_process(material=material, valve_type='')
+            r = response['tool_results']
+            if r.get('success'):
+                procs = r.get('process_details', [])
+                proc_list = "\n".join([f"  {i+1}. {p['name']} ({p['category']})"
+                                       for i, p in enumerate(procs)]) or '  (No process match)'
+                response['text'] = (
+                    f"=== {material} 工艺包 ===\n\n"
+                    f"Recommended Processes:\n{proc_list}\n\n"
+                    f"Tip: Specify valve type (e.g. relief/solenoid/check) for a complete process route."
+                )
+            response['suggestions'] = [f'{material} 减压阀工艺', f'{material} 电磁阀工艺', f'{material} 单向阀工艺']
+        else:
+            # No material: list all process categories
+            response['action'] = 'list_processes'
+            response['tool_results'] = self._tool_list_processes()
+            r = response['tool_results']
+            if r.get('success'):
+                cats = r.get('categories', [])
+                cat_list = "\n".join([f"  - {c['name']}: {c['count']} processes" for c in cats])
+                response['text'] = (
+                    '=== Avis 阀门工艺库 ===\n\n'
+                    '5大工艺类别:\n' + cat_list + '\n\n'
+                    '请指定: 材料 (如 Inconel 718 / 316L / TC4) + 阀门类型 (relief/solenoid/check)\n'
+                    '或具体工艺 (如 titanium_turning / aluminum_t6)'
+                )
+            response['suggestions'] = [
+                'Inconel 718 减压阀工艺',
+                '316L 电磁阀工艺',
+                'TC4 钛合金时效处理',
+                'titanium_turning 参数',
+            ]
         return response
     
     def _handle_knowledge(self, message: str, params: Dict, response: Dict) -> Dict:

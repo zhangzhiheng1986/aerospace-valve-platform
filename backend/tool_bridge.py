@@ -523,6 +523,109 @@ def _search_knowledge(kwargs):
     }
 
 
+# ============================================================
+# Process tools (Sprint 12: Valve Process Module integration)
+# ============================================================
+
+def _list_processes(kwargs):
+    """List manufacturing processes by category."""
+    category = kwargs.get('category', '').lower()
+    try:
+        from valve_process import get_process_catalog
+        catalog = get_process_catalog()
+        if category and category in catalog:
+            cat = catalog[category]
+            return {
+                'success': True,
+                '_tool': 'list_processes',
+                'category': category,
+                'category_name': cat['name'],
+                'count': cat['count'],
+                'processes': cat['processes'],
+            }
+        # No category: return summary
+        return {
+            'success': True,
+            '_tool': 'list_processes',
+            'categories': [
+                {'key': k, 'name': v['name'], 'count': v['count']}
+                for k, v in catalog.items()
+            ],
+        }
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'list_processes'}
+
+
+def _get_process_detail(kwargs):
+    """Get full parameters for a specific process."""
+    process_id = kwargs.get('process_id', kwargs.get('process', ''))
+    if not process_id:
+        return {'success': False, 'error': 'process_id required', '_tool': 'get_process_detail'}
+    try:
+        from valve_process import get_process_detail
+        result = get_process_detail(process_id)
+        if result is None:
+            return {'success': False, 'error': f'process not found: {process_id}', '_tool': 'get_process_detail'}
+        return {'success': True, '_tool': 'get_process_detail', **result}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'get_process_detail'}
+
+
+def _recommend_process(kwargs):
+    """Recommend process route based on material and valve type."""
+    material = kwargs.get('material', kwargs.get('mat', ''))
+    valve_type = kwargs.get('valve_type', kwargs.get('valve', ''))
+    if not material:
+        return {'success': False, 'error': 'material required', '_tool': 'recommend_process'}
+    try:
+        from valve_process import recommend_process_route
+        result = recommend_process_route(material, valve_type)
+        # Enrich: get names for process ids
+        from valve_process import get_process_detail
+        proc_details = []
+        for pid in result['processes']:
+            d = get_process_detail(pid)
+            if d:
+                proc_details.append({
+                    'id': pid,
+                    'name': d['name'],
+                    'category': d['category'],
+                    'applicability': d.get('applicability', ''),
+                })
+        result['process_details'] = proc_details
+        result['_tool'] = 'recommend_process'
+        result['success'] = True
+        result['material'] = material
+        result['valve_type'] = valve_type
+        return result
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'recommend_process'}
+
+
+def _get_process_route(kwargs):
+    """Get full process route (step-by-step instructions)."""
+    route_id = kwargs.get('route_id', kwargs.get('route', ''))
+    if not route_id:
+        # No route: list all
+        try:
+            from valve_process import list_process_routes
+            return {
+                'success': True,
+                '_tool': 'get_process_route',
+                'routes': list_process_routes(),
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e), '_tool': 'get_process_route'}
+    try:
+        from valve_process import get_process_route
+        result = get_process_route(route_id)
+        if result is None:
+            return {'success': False, 'error': f'route not found: {route_id}', '_tool': 'get_process_route'}
+        return {'success': True, '_tool': 'get_process_route', **result}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'get_process_route'}
+
+
 def _graph_search(kwargs):
     """Search knowledge graph entities."""
     query = kwargs.get('query', kwargs.get('message', ''))
@@ -580,6 +683,11 @@ TOOL_BRIDGE = {
     # Knowledge Graph
     'graph_search': _graph_search,
     'graph_neighbors': _graph_neighbors,
+    # Process (Sprint 12)
+    'list_processes': _list_processes,
+    'get_process_detail': _get_process_detail,
+    'recommend_process': _recommend_process,
+    'get_process_route': _get_process_route,
 }
 
 
