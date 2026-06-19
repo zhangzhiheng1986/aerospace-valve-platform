@@ -776,3 +776,96 @@ def orchestrator_stats(current_user=None):
         return jsonify({'success': True, 'stats': orch.stats()})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Sprint 14.2: Agent Memory & Experience endpoints
+@ai_agent_bp.route('/memory/stats', methods=['GET'])
+@require_auth()
+def memory_stats(current_user=None):
+    """Aggregate agent memory statistics."""
+    try:
+        from agent_memory import get_memory_stats
+        return jsonify({'success': True, 'stats': get_memory_stats()})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@ai_agent_bp.route('/memory/experiences', methods=['GET'])
+@require_auth()
+def memory_experiences(current_user=None):
+    """List recent experiences (filterable by ?agent_role=design&limit=50)."""
+    try:
+        from agent_memory import get_experiences
+        agent_role = request.args.get('agent_role')
+        limit = int(request.args.get('limit', 50))
+        success_param = request.args.get('success')
+        success = None
+        if success_param is not None:
+            success = success_param.lower() in ('1', 'true', 'yes')
+        exps = get_experiences(agent_role=agent_role, success=success, limit=limit)
+        return jsonify({'success': True, 'count': len(exps), 'experiences': exps})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@ai_agent_bp.route('/memory/patterns', methods=['GET'])
+@require_auth()
+def memory_patterns(current_user=None):
+    """List distilled patterns (optionally re-extract with ?refresh=1)."""
+    try:
+        from agent_memory import extract_patterns, save_patterns, get_patterns
+        if request.args.get('refresh') == '1':
+            save_patterns()  # recompute and save
+        agent_role = request.args.get('agent_role')
+        min_conf = float(request.args.get('min_confidence', 0))
+        patterns = get_patterns(agent_role=agent_role, min_confidence=min_conf)
+        return jsonify({'success': True, 'count': len(patterns), 'patterns': patterns})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@ai_agent_bp.route('/memory/reflect', methods=['POST'])
+@require_auth()
+def memory_reflect(current_user=None):
+    """Query memory for guidance on a new task (Hermes-style reflection)."""
+    try:
+        data = request.get_json() or {}
+        task = data.get('task', data.get('message', ''))
+        agent_role = data.get('agent_role')
+        from agent_memory import reflect_for_task
+        reflection = reflect_for_task(task, agent_role=agent_role)
+        return jsonify({'success': True, **reflection})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@ai_agent_bp.route('/memory/snapshots', methods=['GET'])
+@require_auth()
+def memory_snapshots(current_user=None):
+    """List design snapshots (filterable by ?design_id=xxx)."""
+    try:
+        from agent_memory import get_snapshots
+        design_id = request.args.get('design_id')
+        limit = int(request.args.get('limit', 50))
+        snaps = get_snapshots(design_id=design_id, limit=limit)
+        return jsonify({'success': True, 'count': len(snaps), 'snapshots': snaps})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@ai_agent_bp.route('/memory/snapshots', methods=['POST'])
+@require_auth()
+def memory_snapshot_create(current_user=None):
+    """Freeze a design state for audit/rollback."""
+    try:
+        data = request.get_json() or {}
+        from agent_memory import create_snapshot
+        snap_id = create_snapshot(
+            design_id=data.get('design_id', 'unknown'),
+            design_type=data.get('design_type', 'generic'),
+            state=data.get('state', {}),
+            note=data.get('note', ''),
+        )
+        return jsonify({'success': True, 'snapshot_id': snap_id})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

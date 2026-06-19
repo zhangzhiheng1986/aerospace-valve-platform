@@ -177,6 +177,19 @@ class SubAgent:
             result["elapsed_ms"] = elapsed * 1000
             if "success" not in result:
                 result["success"] = True
+            # Sprint 14.2: record experience into agent memory
+            try:
+                from agent_memory import record_experience
+                record_experience(
+                    agent_role=self.role.value,
+                    task=tool_name,
+                    decision={"tool": tool_name, "inputs_keys": list(inputs.keys()) if isinstance(inputs, dict) else []},
+                    outcome=result if isinstance(result, dict) else {"value": str(result)[:200]},
+                    success=result.get("success", True),
+                    duration_ms=elapsed * 1000,
+                )
+            except Exception as mem_err:
+                logging.getLogger(__name__).warning(f"agent_memory.record failed: {mem_err}")
             return result
         return {"success": True, "result": result, "elapsed_ms": elapsed * 1000}
 
