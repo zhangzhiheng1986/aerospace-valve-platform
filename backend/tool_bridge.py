@@ -773,6 +773,9 @@ def _cost_breakdown(kwargs):
     overhead = (mat_total + proc_total) * 0.15
     total = mat_total + proc_total + overhead
 
+    if total <= 0:
+        return {'success': False, 'error': 'total cost <= 0 (invalid inputs)', '_tool': 'cost_breakdown'}
+
     return {
         'success': True,
         '_tool': 'cost_breakdown',

@@ -406,6 +406,27 @@ class AerospaceMaterialsDatabase:
             aerospace_grade="Aerospace Grade",
             notes="耐高温燃油、液压油，主密封材料"
         ))
+
+        # Sprint 15.2: Inconel 718 (GH4169) — 镍基高温合金
+        self.add_material(MaterialProperty(
+            name="Inconel 718",
+            category=MaterialCategory.STRUCTURAL,
+            standard="AMS 5662 / GJB 3312A-2003",
+            density=8.19,
+            melting_point=1336,
+            tensile_strength=1370,
+            yield_strength=1100,
+            elongation=12,
+            hardness=45,  # HRC
+            thermal_conductivity=11.4,
+            thermal_expansion=13.0,
+            max_temp=650,
+            min_temp=-250,
+            elastic_modulus=200,
+            corrosion_resistance="极佳",
+            aerospace_grade="Aerospace Grade",
+            notes="高强镍基高温合金，发动机、火箭、阀门核心材料"
+        ))
         
         # 16. 聚四氟乙烯
         self.add_material(MaterialProperty(

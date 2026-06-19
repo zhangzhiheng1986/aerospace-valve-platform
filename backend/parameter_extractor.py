@@ -77,7 +77,7 @@ VOLTAGE_UNITS = {
 MATERIAL_SYNONYMS = {
     # Chinese names → canonical codes
     '钛合金': 'TC4', '钛': 'TC4', 'ti-6al-4v': 'TC4', 'ti6al4v': 'TC4',
-    '高温合金': 'GH4169', '镍基合金': 'GH4169', 'inconel': 'GH4169', 'inconel 718': 'GH4169',
+    '高温合金': 'GH4169', '镍基合金': 'GH4169', 'inconel 718': 'Inconel 718', 'inconel': 'Inconel 718',
     '不锈钢': '1Cr18Ni9Ti', '304': '1Cr18Ni9Ti', '321': '1Cr18Ni9Ti',
     '铝合金': '2A12', '7075': '7075', '铝': '2A12',
     '铜合金': 'H62', '黄铜': 'H62',
