@@ -57,6 +57,11 @@ class AgentRole(Enum):
     ORCHESTRATOR = "orchestrator"
     DESIGN = "design"
     COMPLIANCE = "compliance"
+    MATERIAL = "material"
+    SIMULATION = "simulation"
+    PROCESS = "process"
+    KNOWLEDGE = "knowledge"
+    COST = "cost"
 
 @dataclass
 class SubTask:
@@ -232,6 +237,42 @@ class TaskDecomposer:
             ("design_spring", AgentRole.DESIGN, []),             # independent of valve
             ("check_compliance", AgentRole.COMPLIANCE, [1, 2]),  # wait for both
         ],
+        # Sprint 14.1: 7-agent pipelines covering material/sim/process/knowledge/cost
+        "design_solenoid_full": [
+            ("query_material", AgentRole.MATERIAL, []),
+            ("analyze_solenoid_valve", AgentRole.DESIGN, [0]),
+            ("check_compliance", AgentRole.COMPLIANCE, [1]),
+            ("recommend_process", AgentRole.PROCESS, [1]),
+            ("get_process_route", AgentRole.PROCESS, [3]),
+            ("search_knowledge", AgentRole.KNOWLEDGE, [1]),
+            ("estimate_cost", AgentRole.COST, [4]),
+        ],
+        "design_pressure_valve_full": [
+            ("query_material", AgentRole.MATERIAL, []),
+            ("analyze_pressure_valve", AgentRole.DESIGN, [0]),
+            ("check_compliance", AgentRole.COMPLIANCE, [1]),
+            ("recommend_process", AgentRole.PROCESS, [1]),
+            ("get_process_route", AgentRole.PROCESS, [3]),
+            ("search_knowledge", AgentRole.KNOWLEDGE, [1]),
+            ("estimate_cost", AgentRole.COST, [4]),
+        ],
+        "process_design_review": [
+            ("query_material", AgentRole.MATERIAL, []),
+            ("recommend_process", AgentRole.PROCESS, [0]),
+            ("get_process_route", AgentRole.PROCESS, [1]),
+            ("estimate_cost", AgentRole.COST, [2]),
+            ("check_compliance", AgentRole.COMPLIANCE, [2]),
+        ],
+        "knowledge_qa": [
+            ("search_knowledge", AgentRole.KNOWLEDGE, []),
+            ("graph_search", AgentRole.KNOWLEDGE, []),
+        ],
+        "cost_estimation": [
+            ("query_material", AgentRole.MATERIAL, []),
+            ("recommend_process", AgentRole.PROCESS, [0]),
+            ("estimate_cost", AgentRole.COST, [1]),
+            ("cost_breakdown", AgentRole.COST, [2]),
+        ],
     }
 
     @classmethod
@@ -259,7 +300,25 @@ class TaskDecomposer:
 
         m = message.lower()
 
-        # Compound signals first
+        # Sprint 14.1: 7-agent full pipelines (must check before basic 3-agent paths)
+        if ("设计" in m or "design" in m) and ("电磁阀" in m or "solenoid" in m or "螺线管" in m) and \
+           ("工艺" in m or "process" in m or "成本" in m or "cost" in m or "知识" in m or "knowledge" in m or "全" in m or "完整" in m or "全流程" in m):
+            return "design_solenoid_full"
+        if ("设计" in m or "design" in m) and ("减压阀" in m or "pressure" in m or "prv" in m) and \
+           ("工艺" in m or "process" in m or "成本" in m or "cost" in m or "知识" in m or "knowledge" in m or "全" in m or "完整" in m or "全流程" in m):
+            return "design_pressure_valve_full"
+        # Process design review (工艺+审查/评估)
+        if ("工艺" in m or "process" in m) and ("审查" in m or "review" in m or "评估" in m):
+            return "process_design_review"
+        # Cost estimation (cost/成本 + 工艺/材料)
+        if (("成本" in m or "估价" in m or "报价" in m) and not ("工艺" in m or "审查" in m or "评估" in m)):
+            return "cost_estimation"
+        # Knowledge Q&A (什么/原理 + not standard/compliance)
+        if (("什么" in m or "原理" in m or "why" in m or "mechanism" in m or "explain" in m) and
+            not ("设计" in m or "design" in m or "合规" in m or "compliance" in m)):
+            return "knowledge_qa"
+
+        # Basic 3-agent pipelines
         if ("设计" in m or "design" in m) and ("电磁阀" in m or "solenoid" in m or "螺线管" in m):
             return "design_solenoid_system"
         if ("设计" in m or "design" in m) and ("减压阀" in m or "pressure" in m or "prv" in m):
@@ -268,7 +327,7 @@ class TaskDecomposer:
             return "design_spring_system"
         if ("设计" in m or "design" in m) and ("o型" in m or "oring" in m or "密封圈" in m or "o形" in m or "o-ring" in m):
             return "design_oring_system"
-        if ("审查" in m or "review" in m or "评估" in m or "评估" in m) and ("设计" in m or "方案" in m):
+        if ("审查" in m or "review" in m or "评估" in m) and ("设计" in m or "方案" in m):
             return "design_review"
         if ("验证" in m or "validate" in m or "合规" in m or "compliance" in m or "标准" in m or "qj" in m):
             return "validate_design"
@@ -377,6 +436,76 @@ class OrchestratorAgent:
             name="Compliance Checker",
             capabilities=["check_compliance", "verify_leak", "verify_rated", "verify_life"],
             description="标准合规专家：负责QJ20156/GJB等标准的符合性校验"
+        )
+        for tool_name, handler in handler_map.items():
+            if tool_name in agent.capabilities:
+                agent.register_tool(tool_name, handler)
+        self.registry.register(agent)
+        return self
+
+    def register_material_agent(self, handler_map: Dict[str, Callable]) -> 'OrchestratorAgent':
+        """Sprint 14.1: Material Expert — deep material selection advisor."""
+        agent = SubAgent(
+            role=AgentRole.MATERIAL,
+            name="Material Expert",
+            capabilities=["query_material", "compare_materials", "material_suggest"],
+            description="材料专家: 21种航空材料库，材料选型+对比+推荐"
+        )
+        for tool_name, handler in handler_map.items():
+            if tool_name in agent.capabilities:
+                agent.register_tool(tool_name, handler)
+        self.registry.register(agent)
+        return self
+
+    def register_simulation_agent(self, handler_map: Dict[str, Callable]) -> 'OrchestratorAgent':
+        """Sprint 14.1: Simulation Expert — CFD/Thermal/Structural."""
+        agent = SubAgent(
+            role=AgentRole.SIMULATION,
+            name="Simulation Expert",
+            capabilities=["run_fluid_calculation", "cfd_simulate", "thermal_simulate", "structural_simulate", "identify_formula"],
+            description="仿真专家: CFD/热力学/结构强度仿真, 公式识别"
+        )
+        for tool_name, handler in handler_map.items():
+            if tool_name in agent.capabilities:
+                agent.register_tool(tool_name, handler)
+        self.registry.register(agent)
+        return self
+
+    def register_process_agent(self, handler_map: Dict[str, Callable]) -> 'OrchestratorAgent':
+        """Sprint 14.1: Process Expert — valve manufacturing process."""
+        agent = SubAgent(
+            role=AgentRole.PROCESS,
+            name="Process Expert",
+            capabilities=["list_processes", "get_process_detail", "recommend_process", "get_process_route"],
+            description="工艺专家: 28种加工工艺, 5大类, 工艺路线推荐"
+        )
+        for tool_name, handler in handler_map.items():
+            if tool_name in agent.capabilities:
+                agent.register_tool(tool_name, handler)
+        self.registry.register(agent)
+        return self
+
+    def register_knowledge_agent(self, handler_map: Dict[str, Callable]) -> 'OrchestratorAgent':
+        """Sprint 14.1: Knowledge Expert — knowledge graph + semantic search."""
+        agent = SubAgent(
+            role=AgentRole.KNOWLEDGE,
+            name="Knowledge Expert",
+            capabilities=["search_knowledge", "semantic_search", "graph_search", "graph_neighbors"],
+            description="知识专家: 知识库+知识图谱+语义搜索, 39术语/197标签/15章节"
+        )
+        for tool_name, handler in handler_map.items():
+            if tool_name in agent.capabilities:
+                agent.register_tool(tool_name, handler)
+        self.registry.register(agent)
+        return self
+
+    def register_cost_agent(self, handler_map: Dict[str, Callable]) -> 'OrchestratorAgent':
+        """Sprint 14.1: Cost Expert — material/process cost estimation."""
+        agent = SubAgent(
+            role=AgentRole.COST,
+            name="Cost Expert",
+            capabilities=["estimate_cost", "compare_costs", "cost_breakdown"],
+            description="成本专家: 材料/工艺/加工成本估算, 预算对比"
         )
         for tool_name, handler in handler_map.items():
             if tool_name in agent.capabilities:

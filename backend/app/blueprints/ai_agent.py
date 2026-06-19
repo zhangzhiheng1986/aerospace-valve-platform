@@ -590,7 +590,7 @@ def paor_debug(current_user=None):
 # ============================================================
 
 def _init_orchestrator():
-    """Lazy-init OrchestratorAgent with Design + Compliance agents wired via tool_bridge."""
+    """Lazy-init OrchestratorAgent with all 7 Sprint 14 agents wired via tool_bridge."""
     from orchestrator_agent import get_orchestrator
     orch = get_orchestrator()
 
@@ -603,6 +603,9 @@ def _init_orchestrator():
         _material_query, _analyze_solenoid, _analyze_prv, _design_spring, _design_oring,
         _fluid_calculation, _identify_formula,
         _compliance_check, _verify_leak, _verify_rated_output, _verify_life_cycles,
+        _list_processes, _get_process_detail, _recommend_process, _get_process_route,
+        _search_knowledge, _semantic_search, _graph_search, _graph_neighbors,
+        _estimate_cost, _compare_costs, _cost_breakdown,
     )
 
     # Wrap: orchestrator calls handler(**inputs), but tool_bridge expects handler(kwargs dict)
@@ -630,6 +633,41 @@ def _init_orchestrator():
         'verify_life': _wrap(_verify_life_cycles),
     }
     orch.register_compliance_agent(compliance_handlers)
+
+    # Sprint 14.1: 5 new agents
+    material_handlers = {
+        'query_material': _wrap(_material_query),
+    }
+    orch.register_material_agent(material_handlers)
+
+    simulation_handlers = {
+        'run_fluid_calculation': _wrap(_fluid_calculation),
+        'identify_formula': _wrap(_identify_formula),
+    }
+    orch.register_simulation_agent(simulation_handlers)
+
+    process_handlers = {
+        'list_processes': _wrap(_list_processes),
+        'get_process_detail': _wrap(_get_process_detail),
+        'recommend_process': _wrap(_recommend_process),
+        'get_process_route': _wrap(_get_process_route),
+    }
+    orch.register_process_agent(process_handlers)
+
+    knowledge_handlers = {
+        'search_knowledge': _wrap(_search_knowledge),
+        'semantic_search': _wrap(_semantic_search),
+        'graph_search': _wrap(_graph_search),
+        'graph_neighbors': _wrap(_graph_neighbors),
+    }
+    orch.register_knowledge_agent(knowledge_handlers)
+
+    cost_handlers = {
+        'estimate_cost': _wrap(_estimate_cost),
+        'compare_costs': _wrap(_compare_costs),
+        'cost_breakdown': _wrap(_cost_breakdown),
+    }
+    orch.register_cost_agent(cost_handlers)
 
     return orch
 

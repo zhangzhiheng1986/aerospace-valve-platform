@@ -651,10 +651,139 @@ def _graph_neighbors(kwargs):
         q = get_graph_query()
         neighbors = q.get_neighbors(entity_id, relation=relation, direction=direction)
         entity = q.get_entity(entity_id)
-        return {'success': True, '_tool': 'graph_neighbors', 
+        return {'success': True, '_tool': 'graph_neighbors',
                 'entity': entity, 'neighbors': neighbors, 'total': len(neighbors)}
     except Exception as e:
         return {'success': False, 'error': str(e), '_tool': 'graph_neighbors'}
+
+
+# ============================================================================
+# Sprint 14.1: Cost Estimation Tools
+# ============================================================================
+
+# Material cost (USD/kg) — aerospace-grade reference prices
+_MATERIAL_COSTS = {
+    'inconel_718': 95.0,
+    'inconel_625': 88.0,
+    '316l': 12.0,
+    '17-4ph': 28.0,
+    'tc4': 180.0,
+    'ti-6al-4v': 180.0,
+    'co-cr-mo': 75.0,
+    'al_7075': 8.0,
+    'hastelloy_c276': 130.0,
+    'monel_400': 65.0,
+    'default': 30.0,
+}
+
+# Process cost (USD/min) — rough reference rates
+_PROCESS_COSTS = {
+    'turning': 2.5,
+    'milling': 3.5,
+    'grinding': 4.0,
+    'welding_tig': 3.0,
+    'welding_eb': 5.0,
+    'welding_laser': 4.5,
+    'heat_treat': 1.5,
+    'aging': 1.0,
+    'shot_peening': 2.0,
+    'passivation': 1.0,
+    'default': 2.0,
+}
+
+
+def _estimate_cost(kwargs):
+    """Sprint 14.1: Estimate total cost for material + process."""
+    material = (kwargs.get('material') or 'default').lower().replace(' ', '_').replace('-', '_')
+    mass_kg = float(kwargs.get('mass_kg') or kwargs.get('mass') or 1.0)
+    process_time_min = float(kwargs.get('process_time_min') or kwargs.get('time_min') or 60.0)
+    quantity = int(kwargs.get('quantity') or 1)
+
+    mat_cost = _MATERIAL_COSTS.get(material, _MATERIAL_COSTS['default'])
+    proc_cost = _PROCESS_COSTS['default']  # weighted avg
+    mat_total = mat_cost * mass_kg * quantity
+    proc_total = proc_cost * process_time_min * quantity
+    overhead = (mat_total + proc_total) * 0.15
+    total = mat_total + proc_total + overhead
+
+    return {
+        'success': True,
+        '_tool': 'estimate_cost',
+        'material': material,
+        'mass_kg': mass_kg,
+        'process_time_min': process_time_min,
+        'quantity': quantity,
+        'material_cost_usd': round(mat_total, 2),
+        'process_cost_usd': round(proc_total, 2),
+        'overhead_usd': round(overhead, 2),
+        'total_usd': round(total, 2),
+        'unit_cost_usd': round(total / quantity, 2),
+        'currency': 'USD',
+        'note': 'Reference aerospace-grade cost; actual quotes depend on supplier, batch size, and lead time.',
+    }
+
+
+def _compare_costs(kwargs):
+    """Sprint 14.1: Compare cost across multiple material/process options."""
+    options = kwargs.get('options') or []
+    if not options and 'material' in kwargs:
+        # Build options from a single material spec
+        options = [{
+            'name': kwargs.get('material', 'option_1'),
+            'material': kwargs.get('material'),
+            'mass_kg': kwargs.get('mass_kg', 1.0),
+            'process_time_min': kwargs.get('process_time_min', 60.0),
+        }]
+    rows = []
+    for opt in options:
+        m = opt.get('material', 'default')
+        mass = float(opt.get('mass_kg') or 1.0)
+        t = float(opt.get('process_time_min') or 60.0)
+        mat_cost = _MATERIAL_COSTS.get(m.lower().replace(' ', '_').replace('-', '_'), _MATERIAL_COSTS['default'])
+        mat_total = mat_cost * mass
+        proc_total = _PROCESS_COSTS['default'] * t
+        overhead = (mat_total + proc_total) * 0.15
+        total = mat_total + proc_total + overhead
+        rows.append({
+            'name': opt.get('name', m),
+            'material': m,
+            'material_cost_usd': round(mat_total, 2),
+            'process_cost_usd': round(proc_total, 2),
+            'total_usd': round(total, 2),
+        })
+    rows.sort(key=lambda r: r['total_usd'])
+    return {
+        'success': True,
+        '_tool': 'compare_costs',
+        'options': rows,
+        'cheapest': rows[0]['name'] if rows else None,
+        'total_savings_pct': round((1 - rows[0]['total_usd'] / rows[-1]['total_usd']) * 100, 1) if len(rows) >= 2 else 0,
+    }
+
+
+def _cost_breakdown(kwargs):
+    """Sprint 14.1: Cost breakdown by category (material / process / overhead)."""
+    material = (kwargs.get('material') or 'default').lower().replace(' ', '_').replace('-', '_')
+    mass_kg = float(kwargs.get('mass_kg') or 1.0)
+    process_time_min = float(kwargs.get('process_time_min') or 60.0)
+
+    mat_cost = _MATERIAL_COSTS.get(material, _MATERIAL_COSTS['default'])
+    mat_total = mat_cost * mass_kg
+    proc_total = _PROCESS_COSTS['default'] * process_time_min
+    overhead = (mat_total + proc_total) * 0.15
+    total = mat_total + proc_total + overhead
+
+    return {
+        'success': True,
+        '_tool': 'cost_breakdown',
+        'material': material,
+        'breakdown': {
+            'material': {'cost_usd': round(mat_total, 2), 'pct': round(mat_total / total * 100, 1)},
+            'process': {'cost_usd': round(proc_total, 2), 'pct': round(proc_total / total * 100, 1)},
+            'overhead': {'cost_usd': round(overhead, 2), 'pct': 15.0},
+        },
+        'total_usd': round(total, 2),
+    }
 
 
 # ============================================================================
@@ -688,6 +817,10 @@ TOOL_BRIDGE = {
     'get_process_detail': _get_process_detail,
     'recommend_process': _recommend_process,
     'get_process_route': _get_process_route,
+    # Cost (Sprint 14.1)
+    'estimate_cost': _estimate_cost,
+    'compare_costs': _compare_costs,
+    'cost_breakdown': _cost_breakdown,
 }
 
 
