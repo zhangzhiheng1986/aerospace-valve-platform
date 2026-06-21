@@ -38,6 +38,14 @@
   --input-bg: var(--bg-primary);
   --hover: rgba(255,255,255,0.04);
 
+  /* --- seal_pair.html / safety_valve.html / new modules --- */
+  --text-pri: var(--text-primary);
+  --text-sec: var(--text-secondary);
+  --text-mut: var(--text-muted);
+  --bg-input: var(--bg-primary);
+  --cyan: var(--accent);
+  --blue: #3b82f6;
+
   /* --- common overrides --- */
   --accent2: #48cae4;
   --accent-green: #10b981;
@@ -48,6 +56,36 @@
 
   /* --- border variants --- */
   --border-active: var(--accent);
+
+  /* --- multi-page status colors --- */
+  --success: var(--accent-green);
+  --warning: var(--accent-amber);
+  --error: var(--accent-red);
+  --danger-color: var(--accent-red);
+  --info-color: var(--accent-purple);
+  --accent-color: var(--accent);
+  --orange: #f97316;
+
+  /* --- ai_agent specific --- */
+  --ai-accent: #00b4d8;
+  --ai-gradient: linear-gradient(135deg, #0a1930, #0d2540);
+  --knowledge-color: #8b5cf6;
+
+  /* --- cron gantt chart --- */
+  --gantt-bg: var(--bg-card);
+  --gantt-border: var(--border);
+  --gantt-fill: #1e40af;
+  --gantt-progress: #3b82f6;
+
+  /* --- misc --- */
+  --font-size-sm: 12px;
+  --sidebar-w: 270px;
+  --formula-list-w: 290px;
+  --card-accent: var(--accent);
+
+  /* --- ai_agent tool chip colors --- */
+  --design-color: #3b82f6;
+  --compliance-color: #10b981;
 
   /* --- transition --- */
   --transition: 0.2s ease;
