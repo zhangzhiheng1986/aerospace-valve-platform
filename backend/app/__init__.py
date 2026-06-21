@@ -212,6 +212,11 @@ def _register_page_routes(app):
         return render_template('avis_dashboard.html', auth_token=token,
                               user_name=user.get('username', 'Engineer'))
 
+    @app.route('/classic')
+    def classic_page():
+        """Classic dashboard without login."""
+        return render_template('index_classic.html')
+
     @app.route('/ai-agent')
     def ai_agent_page():
         from app.middleware.auth import login_required_page
