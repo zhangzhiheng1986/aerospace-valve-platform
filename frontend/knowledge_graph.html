@@ -5,35 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knowledge Graph - Avis Platform</title>
 <style>
-:root {
-  --bg-primary: #0f1923;
-  --bg-secondary: #1a2736;
-  --bg-card: #1e2d3d;
-  --bg-sidebar: #0d1321;
-  --accent: #00b4d8;
-  --accent-glow: rgba(0, 180, 216, 0.15);
-  --accent2: #64ffda;
-  --text-primary: #e0e6ed;
-  --text-secondary: #8899aa;
-  --text-muted: #5a6a7a;
-  --border: #2a3a4a;
-  --danger: #ff6b6b;
-  --success: #51cf66;
-  --warning: #ffd43b;
-  --orange: #ff9f43;
-  --sidebar-width: 320px;
-}
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
+
+
+
 
 /* Sidebar */
 .sidebar {
@@ -465,6 +441,8 @@ body {
   max-width: 250px;
 }
 </style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
 
@@ -972,5 +950,8 @@ window.addEventListener('resize', () => {
 // Init
 document.addEventListener('DOMContentLoaded', init);
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

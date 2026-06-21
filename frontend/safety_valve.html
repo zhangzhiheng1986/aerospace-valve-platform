@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全阀设计 | 航天阀门研发平台</title>
+<style>
+
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-logo { font-size: 1.4rem; font-weight: 700; color: var(--cyan); letter-spacing: 1px; }
+.topbar-subtitle { color: var(--text-mut); font-size: 0.8rem; }
+.topbar-right { display: flex; gap: 12px; align-items: center; }
+.topbar-right a { color: var(--text-sec); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+.topbar-right a:hover { color: var(--cyan); }
+
+/* ── Tab Bar ── */
+.tab-bar {
+  display: flex;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  gap: 0;
+}
+.tab-btn {
+  padding: 14px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-mut);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn:hover { color: var(--text-sec); }
+.tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+/* ── Main Layout ── */
+.main {
+  display: flex;
+  gap: 24px;
+  padding: 24px 28px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sidebar-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.sidebar-section h3 {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Preset buttons */
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.preset-btn {
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-sec);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: inherit;
+  line-height: 1.3;
+}
+.preset-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0, 212, 255, 0.06);
+}
+
+/* Material selector cards */
+.material-cards { display: flex; flex-direction: column; gap: 6px; }
+.material-card {
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.material-card:hover { border-color: var(--blue); }
+.material-card.selected { border-color: var(--cyan); background: rgba(0, 212, 255, 0.08); }
+.material-card .mat-name { font-size: 0.85rem; font-weight: 600; color: var(--text-pri); }
+.material-card .mat-en { font-size: 0.7rem; color: var(--text-mut); margin-top: 2px; }
+.material-card .mat-props { font-size: 0.7rem; color: var(--text-sec); margin-top: 4px; }
+
+/* Form */
+.form-group { margin-bottom: 12px; }
+.form-group label {
+  display: block;
+  color: var(--text-sec);
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-pri);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.12);
+}
+.form-group input::placeholder { color: var(--text-mut); }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-unit {
+  font-size: 0.7rem;
+  color: var(--text-mut);
+  margin-left: 2px;
+}
+
+/* Primary button */
+.btn-primary {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, var(--cyan), #0099cc);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  margin-top: 8px;
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── Content Area ── */
+.content {
+  flex: 1;
+  min-width: 0;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: var(--text-mut);
+  gap: 12px;
+}
+.empty-state .empty-icon { font-size: 3rem; opacity: 0.4; }
+.empty-state .empty-text { font-size: 0.95rem; }
+.empty-state .empty-hint { font-size: 0.8rem; }
+
+/* Loading spinner */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 12px;
+  color: var(--text-mut);
+}
+.spinner {
+  width: 24px; height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Design Results ── */
+.result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.result-card h3 {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.result-card h3 .section-unit { color: var(--text-mut); text-transform: none; font-size: 0.75rem; margin-left: 8px; }
+
+/* Status row */
+.status-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+}
+.status-badge.valid { border-color: var(--green); color: var(--green); }
+.status-badge.invalid { border-color: var(--red); color: var(--red); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.status-dot.green { background: var(--green); }
+.status-dot.red { background: var(--red); }
+
+/* Metrics grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.metric-item {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.metric-label { font-size: 0.7rem; color: var(--text-mut); text-transform: uppercase; margin-bottom: 4px; }
+.metric-value { font-size: 1rem; font-weight: 600; color: var(--text-pri); }
+.metric-unit { font-size: 0.65rem; color: var(--text-mut); margin-left: 3px; }
+.metric-value.green { color: var(--green); }
+.metric-value.amber { color: var(--amber); }
+.metric-value.red { color: var(--red); }
+.metric-value.cyan { color: var(--cyan); }
+
+/* Warnings */
+.warnings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.warning-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--amber);
+}
+.warning-icon { flex-shrink: 0; font-size: 1rem; }
+.no-warnings {
+  color: var(--text-mut);
+  font-size: 0.82rem;
+  padding: 8px 0;
+}
+
+/* ── Compare Tab ── */
+.compare-table-wrap { overflow-x: auto; }
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.compare-table th {
+  background: var(--bg-input);
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--text-sec);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.compare-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-pri);
+  white-space: nowrap;
+}
+.compare-table tr:hover td { background: rgba(0, 212, 255, 0.03); }
+.compare-table .cell-valid { color: var(--green); }
+.compare-table .cell-invalid { color: var(--red); }
+.compare-table .cell-orifice { color: var(--cyan); font-weight: 600; }
+
+/* ── Sensitivity Tab ── */
+.sensitivity-controls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.sensitivity-controls .form-group { margin-bottom: 0; min-width: 200px; }
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bar-label {
+  width: 90px;
+  font-size: 0.78rem;
+  color: var(--text-sec);
+  text-align: right;
+  flex-shrink: 0;
+}
+.bar-track {
+  flex: 1;
+  height: 22px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 0.7rem;
+  color: #fff;
+  font-weight: 600;
+}
+.bar-fill.cyan { background: linear-gradient(90deg, var(--cyan), #0099cc); }
+.bar-fill.green { background: linear-gradient(90deg, var(--green), #0d9488); }
+.bar-fill.amber { background: linear-gradient(90deg, var(--amber), #d97706); }
+.bar-fill.purple { background: linear-gradient(90deg, var(--purple), #7c3aed); }
+.bar-value {
+  width: 70px;
+  font-size: 0.78rem;
+  color: var(--text-pri);
+  text-align: left;
+  flex-shrink: 0;
+}
+
+/* Sensitivity chart card */
+.sensitivity-charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  z-index: 999;
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+}
+.toast.error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); color: var(--red); }
+.toast.success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--green); color: var(--green); }
+@keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-mut); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main { flex-direction: column; padding: 16px; }
+  .sidebar { width: 100%; }
+  .metrics-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+</style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
+</head>
+<body>
+
+<!-- ════ Topbar ════ -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">AVIS</span>
+    <span class="topbar-subtitle">航天阀门智能设计系统 · Safety Valve Designer</span>
+  </div>
+  <div class="topbar-right">
+    <a href="index.html">» 返回平台首页</a>
+  </div>
+</div>
+
+<!-- ════ Tab Bar ════ -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-action="tab" data-tab="design">设计计算</button>
+  <button class="tab-btn" data-action="tab" data-tab="compare">方案对比</button>
+  <button class="tab-btn" data-action="tab" data-tab="sensitivity">灵敏度分析</button>
+</div>
+
+<!-- ════ Main Layout ════ -->
+<div class="main">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+
+    <!-- Presets -->
+    <div class="sidebar-section">
+      <h3>⚡ 预设工况</h3>
+      <div class="preset-grid">
+        <button class="preset-btn" data-action="preset" data-id="n2_10mpa">氮气增压<br>10MPa</button>
+        <button class="preset-btn" data-action="preset" data-id="he_cryo_5mpa">氦气低温<br>5MPa</button>
+        <button class="preset-btn" data-action="preset" data-id="lox_35mpa">液氧贮箱<br>3.5MPa</button>
+        <button class="preset-btn" data-action="preset" data-id="hydrazine_25mpa">肼推进剂<br>2.5MPa</button>
+        <button class="preset-btn" data-action="preset" data-id="h2o2_twophase">过氧化氢<br>两相流</button>
+        <button class="preset-btn" data-action="preset" data-id="hot_gas_8mpa">高温燃气<br>8MPa</button>
+      </div>
+    </div>
+
+    <!-- Material Selector -->
+    <div class="sidebar-section">
+      <h3>🔩 阀体材料</h3>
+      <div class="material-cards" id="materialCards">
+        <div class="material-card selected" data-action="mat-select" data-id="">
+          <span class="mat-name">加载中...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Design Form -->
+    <div class="sidebar-section">
+      <h3>📐 设计参数</h3>
+      <div class="form-group">
+        <label>整定压力 <span class="form-unit">(MPa·表压)</span></label>
+        <input type="number" id="setPressure" step="0.01" min="0" placeholder="例如 10.0" value="10">
+      </div>
+      <div class="form-group">
+        <label>泄放温度 <span class="form-unit">(&deg;C)</span></label>
+        <input type="number" id="temp" step="0.1" placeholder="例如 20" value="20">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>需求泄放量 <span class="form-unit">(kg/s)</span></label>
+          <input type="number" id="flowRate" step="0.01" min="0" placeholder="0.5" value="0.5">
+        </div>
+        <div class="form-group">
+          <label>介质类型</label>
+          <select id="mediumType">
+            <option value="gas">气体 gas</option>
+            <option value="liquid">液体 liquid</option>
+            <option value="two_phase">两相 two-phase</option>
+          </select>
+        </div>
+      </div>
+      <div id="gasFields">
+        <div class="form-row">
+          <div class="form-group">
+            <label>分子量 <span class="form-unit">(g/mol)</span></label>
+            <input type="number" id="molWeight" step="0.1" min="0" placeholder="28.01" value="28.01">
+          </div>
+          <div class="form-group">
+            <label>比热比 k</label>
+            <input type="number" id="kRatio" step="0.01" min="1" placeholder="1.40" value="1.40">
+          </div>
+        </div>
+      </div>
+      <div id="liquidFields" style="display:none;">
+        <div class="form-group">
+          <label>液体密度 <span class="form-unit">(kg/m³)</span></label>
+          <input type="number" id="liquidDensity" step="1" min="0" placeholder="1000" value="1000">
+        </div>
+      </div>
+      <div id="twoPhaseFields" style="display:none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>液相质量分数</label>
+            <input type="number" id="vaporMassFraction" step="0.01" min="0" max="1" placeholder="0.3" value="0.3">
+          </div>
+          <div class="form-group">
+            <label>液体密度 <span class="form-unit">(kg/m³)</span></label>
+            <input type="number" id="twoPhaseDensity" step="1" min="0" placeholder="1400" value="1400">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>分子量 <span class="form-unit">(g/mol)</span></label>
+            <input type="number" id="molWeight2p" step="0.1" min="0" placeholder="28.01" value="28.01">
+          </div>
+          <div class="form-group">
+            <label>比热比 k</label>
+            <input type="number" id="kRatio2p" step="0.01" min="1" placeholder="1.40" value="1.40">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>应用场景</label>
+        <select id="application">
+          <option value="rocket_propulsion">火箭推进 Rocket Propulsion</option>
+          <option value="cryogenic_storage">低温贮箱 Cryogenic Storage</option>
+          <option value="satellite_propulsion">卫星推进 Satellite Propulsion</option>
+          <option value="ground_support">地面支持 Ground Support</option>
+          <option value="test_stand">试车台 Test Stand</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>最大允许质量 <span class="form-unit">(kg)</span></label>
+        <input type="number" id="maxMass" step="0.1" min="0" placeholder="5.0" value="5.0">
+      </div>
+      <button class="btn-primary" id="designBtn" data-action="run-design">
+        &#9654; 开始设计
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Content ── -->
+  <div class="content">
+
+    <!-- ════ Tab: Design Results ════ -->
+    <div class="tab-content active" id="tab-design">
+      <!-- Empty -->
+      <div class="empty-state" id="designEmpty">
+        <div class="empty-icon">&#9881;</div>
+        <div class="empty-text">尚未进行设计计算</div>
+        <div class="empty-hint">请在左侧设置参数后点击「开始设计」</div>
+      </div>
+      <!-- Loading -->
+      <div class="loading" id="designLoading" style="display:none;">
+        <div class="spinner"></div>
+        <span>正在进行安全阀设计计算...</span>
+      </div>
+      <!-- Results -->
+      <div id="designResults" style="display:none;">
+        <!-- Status Row -->
+        <div class="result-card">
+          <h3>设计状态</h3>
+          <div class="status-row" id="designStatus"></div>
+        </div>
+        <!-- Geometry -->
+        <div class="result-card">
+          <h3>几何参数 <span class="section-unit">mm</span></h3>
+          <div class="metrics-grid" id="geometryGrid"></div>
+        </div>
+        <!-- Spring -->
+        <div class="result-card">
+          <h3>弹簧设计</h3>
+          <div class="metrics-grid" id="springGrid"></div>
+        </div>
+        <!-- Body Strength -->
+        <div class="result-card">
+          <h3>壳体强度</h3>
+          <div class="metrics-grid" id="bodyGrid"></div>
+        </div>
+        <!-- Dynamics -->
+        <div class="result-card">
+          <h3>动态特性</h3>
+          <div class="metrics-grid" id="dynamicsGrid"></div>
+        </div>
+        <!-- Aerospace Constraints -->
+        <div class="result-card">
+          <h3>航天约束</h3>
+          <div class="metrics-grid" id="constraintsGrid"></div>
+        </div>
+        <!-- Warnings -->
+        <div class="result-card">
+          <h3>&#9888; 设计警告</h3>
+          <div class="warnings-list" id="warningsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ Tab: Compare ════ -->
+    <div class="tab-content" id="tab-compare">
+      <div class="empty-state" id="compareEmpty">
+        <div class="empty-icon">&#9878;</div>
+        <div class="empty-text">方案对比列表为空</div>
+        <div class="empty-hint">切换至「设计计算」页签运行设计，结果将自动加入对比列表</div>
+      </div>
+      <div class="loading" id="compareLoading" style="display:none;">
+        <div class="spinner"></div>
+        <span>正在对比计算...</span>
+      </div>
+      <div class="result-card" id="compareResults" style="display:none;">
+        <h3>方案对比结果</h3>
+        <div class="compare-table-wrap">
+          <table class="compare-table" id="compareTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ Tab: Sensitivity ════ -->
+    <div class="tab-content" id="tab-sensitivity">
+      <div class="empty-state" id="sensiEmpty">
+        <div class="empty-icon">&#9783;</div>
+        <div class="empty-text">灵敏度分析尚未执行</div>
+        <div class="empty-hint">请先在「设计计算」中完成一次设计，然后在此选择参数进行分析</div>
+      </div>
+      <div class="loading" id="sensiLoading" style="display:none;">
+        <div class="spinner"></div>
+        <span>正在运行灵敏度分析...</span>
+      </div>
+      <div id="sensiResults" style="display:none;">
+        <div class="result-card">
+          <h3>参数扫描</h3>
+          <div class="sensitivity-controls">
+            <div class="form-group">
+              <label>扫描参数</label>
+              <select id="sensiParam">
+                <option value="set_pressure">整定压力</option>
+                <option value="relieving_temperature">泄放温度</option>
+                <option value="required_relieving_rate">需求泄放量</option>
+                <option value="body_material">阀体材料</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>参数值（逗号分隔）</label>
+              <input type="text" id="sensiValues" placeholder="5, 8, 10, 12, 15">
+            </div>
+            <button class="btn-primary" style="width:auto;padding:8px 20px;margin-top:0;" data-action="run-sensitivity">
+              &#9654; 运行扫描
+            </button>
+          </div>
+        </div>
+        <div class="sensitivity-charts" id="sensiCharts"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
+<script>
+'use strict';
+
+// ─── State ───
+let selectedMaterialId = '';
+let materials = [];
+let lastDesignResult = null;
+let compareConfigs = [];
+let appData = {};
+
+// ─── Init ───
+document.addEventListener('DOMContentLoaded', () => {
+  loadInfo();
+  setupMediumToggle();
+});
+
+// ─── Fetch module info ───
+async function loadInfo() {
+  try {
+    const r = await fetch('/api/avis/safety_valve/info');
+    appData = await r.json();
+    materials = appData.materials || [];
+    renderMaterialCards();
+    if (materials.length > 0) {
+      selectedMaterialId = materials[0].id;
+      document.querySelector('.material-card[data-id="' + materials[0].id + '"]')?.classList.add('selected');
+    }
+  } catch (e) {
+    showToast('无法加载模块信息，请确认后端服务已启动', 'error');
+  }
+}
+
+// ─── Material cards ───
+function renderMaterialCards() {
+  const container = document.getElementById('materialCards');
+  if (materials.length === 0) {
+    container.innerHTML = '<div class="material-card"><span class="mat-name">无可用材料数据</span></div>';
+    return;
+  }
+  container.innerHTML = materials.map(m => `
+    <div class="material-card${m.id === selectedMaterialId ? ' selected' : ''}" data-action="mat-select" data-id="${m.id}">
+      <span class="mat-name">${m.name_cn || m.name_en}</span>
+      <span class="mat-en">${m.name_en || ''}</span>
+      <span class="mat-props">UTS ${m.uts_MPa || '?'} MPa &middot; R<sub>p0.2</sub> ${m.yield_MPa || '?'} MPa &middot; T<sub>max</sub> ${m.max_temp_C || '?'}&deg;C</span>
+    </div>
+  `).join('');
+}
+
+// ─── Event delegation ───
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+
+  switch (action) {
+    case 'tab':
+      switchTab(btn.dataset.tab);
+      break;
+    case 'preset':
+      applyPreset(btn.dataset.id);
+      break;
+    case 'mat-select':
+      selectMaterial(btn.dataset.id);
+      break;
+    case 'run-design':
+      runDesign();
+      break;
+    case 'add-compare':
+      addToCompare();
+      break;
+    case 'run-sensitivity':
+      runSensitivity();
+      break;
+  }
+});
+
+// ─── Tab switching ───
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="' + tabName + '"]')?.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tabName)?.classList.add('active');
+}
+
+// ─── Medium type toggle ───
+function setupMediumToggle() {
+  const sel = document.getElementById('mediumType');
+  sel.addEventListener('change', () => {
+    const v = sel.value;
+    document.getElementById('gasFields').style.display = (v === 'gas' || v === 'two_phase') ? '' : 'none';
+    document.getElementById('liquidFields').style.display = (v === 'liquid') ? '' : 'none';
+    document.getElementById('twoPhaseFields').style.display = (v === 'two_phase') ? '' : 'none';
+  });
+}
+
+// ─── Material select ───
+function selectMaterial(id) {
+  selectedMaterialId = id;
+  document.querySelectorAll('.material-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector('.material-card[data-id="' + id + '"]')?.classList.add('selected');
+}
+
+// ─── Preset ───
+function applyPreset(id) {
+  const presets = {
+    n2_10mpa:       { setPressure:10, temp:20, flowRate:0.8, medium:'gas', mw:28.01, k:1.40, app:'rocket_propulsion', maxMass:5 },
+    he_cryo_5mpa:   { setPressure:5, temp:-196, flowRate:0.3, medium:'gas', mw:4.00, k:1.67, app:'cryogenic_storage', maxMass:3 },
+    lox_35mpa:      { setPressure:3.5, temp:-183, flowRate:2.0, medium:'liquid', mw:32.00, k:1.40, ld:1140, app:'cryogenic_storage', maxMass:8 },
+    hydrazine_25mpa:{ setPressure:2.5, temp:25, flowRate:1.5, medium:'liquid', mw:32.05, k:1.30, ld:1010, app:'satellite_propulsion', maxMass:4 },
+    h2o2_twophase:  { setPressure:1.5, temp:150, flowRate:0.6, medium:'two_phase', mw:34.01, k:1.25, ld:1440, vmf:0.25, app:'rocket_propulsion', maxMass:6 },
+    hot_gas_8mpa:   { setPressure:8, temp:600, flowRate:1.2, medium:'gas', mw:22.0, k:1.30, app:'test_stand', maxMass:7 }
+  };
+  const p = presets[id];
+  if (!p) return;
+  document.getElementById('setPressure').value = p.setPressure;
+  document.getElementById('temp').value = p.temp;
+  document.getElementById('flowRate').value = p.flowRate;
+  document.getElementById('mediumType').value = p.medium;
+  document.getElementById('molWeight').value = p.mw || 28.01;
+  document.getElementById('kRatio').value = p.k || 1.40;
+  document.getElementById('molWeight2p').value = p.mw || 28.01;
+  document.getElementById('kRatio2p').value = p.k || 1.40;
+  if (p.ld) {
+    document.getElementById('liquidDensity').value = p.ld;
+    document.getElementById('twoPhaseDensity').value = p.ld;
+  }
+  if (p.vmf !== undefined) document.getElementById('vaporMassFraction').value = p.vmf;
+  document.getElementById('application').value = p.app || 'rocket_propulsion';
+  document.getElementById('maxMass').value = p.maxMass || 5;
+  // trigger medium toggle
+  document.getElementById('mediumType').dispatchEvent(new Event('change'));
+  showToast('已加载预设工况', 'success');
+}
+
+// ─── Build design payload ───
+function buildPayload() {
+  const setPressureMPa = parseFloat(document.getElementById('setPressure').value) || 0;
+  const tempC = parseFloat(document.getElementById('temp').value) || 20;
+  const payload = {
+    set_pressure: setPressureMPa * 1e6,
+    relieving_temperature: tempC + 273.15,
+    required_relieving_rate: parseFloat(document.getElementById('flowRate').value) || 0,
+    medium_type: document.getElementById('mediumType').value,
+    application: document.getElementById('application').value,
+    body_material: selectedMaterialId,
+    max_mass_kg: parseFloat(document.getElementById('maxMass').value) || 5
+  };
+  const mt = payload.medium_type;
+  if (mt === 'gas' || mt === 'two_phase') {
+    payload.molecular_weight = parseFloat(document.getElementById(mt === 'two_phase' ? 'molWeight2p' : 'molWeight').value) || 28.01;
+    payload.specific_heat_ratio = parseFloat(document.getElementById(mt === 'two_phase' ? 'kRatio2p' : 'kRatio').value) || 1.40;
+  }
+  if (mt === 'liquid') {
+    payload.liquid_density = parseFloat(document.getElementById('liquidDensity').value) || 1000;
+  }
+  if (mt === 'two_phase') {
+    payload.liquid_density = parseFloat(document.getElementById('twoPhaseDensity').value) || 1400;
+    payload.vapor_mass_fraction = parseFloat(document.getElementById('vaporMassFraction').value) || 0;
+  }
+  return payload;
+}
+
+// ─── Run Design ───
+async function runDesign() {
+  const btn = document.getElementById('designBtn');
+  btn.disabled = true;
+  btn.textContent = '计算中...';
+  document.getElementById('designEmpty').style.display = 'none';
+  document.getElementById('designResults').style.display = 'none';
+  document.getElementById('designLoading').style.display = 'flex';
+
+  try {
+    const payload = buildPayload();
+    const r = await fetch('/api/avis/safety_valve/design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    lastDesignResult = data;
+    lastDesignResult._payload = payload;
+    renderDesignResults(data);
+    // Add to compare if not already
+    if (!compareConfigs.find(c => c.label === payload.application + '_' + payload.set_pressure)) {
+      compareConfigs.push({...payload, label: '设计-' + (compareConfigs.length + 1)});
+    }
+    showToast('设计计算完成', 'success');
+  } catch (e) {
+    showToast('设计计算失败: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '\u25B6 开始设计';
+    document.getElementById('designLoading').style.display = 'none';
+  }
+}
+
+// ─── Render design results ───
+function renderDesignResults(d) {
+  document.getElementById('designResults').style.display = '';
+  document.getElementById('designEmpty').style.display = 'none';
+
+  // Status
+  const validClass = d.is_valid ? 'valid' : 'invalid';
+  const dotClass = d.is_valid ? 'green' : 'red';
+  document.getElementById('designStatus').innerHTML = [
+    '<span class="status-badge ' + validClass + '"><span class="status-dot ' + dotClass + '"></span>' + (d.is_valid ? '设计合格' : '设计不合格') + '</span>',
+    '<span class="status-badge"><span style="color:var(--text-mut);margin-right:4px;">阀口</span>' + (d.selected_orifice || '——') + '</span>',
+    '<span class="status-badge"><span style="color:var(--text-mut);margin-right:4px;">流态</span>' + (d.flow_regime || '——') + '</span>',
+    '<span class="status-badge"><span style="color:var(--text-mut);margin-right:4px;">SF<sub>y</sub></span>' + fmt(d.safety_factor_yield) + '</span>',
+    '<span class="status-badge"><span style="color:var(--text-mut);margin-right:4px;">SF<sub>t</sub></span>' + fmt(d.safety_factor_tensile) + '</span>'
+  ].join('');
+
+  // Geometry
+  document.getElementById('geometryGrid').innerHTML = buildMetricItems([
+    ['阀口面积需求', d.required_orifice_area_mm2, 'mm²'],
+    ['阀口面积实际', d.actual_orifice_area_mm2, 'mm²', d.actual_orifice_area_mm2 >= d.required_orifice_area_mm2 ? '' : 'red'],
+    ['阀口直径', d.orifice_diameter_mm, 'mm', 'cyan'],
+    ['排放系数', d.discharge_coefficient, ''],
+    ['入口直径', d.inlet_diameter_mm, 'mm'],
+    ['出口直径', d.outlet_diameter_mm, 'mm'],
+    ['阀座直径', d.seat_diameter_mm, 'mm'],
+    ['阀瓣直径', d.disc_diameter_mm, 'mm'],
+    ['阀瓣质量', d.disc_mass_kg, 'kg'],
+    ['升程高度', d.lift_height_mm, 'mm'],
+  ]);
+
+  // Spring
+  document.getElementById('springGrid').innerHTML = buildMetricItems([
+    ['弹簧线径', d.spring_wire_diameter_mm, 'mm'],
+    ['弹簧中径', d.spring_mean_diameter_mm, 'mm'],
+    ['有效圈数', d.spring_coils, ''],
+    ['自由长度', d.spring_free_length_mm, 'mm'],
+    ['刚度', d.spring_stiffness_N_m, 'N/m'],
+    ['剪切应力', d.spring_shear_stress_MPa, 'MPa', colorByThreshold(d.spring_shear_stress_MPa, [400, 600])],
+    ['弹簧质量', d.spring_mass_kg, 'kg'],
+    ['弹簧安全系数', d.safety_factor_spring, '', d.safety_factor_spring >= 1.25 ? 'green' : (d.safety_factor_spring >= 1.0 ? 'amber' : 'red')],
+  ]);
+
+  // Body
+  document.getElementById('bodyGrid').innerHTML = buildMetricItems([
+    ['壁厚', d.body_wall_thickness_mm, 'mm'],
+    ['环向应力', d.body_hoop_stress_MPa, 'MPa'],
+    ['纵向应力', d.body_longitudinal_stress_MPa, 'MPa'],
+    ['总体积', d.overall_diameter_mm, 'mm', '', '外径'],
+    ['总高度', d.overall_height_mm, 'mm'],
+    ['阀门总质量', d.valve_mass_kg, 'kg', d.valve_mass_kg <= (parseFloat(document.getElementById('maxMass').value) || 5) ? 'green' : 'red'],
+  ]);
+
+  // Dynamics
+  document.getElementById('dynamicsGrid').innerHTML = buildMetricItems([
+    ['固有频率', d.natural_frequency_Hz, 'Hz', d.natural_frequency_Hz > 100 ? 'green' : 'amber'],
+    ['开启时间', d.opening_time_ms, 'ms'],
+    ['关闭时间', d.closing_time_ms, 'ms'],
+    ['颤振指数', d.chatter_index, '', d.chatter_index < 0.5 ? 'green' : (d.chatter_index < 1.0 ? 'amber' : 'red')],
+  ]);
+
+  // Aerospace constraints
+  document.getElementById('constraintsGrid').innerHTML = buildMetricItems([
+    ['质量裕度', d.mass_margin_pct, '%', d.mass_margin_pct > 0 ? 'green' : 'red'],
+    ['外径包络裕度', d.envelope_margin_diameter_pct, '%', d.envelope_margin_diameter_pct > 0 ? 'green' : 'red'],
+    ['高度包络裕度', d.envelope_margin_height_pct, '%', d.envelope_margin_height_pct > 0 ? 'green' : 'red'],
+    ['低温整定偏移', d.cryogenic_set_pressure_shift_kPa, 'kPa'],
+    ['低温泄漏系数', d.cryogenic_seat_leakage_factor, ''],
+    ['可靠性因子', d.reliability_factor, '', d.reliability_factor >= 0.999 ? 'green' : (d.reliability_factor >= 0.99 ? 'amber' : 'red')],
+    ['计算排放能力', d.calculated_capacity_kg_s, 'kg/s'],
+  ]);
+
+  // Warnings
+  const wl = document.getElementById('warningsList');
+  if (d.warnings && d.warnings.length > 0) {
+    wl.innerHTML = d.warnings.map(w => '<div class="warning-item"><span class="warning-icon">\u26A0</span>' + w + '</div>').join('');
+  } else {
+    wl.innerHTML = '<div class="no-warnings">\u2714 设计通过所有检查，无警告项</div>';
+  }
+}
+
+function buildMetricItems(items) {
+  return items.map(([label, value, unit, colorClass, altUnit]) => {
+    const v = value != null ? (typeof value === 'number' ? fmt(value) : value) : '——';
+    const cls = colorClass ? ' metric-value ' + colorClass : ' metric-value';
+    const u = altUnit || unit || '';
+    return '<div class="metric-item"><div class="metric-label">' + label + '</div><div class="' + cls + '">' + v + '<span class="metric-unit">' + u + '</span></div></div>';
+  }).join('');
+}
+
+function fmt(v) {
+  if (v == null) return '——';
+  if (typeof v === 'boolean') return v ? '是' : '否';
+  if (typeof v === 'string') return v;
+  if (Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0)) return v.toExponential(3);
+  return v.toFixed(3).replace(/\.?0+$/, '');
+}
+
+function colorByThreshold(v, thresh) {
+  if (v == null) return '';
+  const [warn, danger] = thresh;
+  if (v >= danger) return 'red';
+  if (v >= warn) return 'amber';
+  return 'green';
+}
+
+// ─── Compare ───
+async function addToCompare() {
+  if (compareConfigs.length < 2) {
+    showToast('请至少加载两个设计配置', 'error');
+    return;
+  }
+  document.getElementById('compareEmpty').style.display = 'none';
+  document.getElementById('compareResults').style.display = 'none';
+  document.getElementById('compareLoading').style.display = 'flex';
+
+  try {
+    const r = await fetch('/api/avis/safety_valve/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(compareConfigs)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    renderCompareResults(data);
+    showToast('方案对比完成', 'success');
+  } catch (e) {
+    showToast('方案对比失败: ' + e.message, 'error');
+  } finally {
+    document.getElementById('compareLoading').style.display = 'none';
+  }
+}
+
+function renderCompareResults(data) {
+  document.getElementById('compareResults').style.display = '';
+  if (!data.length) {
+    document.getElementById('compareTable').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-mut);">无对比数据</td></tr>';
+    return;
+  }
+  const rows = data.map(d => `
+    <tr>
+      <td>${d.label || '——'}</td>
+      <td class="cell-orifice">${d.orifice || '——'}</td>
+      <td>${fmt(d.safety_factor_yield)}</td>
+      <td>${fmt(d.valve_mass_kg)} kg</td>
+      <td>${fmt(d.capacity_kg_s)} kg/s</td>
+      <td class="${d.is_valid ? 'cell-valid' : 'cell-invalid'}">${d.is_valid ? '\u2714 合格' : '\u2718 不合格'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('compareTable').innerHTML = `
+    <thead><tr>
+      <th>方案</th><th>阀口</th><th>SF<sub>y</sub></th><th>质量</th><th>排放能力</th><th>状态</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  `;
+}
+
+// ─── Sensitivity ───
+async function runSensitivity() {
+  if (!lastDesignResult || !lastDesignResult._payload) {
+    showToast('请先运行设计计算', 'error');
+    return;
+  }
+  const param = document.getElementById('sensiParam').value;
+  const rawValues = document.getElementById('sensiValues').value;
+  if (!rawValues.trim()) {
+    showToast('请输入参数值', 'error');
+    return;
+  }
+  const paramValues = rawValues.split(/[,，\s]+/).filter(Boolean).map(Number);
+  if (paramValues.some(isNaN)) {
+    showToast('参数值格式错误，请用逗号分隔数字', 'error');
+    return;
+  }
+
+  document.getElementById('sensiEmpty').style.display = 'none';
+  document.getElementById('sensiResults').style.display = 'none';
+  document.getElementById('sensiLoading').style.display = 'flex';
+
+  try {
+    const payload = {
+      base_config: lastDesignResult._payload,
+      param_name: param,
+      param_values: paramValues
+    };
+    const r = await fetch('/api/avis/safety_valve/sensitivity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    renderSensitivityResults(data, param);
+    showToast('灵敏度分析完成', 'success');
+  } catch (e) {
+    showToast('灵敏度分析失败: ' + e.message, 'error');
+  } finally {
+    document.getElementById('sensiLoading').style.display = 'none';
+  }
+}
+
+function renderSensitivityResults(data, param) {
+  document.getElementById('sensiResults').style.display = '';
+
+  const charts = [
+    { key: 'orifice_area_mm2', label: '阀口面积 (mm²)', cls: 'cyan' },
+    { key: 'safety_factor_yield', label: '屈服安全系数', cls: 'green' },
+    { key: 'valve_mass_kg', label: '阀门质量 (kg)', cls: 'purple' },
+    { key: 'chatter_index', label: '颤振指数', cls: 'amber' },
+  ];
+
+  const allValues = data.map(d => d[charts[0].key] || 0);
+  const maxVal = Math.max(...allValues, 1);
+
+  document.getElementById('sensiCharts').innerHTML = charts.map(chart => {
+    const chartMax = Math.max(...data.map(d => d[chart.key] || 0), 1);
+    const bars = data.map(d => {
+      const pct = ((d[chart.key] || 0) / chartMax * 100).toFixed(1);
+      const invalid = d.is_valid === false ? '; opacity:0.4' : '';
+      return '<div class="bar-row">' +
+        '<div class="bar-label">' + fmt(d.param_value) + '</div>' +
+        '<div class="bar-track"><div class="bar-fill ' + chart.cls + '" style="width:' + pct + '%' + invalid + '">' + (pct > 20 ? fmt(d[chart.key]) : '') + '</div></div>' +
+        '<div class="bar-value">' + fmt(d[chart.key]) + (d.is_valid === false ? ' \u2718' : '') + '</div>' +
+        '</div>';
+    }).join('');
+    return '<div class="result-card"><h3>' + chart.label + '</h3><div class="bar-chart">' + bars + '</div></div>';
+  }).join('');
+
+  // Scroll sensitivity results into view
+  document.getElementById('tab-sensitivity').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── Toast ───
+function showToast(msg, type) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+</script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
+</body>
+</html>

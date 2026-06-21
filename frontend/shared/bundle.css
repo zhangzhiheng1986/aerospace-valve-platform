@@ -1,0 +1,12 @@
+/* ============================================================
+   Avis Shared Bundle — Import this ONE file per page
+   <link rel="stylesheet" href="/frontend/shared/bundle.css">
+   <script src="/frontend/shared/bundle.js"></script>
+
+   This maps to the Flask static route: /frontend/<path:filename>
+   ============================================================ */
+
+@import './tokens.css';
+@import './reset.css';
+@import './layout.css';
+@import './components.css';

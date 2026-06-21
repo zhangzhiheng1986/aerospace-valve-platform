@@ -2803,3 +2803,447 @@ def optimize_suggest():
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+
+# ======================================================================
+# Sprint 14: Debate Engine Endpoints (debate_engine.py)
+# ======================================================================
+
+def _debate_engine():
+    from debate_engine import debate_engine
+    return debate_engine
+
+
+@avis_bp.route('/api/avis/debate/templates', methods=['GET'])
+def debate_templates():
+    """GET /api/avis/debate/templates"""
+    try:
+        engine = _debate_engine()
+        return jsonify({'templates': engine.get_templates()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate/create', methods=['POST'])
+def debate_create():
+    """POST /api/avis/debate/create"""
+    try:
+        data = request.get_json(silent=True) or {}
+        topic = (data.get('topic') or '').strip()
+        if not topic:
+            return jsonify({'error': 'topic is required'}), 400
+        engine = _debate_engine()
+        result = engine.create_session(
+            topic=topic, description=data.get('description', ''),
+            design_params=data.get('design_params', {}),
+            agent_names=data.get('agent_names'),
+            custom_agents=data.get('custom_agents')
+        )
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate/<session_id>/start', methods=['POST'])
+def debate_start(session_id):
+    """POST /api/avis/debate/<id>/start"""
+    try:
+        engine = _debate_engine()
+        return jsonify(engine.start_debate(session_id))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate/<session_id>/argue', methods=['POST'])
+def debate_argue(session_id):
+    """POST /api/avis/debate/<id>/argue"""
+    try:
+        data = request.get_json(silent=True) or {}
+        agent_key = (data.get('agent_key') or '').strip()
+        content = (data.get('content') or '').strip()
+        if not agent_key or not content:
+            return jsonify({'error': 'agent_key and content are required'}), 400
+        engine = _debate_engine()
+        result = engine.submit_argument(
+            session_id, agent_key, content,
+            references=data.get('references'),
+            confidence=data.get('confidence', 0.7)
+        )
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate/<session_id>/vote', methods=['POST'])
+def debate_vote(session_id):
+    """POST /api/avis/debate/<id>/vote"""
+    try:
+        data = request.get_json(silent=True) or {}
+        agent_key = (data.get('agent_key') or '').strip()
+        option = (data.get('option') or '').strip()
+        if not agent_key or not option:
+            return jsonify({'error': 'agent_key and option are required'}), 400
+        engine = _debate_engine()
+        result = engine.cast_vote(
+            session_id, agent_key, option,
+            rationale=data.get('rationale', ''),
+            conditions=data.get('conditions')
+        )
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate/<session_id>', methods=['GET'])
+def debate_get(session_id):
+    """GET /api/avis/debate/<id>"""
+    try:
+        engine = _debate_engine()
+        return jsonify(engine.get_session(session_id))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate/<session_id>/close', methods=['POST'])
+def debate_close(session_id):
+    """POST /api/avis/debate/<id>/close"""
+    try:
+        engine = _debate_engine()
+        return jsonify(engine.close_session(session_id))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/debate', methods=['GET'])
+def debate_list():
+    """GET /api/avis/debate"""
+    try:
+        engine = _debate_engine()
+        return jsonify({'sessions': engine.list_sessions()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================
+# Sprint 14: Knowledge Graph Visualization (kg_viz.py)
+# ============================================================
+
+@avis_bp.route('/api/avis/kg/viz/graph', methods=['GET'])
+def kg_viz_graph():
+    """GET /api/avis/kg/viz/graph"""
+    try:
+        from kg_viz import get_all_entities, get_all_relationships, build_force_graph
+        entities = get_all_entities()
+        rels = get_all_relationships()
+        type_filter = request.args.get('type', '').strip()
+        type_filter = [t.strip() for t in type_filter.split(',')] if type_filter else None
+        graph = build_force_graph(entities, rels, entity_filter=type_filter)
+        return jsonify(graph)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/kg/viz/path', methods=['GET'])
+def kg_viz_path():
+    """GET /api/avis/kg/viz/path?from=X&to=Y"""
+    try:
+        from kg_viz import get_all_entities, get_all_relationships, build_path_highlight
+        entities = get_all_entities()
+        rels = get_all_relationships()
+        from_id = request.args.get('from', '').strip()
+        to_id = request.args.get('to', '').strip()
+        if not from_id or not to_id:
+            return jsonify({'error': 'from and to query params required'}), 400
+        adj = {}
+        for r in rels:
+            adj.setdefault(r['source'], []).append(r['target'])
+            adj.setdefault(r['target'], []).append(r['source'])
+        visited = {from_id: None}
+        queue = [from_id]
+        found = False
+        while queue and not found:
+            cur = queue.pop(0)
+            for nb in adj.get(cur, []):
+                if nb not in visited:
+                    visited[nb] = cur
+                    queue.append(nb)
+                    if nb == to_id:
+                        found = True
+                        break
+        path = []
+        if found:
+            cur = to_id
+            while cur:
+                path.insert(0, cur)
+                cur = visited[cur]
+        graph = build_path_highlight(entities, rels, path)
+        graph['found'] = found
+        graph['from'] = from_id
+        graph['to'] = to_id
+        return jsonify(graph)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/kg/viz/tree/<entity_id>', methods=['GET'])
+def kg_viz_tree(entity_id):
+    """GET /api/avis/kg/viz/tree/<entity_id>?depth=2"""
+    try:
+        from kg_viz import get_all_entities, get_all_relationships, build_subgraph_tree
+        entities = get_all_entities()
+        rels = get_all_relationships()
+        depth = int(request.args.get('depth', 2))
+        tree = build_subgraph_tree(entities, rels, entity_id, max_depth=depth)
+        return jsonify({'tree': tree, 'root': entity_id, 'depth': depth})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/kg/viz/stats', methods=['GET'])
+def kg_viz_stats():
+    """GET /api/avis/kg/viz/stats"""
+    try:
+        from kg_viz import get_all_entities, get_all_relationships, compute_statistics
+        entities = get_all_entities()
+        rels = get_all_relationships()
+        stats = compute_statistics(entities, rels)
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================
+# Sprint 14: Bayesian Optimization + Pareto Frontier (bayesian_optimizer.py)
+# ============================================================
+
+_active_opt_runs = {}
+
+def _get_opt_fn(fn_name):
+    import bayesian_optimizer as bo
+    fn_map = {
+        'solenoid_mass': bo.solenoid_mass,
+        'solenoid_force': bo.solenoid_force,
+        'solenoid_cost': bo.solenoid_cost,
+    }
+    return fn_map.get(fn_name)
+
+
+@avis_bp.route('/api/avis/optimize/bayesian', methods=['POST'])
+def optimize_bayesian():
+    """POST /api/avis/optimize/bayesian"""
+    try:
+        import bayesian_optimizer as bo
+        data = request.get_json(silent=True) or {}
+        template_id = data.get('template_id', 'solenoid')
+        tpl = bo.OPTIMIZATION_TEMPLATES.get(template_id)
+        if not tpl:
+            return jsonify({'error': 'Unknown template: {}'.format(template_id)}), 400
+        vars_ = tpl['variables']
+        bounds = data.get('bounds') or [(v['lo'], v['hi']) for v in vars_]
+        objective_name = data.get('objective', tpl['single_objective']['function'])
+        fn = _get_opt_fn(objective_name)
+        if fn is None:
+            fn = lambda x: sum(xi**2 for xi in x)
+        n_iter = data.get('n_iter', 20)
+        n_init = data.get('n_init', 10)
+        acq = data.get('acq', 'EI')
+        opt = bo.BayesianOptimizer(fn, bounds, length_scale=1.0)
+        result = opt.optimize(n_iter=n_iter, n_init=n_init, acq=acq,
+                              random_state=data.get('random_state'))
+        import time
+        run_id = 'bo_{}'.format(int(time.time()))
+        _active_opt_runs[run_id] = result
+        result['run_id'] = run_id
+        result['template_id'] = template_id
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/optimize/pareto', methods=['POST'])
+def optimize_pareto():
+    """POST /api/avis/optimize/pareto"""
+    try:
+        import bayesian_optimizer as bo
+        data = request.get_json(silent=True) or {}
+        template_id = data.get('template_id', 'solenoid')
+        tpl = bo.OPTIMIZATION_TEMPLATES.get(template_id)
+        if not tpl:
+            return jsonify({'error': 'Unknown template: {}'.format(template_id)}), 400
+        vars_ = tpl['variables']
+        bounds = [(v['lo'], v['hi']) for v in vars_]
+        obj_names = tpl['objectives']
+        objectives = []
+        for oname in obj_names:
+            fn = _get_opt_fn('solenoid_{}'.format(oname))
+            if fn:
+                objectives.append(fn)
+            else:
+                objectives.append(lambda x, i=len(objectives): x[i % len(x)] if len(x) > 0 else 0)
+        n_gen = data.get('n_gen', 50)
+        pop_size = data.get('pop_size', 30)
+        moo = bo.MultiObjectiveOptimizer(objectives, bounds, pop_size=pop_size)
+        result = moo.optimize(n_gen=n_gen, random_state=data.get('random_state'))
+        import time
+        run_id = 'pareto_{}'.format(int(time.time()))
+        _active_opt_runs[run_id] = result
+        result['run_id'] = run_id
+        result['template_id'] = template_id
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/optimize/bayesian/<run_id>', methods=['GET'])
+def optimize_bayesian_result(run_id):
+    """GET /api/avis/optimize/bayesian/<id>"""
+    run = _active_opt_runs.get(run_id)
+    if not run:
+        return jsonify({'error': 'Run not found'}), 404
+    return jsonify(run)
+
+
+@avis_bp.route('/api/avis/optimize/pareto/<run_id>', methods=['GET'])
+def optimize_pareto_result(run_id):
+    """GET /api/avis/optimize/pareto/<id>"""
+    run = _active_opt_runs.get(run_id)
+    if not run:
+        return jsonify({'error': 'Run not found'}), 404
+    return jsonify(run)
+
+
+@avis_bp.route('/api/avis/optimize/bayesian/compare', methods=['POST'])
+def optimize_bayesian_compare():
+    """POST /api/avis/optimize/bayesian/compare"""
+    try:
+        data = request.get_json(silent=True) or {}
+        run_ids = data.get('run_ids', [])
+        results = {}
+        for rid in run_ids:
+            if rid in _active_opt_runs:
+                r = _active_opt_runs[rid]
+                results[rid] = {
+                    'best_y': r.get('best_y'),
+                    'best_x': r.get('best_x'),
+                    'iterations': r.get('iterations'),
+                    'pareto_size': r.get('pareto_size'),
+                    'template_id': r.get('template_id')
+                }
+        return jsonify({'comparison': results})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/optimize/bayesian/templates', methods=['GET'])
+def bayesian_templates():
+    """GET /api/avis/optimize/bayesian/templates"""
+    try:
+        import bayesian_optimizer as bo
+        templates = {}
+        for tid, tpl_ in bo.OPTIMIZATION_TEMPLATES.items():
+            templates[tid] = {
+                'name': tpl_['name'],
+                'description': tpl_['description'],
+                'variables': tpl_['variables'],
+                'objectives': tpl_['objectives']
+            }
+        return jsonify({'templates': templates})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================
+# Seal Pair Designer Module (DeepSeek Aerospace Seal Program)
+# ============================================================
+
+@avis_bp.route('/api/avis/seal/info', methods=['GET'])
+def seal_info():
+    """Return seal designer module info: materials, gases, contact types, leak classes"""
+    from seal_pair_designer import get_seal_design_info
+    return jsonify(get_seal_design_info())
+
+
+@avis_bp.route('/api/avis/seal/design', methods=['POST'])
+def seal_design():
+    """Full seal pair design calculation"""
+    from seal_pair_designer import api_seal_design
+    params = request.get_json() or {}
+    return jsonify(api_seal_design(params))
+
+
+@avis_bp.route('/api/avis/seal/compare', methods=['POST'])
+def seal_compare():
+    """Multi-design comparison"""
+    from seal_pair_designer import api_compare_designs
+    data = request.get_json() or {}
+    configs_list = data.get('configs', [])
+    gas = data.get('gas', 'N2')
+    return jsonify(api_compare_designs(configs_list, gas))
+
+
+@avis_bp.route('/api/avis/seal/sensitivity', methods=['POST'])
+def seal_sensitivity():
+    """Sensitivity analysis for a single parameter"""
+    from seal_pair_designer import api_sensitivity_analysis
+    data = request.get_json() or {}
+    base_config = data.get('base_config', {})
+    param_name = data.get('param_name', 'roughness_Ra_um')
+    param_values = data.get('param_values', [0.1, 0.2, 0.4, 0.8, 1.6])
+    gas = data.get('gas', 'N2')
+    return jsonify(api_sensitivity_analysis(base_config, param_name, param_values, gas))
+
+
+# ============================================================
+# Safety Valve Designer Module (Aerospace Safety Valve Program)
+# ============================================================
+
+@avis_bp.route('/api/avis/safety_valve/info', methods=['GET'])
+def safety_valve_info():
+    """Return safety valve designer module info: materials, orifice types, API standards"""
+    from safety_valve_designer import safety_valve_info as _sv_info
+    return jsonify(_sv_info())
+
+
+@avis_bp.route('/api/avis/safety_valve/design', methods=['POST'])
+def safety_valve_design():
+    """Full safety valve design calculation"""
+    from safety_valve_designer import safety_valve_design as _sv_design
+    params = request.get_json() or {}
+    return jsonify(_sv_design(params))
+
+
+@avis_bp.route('/api/avis/safety_valve/compare', methods=['POST'])
+def safety_valve_compare():
+    """Multi-design comparison for safety valves"""
+    from safety_valve_designer import safety_valve_compare as _sv_compare
+    data = request.get_json() or {}
+    if isinstance(data, list):
+        configs_list = data
+    else:
+        configs_list = data.get('configs', [])
+    return jsonify(_sv_compare(configs_list))
+
+
+@avis_bp.route('/api/avis/safety_valve/sensitivity', methods=['POST'])
+def safety_valve_sensitivity():
+    """Sensitivity analysis for safety valve parameters"""
+    from safety_valve_designer import safety_valve_sensitivity as _sv_sensitivity
+    data = request.get_json() or {}
+    base_config = data.get('base_config', {})
+    param_name = data.get('param_name', 'set_pressure')
+    param_values = data.get('param_values', [])
+    return jsonify(_sv_sensitivity(base_config, param_name, param_values))

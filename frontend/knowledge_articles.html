@@ -5,13 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>专业知识文章 - 航空航天阀门研发平台</title>
 <style>
-:root {
-  --bg: #0f1923; --card-bg: #1a2332; --border: #2a3a4a;
-  --text: #e0e6ed; --text-secondary: #8899aa; --accent: #4fc3f7;
-  --input-bg: #0d1520; --hover: #1e2d3d;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", sans-serif; min-height: 100vh; line-height: 1.6; }
+
+
+
 
 .header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; }
 .header h1 { font-size: 20px; color: var(--accent); cursor: pointer; }
@@ -85,7 +81,11 @@ body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "Micr
 
 .loading { text-align: center; padding: 60px; color: var(--text-secondary); }
 .empty { text-align: center; padding: 80px 20px; color: var(--text-secondary); font-size: 15px; }
+
+body{min-height: 100vh}
 </style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
 
@@ -293,5 +293,8 @@ function debounceSearch() {
 loadCategories();
 loadArticles();
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

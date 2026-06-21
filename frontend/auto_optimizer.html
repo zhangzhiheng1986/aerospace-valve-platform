@@ -5,28 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Auto-Optimizer | Avis Design Platform</title>
 <style>
-:root {
-  --bg-primary: #0f1923;
-  --bg-secondary: #1a2736;
-  --bg-card: #1e2d3d;
-  --accent: #00b4d8;
-  --accent-glow: rgba(0, 180, 216, 0.15);
-  --text-primary: #e0e6ed;
-  --text-secondary: #8899aa;
-  --border: #2a3a4a;
-  --danger: #ff6b6b;
-  --success: #51cf66;
-  --warning: #ffd43b;
-  --info: #4dabf7;
-}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  line-height: 1.5;
-}
+
 .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 header {
   background: var(--bg-secondary);
@@ -155,6 +136,8 @@ td { color: var(--text-primary); }
 .history-item .time { color: var(--text-secondary); font-size: 0.8rem; }
 #specFormFields { max-height: 400px; overflow-y: auto; }
 </style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
 <header>
@@ -652,5 +635,8 @@ async function showTemplates() {
 // Load history on page load
 loadHistory();
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

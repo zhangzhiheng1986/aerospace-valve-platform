@@ -5,34 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>每日资讯 - 航空航天阀门研发平台</title>
     <style>
-        :root {
-            --bg-primary: #0a0e17;
-            --bg-secondary: #111827;
-            --bg-card: rgba(17,24,39,0.8);
-            --border: rgba(255,255,255,0.06);
-            --border-active: rgba(0,180,216,0.4);
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --accent: #00b4d8;
-            --accent2: #48cae4;
-            --accent-green: #10b981;
-            --accent-amber: #f59e0b;
-            --accent-purple: #8b5cf6;
-            --accent-red: #ef4444;
-            --radius: 12px;
-            --radius-sm: 8px;
-            --radius-xs: 6px;
-            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
-            --font-mono: 'JetBrains Mono','Cascadia Code','Fira Code',monospace;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI',system-ui,-apple-system,sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
+        
+        
+        
         /* ===== TOP BAR ===== */
         .topbar {
             height: 60px;
@@ -181,6 +156,8 @@
             .news-card { padding: 16px; }
         }
     </style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
     <div class="topbar">
@@ -361,5 +338,8 @@
 
         init();
     </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

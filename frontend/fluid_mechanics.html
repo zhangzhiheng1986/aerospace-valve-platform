@@ -6,22 +6,9 @@
 <title>Fluid Mechanics Super Calculator</title>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-:root {
-  --bg-primary: #0f1923; --bg-secondary: #1a2736; --bg-card: #1e2d3d;
-  --accent: #00b4d8; --accent-glow: rgba(0,180,216,0.15); --accent2: #48cae4;
-  --text-primary: #e0e6ed; --text-secondary: #8899aa; --text-muted: #5a6a7a;
-  --border: #2a3a4a; --danger: #ff6b6b; --success: #51cf66; --warning: #ffd43b;
-  --radius: 8px; --radius-sm: 5px;
-  --sidebar-w: 270px; --formula-list-w: 290px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
-  background: var(--bg-primary); color: var(--text-primary);
-  display:flex; height:100vh; height:100dvh; overflow:hidden;
-  -webkit-tap-highlight-color: transparent;
-}
+
+
+
 
 /* ===== SIDEBAR OVERLAY (mobile) ===== */
 .sidebar-backdrop {
@@ -371,6 +358,15 @@ body {
   .sidebar-header { padding:20px 16px; }
   .sidebar-header h2 { font-size:16px; }
   .lang-btn { padding:7px 0; font-size:13px; }
+}
+</style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
+<style>
+:root {
+  --sidebar-w: 270px;
+  --formula-list-w: 290px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 </style>
 </head>
@@ -1069,5 +1065,8 @@ function loadStoredPrefs() {
 // (We do this by wrapping the original init callback)
 loadStoredPrefs();
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

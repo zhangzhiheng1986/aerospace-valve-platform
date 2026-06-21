@@ -1,0 +1,54 @@
+/* ============================================
+   compat.css — Legacy Variable Compatibility Layer
+   Maps all legacy CSS variable names to shared tokens.
+   Load AFTER bundle.css, BEFORE page-specific styles.
+   ============================================ */
+
+:root {
+  /* --- qj20156.html --- */
+  --bg: var(--bg-primary);
+  --surface: var(--bg-secondary);
+  --surface2: var(--bg-card);
+  --text: var(--text-primary);
+  --text2: var(--text-muted);
+  --pass: var(--accent-green);
+  --fail: var(--accent-red);
+  --warn: var(--accent-amber);
+  --info: var(--accent-purple);
+
+  /* --- pressure_valve.html / check_valve.html --- */
+  --card: var(--bg-card);
+  --dim: var(--text-muted);
+  --danger: var(--accent-red);
+  --purple: var(--accent-purple);
+
+  /* --- template_library.html --- */
+  --bg2: var(--bg-secondary);
+  --text1: var(--text-primary);
+  --text3: var(--text-muted);
+  --green: var(--accent-green);
+  --amber: var(--accent-amber);
+  --red: var(--accent-red);
+  --pink: var(--accent-pink);
+  --indigo: #6366f1;
+  --mono: var(--font-mono, 'Cascadia Code', 'Fira Code', monospace);
+
+  /* --- knowledge_articles.html / cms_admin.html --- */
+  --card-bg: var(--bg-card);
+  --input-bg: var(--bg-primary);
+  --hover: rgba(255,255,255,0.04);
+
+  /* --- common overrides --- */
+  --accent2: #48cae4;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-purple: #8b5cf6;
+  --accent-red: #ef4444;
+  --accent-pink: #ec4899;
+
+  /* --- border variants --- */
+  --border-active: var(--accent);
+
+  /* --- transition --- */
+  --transition: 0.2s ease;
+}

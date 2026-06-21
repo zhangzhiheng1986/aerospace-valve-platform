@@ -5,16 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>密封副设计 | 航天阀门研发平台</title>
 <style>
-:root {
-  --bg-primary: #0b0e1a; --bg-secondary: #111827; --bg-card: #1a2236;
-  --bg-input: #0f1525; --border: #2a3550; --text-pri: #e8edf5;
-  --text-sec: #8896b3; --text-mut: #5a6a8a;
-  --cyan: #00d4ff; --blue: #3b82f6; --green: #10b981;
-  --amber: #f59e0b; --red: #ef4444; --purple: #8b5cf6;
-  --radius: 10px; --radius-sm: 6px;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg-primary); color:var(--text-pri); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+
+
 .topbar { background:var(--bg-secondary); border-bottom:1px solid var(--border); padding:0 20px; height:52px; display:flex; align-items:center; gap:20px; flex-shrink:0; }
 .topbar a { color:var(--text-sec); text-decoration:none; font-size:13px; }
 .topbar a:hover { color:var(--cyan); }
@@ -112,7 +105,11 @@ body { font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; backgr
 .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 @media (max-width:900px) { .main { flex-direction:column; } .sidebar { width:100%; min-width:0; max-height:50vh; } }
+
+body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
 </style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
 
@@ -675,5 +672,8 @@ async function runSensitivity() {
   document.getElementById('sensTable').innerHTML=tbl;
 }
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

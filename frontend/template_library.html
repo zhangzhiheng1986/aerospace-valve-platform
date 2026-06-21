@@ -5,28 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>研发模板库 - 航空航天阀门研发平台</title>
     <style>
-        :root {
-            --bg: #0a0e17;
-            --bg2: #111827;
-            --bg-card: rgba(17,24,39,0.85);
-            --border: rgba(255,255,255,0.06);
-            --text1: #e2e8f0;
-            --text2: #94a3b8;
-            --text3: #64748b;
-            --accent: #00b4d8;
-            --accent2: #48cae4;
-            --green: #10b981;
-            --amber: #f59e0b;
-            --purple: #8b5cf6;
-            --red: #ef4444;
-            --pink: #ec4899;
-            --indigo: #6366f1;
-            --radius: 10px;
-            --radius-sm: 7px;
-            --mono: 'JetBrains Mono','Cascadia Code','Consolas',monospace;
-        }
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text1);min-height:100vh}
+        
+        
+        
 
         /* ===== Back link ===== */
         .back-bar{padding:14px 28px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:rgba(13,19,33,0.6);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50}
@@ -154,7 +135,11 @@
             .search-box{min-width:auto;flex:1}
             .tmpl-grid{grid-template-columns:1fr}
         }
-    </style>
+    
+body{min-height:100vh}
+</style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
 <!-- Back bar -->
@@ -520,5 +505,8 @@ document.addEventListener('keydown', function(e){
 loadSidebar();
 loadTemplates();
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>

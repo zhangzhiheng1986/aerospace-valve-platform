@@ -93,3 +93,15 @@ def multi_agent_page():
 def llm_status_page():
     """LLM service status dashboard."""
     return render_template('llm_status.html')
+
+
+@core_bp.route('/seal-pair')
+def seal_pair_page():
+    """Aerospace seal pair designer (DeepSeek integration)."""
+    return render_template('seal_pair.html')
+
+
+@core_bp.route('/safety-valve')
+def safety_valve_page():
+    """Aerospace safety valve designer (DeepSeek integration)."""
+    return render_template('safety_valve.html')

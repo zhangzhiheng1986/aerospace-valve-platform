@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>O型密封圈设计 - 航空航天阀门研发平台 | O-Ring Seal Design - Aerospace Valve R&D</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0e1a;--card:#111827;--border:#1e3a5f;--accent:#00d4ff;--accent2:#00ff88;--text:#e0e7ff;--dim:#6b7fa3;--danger:#ff4757;--warn:#ffa502;--purple:#a855f7}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+
+
 .header{background:linear-gradient(135deg,#0d1b3e,#1a0a2e);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .header h1{font-size:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;min-width:200px}
 .header .back{color:var(--dim);text-decoration:none;font-size:13px;white-space:nowrap}.header .back:hover{color:var(--accent)}
@@ -86,7 +86,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .dq-btn:hover{color:var(--accent);border-color:var(--accent);background:rgba(0,212,255,.08)}
 .dq-btn.current{color:var(--accent2);border-color:var(--accent2);background:rgba(0,255,136,.08)}
 @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
+
+body{min-height:100vh}
 </style>
+<link rel="stylesheet" href="/frontend/shared/bundle.css">
+<link rel="stylesheet" href="/frontend/shared/compat.css">
 </head>
 <body>
 <div class="header">
@@ -554,5 +558,8 @@ applyLang();
 loadMaterials();
 fetchDiaRange();
 </script>
+<script src="/frontend/shared/utils.js"></script>
+<script src="/frontend/shared/toast.js"></script>
+<script src="/frontend/shared/api.js"></script>
 </body>
 </html>
