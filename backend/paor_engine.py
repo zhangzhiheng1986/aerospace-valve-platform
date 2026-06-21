@@ -179,6 +179,8 @@ class PAORPlanner:
             steps = cls._plan_spring_design(user_message, context)
         elif intent == 'design_oring':
             steps = cls._plan_oring_design(user_message, context)
+        elif intent == 'design_seal_pair':
+            steps = cls._plan_seal_design(user_message, context)
         elif intent == 'fluid_calc':
             steps = cls._plan_fluid_calculation(user_message, context)
         elif intent == 'compliance_check':
@@ -203,6 +205,7 @@ class PAORPlanner:
             (['单向阀', '止回阀', 'check valve'], 'design_valve'),
             (['弹簧', 'spring', 'compression'], 'design_spring'),
             (['O形圈', 'O型圈', '密封圈', '密封', 'O-ring', 'oring'], 'design_oring'),
+            (['密封副', 'seal pair', '密封配对', '密封接触', '密封设计', 'Hertz', '锥面密封', '球面密封', '平端面密封', 'ISO 5208', '泄漏等级'], 'design_seal_pair'),
             (['计算', '公式', '雷诺', '马赫', '伯努利', '压降', '流量', 'calculate', 'reynolds', 'mach', 'bernoulli'], 'fluid_calc'),
             (['标准', '合规', 'QJ', '鉴定', 'compliance', 'qualification'], 'compliance_check'),
             (['材料', 'material', 'TC4', 'GH4169', '合金', '不锈钢', '铝合金'], 'material_lookup'),
@@ -295,6 +298,21 @@ class PAORPlanner:
             PlanStep(3, 'verify', 'validate_physics',
                      {'design_type': 'oring', 'depends_on_step': 2},
                      'Validate O-ring leakage physics', depends_on=[2]),
+        ]
+
+    @classmethod
+    def _plan_seal_design(cls, message: str, ctx: Dict) -> List[PlanStep]:
+        """Plan seal pair design (Sprint 13): Hertz contact + Roth leak model."""
+        params = cls._extract_design_params(message)
+        return [
+            PlanStep(1, 'understand', 'query_material',
+                     {'material_name': params.get('seat_material', '316L_SS')},
+                     'Look up seat material properties'),
+            PlanStep(2, 'design', 'design_seal_pair', params,
+                     'Design seal pair (Hertz + Roth leak model)', depends_on=[1]),
+            PlanStep(3, 'verify', 'seal_sensitivity',
+                     {'base_config': params, 'param_name': 'roughness_Ra_um', 'values': [0.1, 0.4, 0.8]},
+                     'Sensitivity analysis on surface roughness', depends_on=[2]),
         ]
 
     @classmethod
@@ -576,6 +594,20 @@ class PAORObserver:
                 sf = float(sf) if sf else 1.5
                 sf_check = PhysicsValidator.validate_safety_factor(sf, 'general')
                 checks.append(sf_check)
+
+        elif tool_name in ('design_seal_pair', 'seal_sensitivity'):
+            # Seal pair: check safety factor and leakage
+            result_data = result.get('result', result)
+            if isinstance(result_data, dict):
+                sf = result_data.get('safety_factor_yield', 1.5)
+                sf = float(sf) if sf else 1.5
+                sf_check = PhysicsValidator.validate_safety_factor(sf, 'general')
+                checks.append(sf_check)
+                # Also check if sealing
+                is_sealing = result_data.get('is_sealing')
+                if is_sealing is not None:
+                    checks.append({'name': 'seal_contact', 'passed': bool(is_sealing),
+                                   'detail': 'Seal contact established' if is_sealing else 'Seal gap detected — increase force or reduce roughness'})
 
         elif tool_name == 'check_compliance':
             # Standard checks are binary pass/fail

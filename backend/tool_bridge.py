@@ -793,6 +793,65 @@ def _cost_breakdown(kwargs):
 # Tool registry — maps tool names → handler functions
 # ============================================================================
 
+# --- Seal Pair Designer (Sprint 13) ---
+
+def _design_seal_pair(kwargs):
+    """Run seal pair design via seal_pair_designer v4.0."""
+    try:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(__file__))
+        from seal_pair_designer import api_seal_design
+        result = api_seal_design(kwargs)
+        if result.get('success'):
+            out = result['output']
+            return _clean({
+                'success': True, '_tool': 'seal_pair',
+                'input': result.get('input_summary', {}),
+                'contact_stress_max_MPa': out.get('contact_stress_max_MPa'),
+                'safety_factor_yield': out.get('safety_factor_yield'),
+                'is_sealing': out.get('is_sealing'),
+                'leak_class': out.get('leak_class'),
+                'leak_rate_mbar_L_s': out.get('leak_rate_mbar_L_s'),
+                'knudsen_number': out.get('knudsen_number'),
+                'flow_regime': out.get('flow_regime'),
+                'predicted_cycle_life': out.get('predicted_cycle_life'),
+                'warnings': result.get('warnings', []),
+                'recommendations': result.get('recommendations', []),
+            })
+        return {'success': False, 'error': result.get('error', 'Unknown error'), '_tool': 'seal_pair'}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'seal_pair'}
+
+
+def _compare_seal_pairs(kwargs):
+    """Compare multiple seal pair designs."""
+    try:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(__file__))
+        from seal_pair_designer import api_compare_designs
+        configs = kwargs.get('configs', [])
+        gas = kwargs.get('gas', 'N2')
+        results = api_compare_designs(configs, gas)
+        return _clean({'success': True, '_tool': 'compare_seal_pairs', 'results': results})
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'compare_seal_pairs'}
+
+
+def _seal_sensitivity(kwargs):
+    """Run seal pair sensitivity analysis."""
+    try:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(__file__))
+        from seal_pair_designer import api_sensitivity_analysis
+        base_config = kwargs.get('base_config', {})
+        param_name = kwargs.get('param_name', 'roughness_Ra_um')
+        values = kwargs.get('values', [0.1, 0.4, 0.8])
+        results = api_sensitivity_analysis(base_config, param_name, values)
+        return _clean({'success': True, '_tool': 'seal_sensitivity', 'param': param_name, 'results': results})
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'seal_sensitivity'}
+
+
 TOOL_BRIDGE = {
     # Material
     'query_material': _material_query,
@@ -824,6 +883,10 @@ TOOL_BRIDGE = {
     'estimate_cost': _estimate_cost,
     'compare_costs': _compare_costs,
     'cost_breakdown': _cost_breakdown,
+    # Seal Pair (Sprint 13)
+    'design_seal_pair': _design_seal_pair,
+    'compare_seal_pairs': _compare_seal_pairs,
+    'seal_sensitivity': _seal_sensitivity,
 }
 
 

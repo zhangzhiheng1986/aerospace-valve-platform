@@ -1,0 +1,28 @@
+[
+  {
+    "snapshot_id": "snap_18f1bd0f",
+    "design_id": "design_test_001",
+    "design_type": "solenoid",
+    "state": {
+      "voltage": 28,
+      "stroke_mm": 2,
+      "force_n": 10,
+      "awg": 29
+    },
+    "note": "Test snapshot from E2E",
+    "frozen_at": "2026-06-19T21:46:11.886050"
+  },
+  {
+    "snapshot_id": "snap_4c0ac0f9",
+    "design_id": "design_test_001",
+    "design_type": "solenoid",
+    "state": {
+      "voltage": 28,
+      "stroke_mm": 2,
+      "force_n": 10,
+      "awg": 29
+    },
+    "note": "Test snapshot from E2E",
+    "frozen_at": "2026-06-19T21:46:36.614423"
+  }
+]

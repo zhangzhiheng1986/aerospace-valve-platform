@@ -234,6 +234,13 @@ class TaskDecomposer:
             ("design_oring", AgentRole.DESIGN, [0]),
             ("check_compliance", AgentRole.COMPLIANCE, [1]),
         ],
+        # Sprint 13: Seal Pair Design
+        "design_seal_pair_system": [
+            ("query_material", AgentRole.DESIGN, []),
+            ("design_seal_pair", AgentRole.DESIGN, [0]),
+            ("seal_sensitivity", AgentRole.DESIGN, [1]),
+            ("check_compliance", AgentRole.COMPLIANCE, [1]),
+        ],
         # Compliance-only checks
         "validate_design": [
             ("check_compliance", AgentRole.COMPLIANCE, []),

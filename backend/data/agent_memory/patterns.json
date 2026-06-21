@@ -1,0 +1,96 @@
+{
+  "updated_at": "2026-06-19T21:46:36.502287",
+  "count": 6,
+  "patterns": [
+    {
+      "pattern_id": "pat_1dd3e52d",
+      "agent_role": "compliance",
+      "tool": "check_compliance",
+      "valve_type": "generic",
+      "count": 4,
+      "success_rate": 1.0,
+      "avg_duration_ms": 3.9,
+      "sample_decision_keys": [
+        "tool",
+        "inputs_keys"
+      ],
+      "confidence": 0.4,
+      "recommendation": "use"
+    },
+    {
+      "pattern_id": "pat_a84794aa",
+      "agent_role": "design",
+      "tool": "query_material",
+      "valve_type": "generic",
+      "count": 4,
+      "success_rate": 1.0,
+      "avg_duration_ms": 4.3,
+      "sample_decision_keys": [
+        "tool",
+        "inputs_keys"
+      ],
+      "confidence": 0.4,
+      "recommendation": "use"
+    },
+    {
+      "pattern_id": "pat_ea6d0893",
+      "agent_role": "material",
+      "tool": "query_material",
+      "valve_type": "generic",
+      "count": 2,
+      "success_rate": 1.0,
+      "avg_duration_ms": 0.0,
+      "sample_decision_keys": [
+        "tool",
+        "inputs_keys"
+      ],
+      "confidence": 0.2,
+      "recommendation": "use"
+    },
+    {
+      "pattern_id": "pat_f79c9af3",
+      "agent_role": "design",
+      "tool": "analyze_pressure_valve",
+      "valve_type": "generic",
+      "count": 2,
+      "success_rate": 1.0,
+      "avg_duration_ms": 5.7,
+      "sample_decision_keys": [
+        "tool",
+        "inputs_keys"
+      ],
+      "confidence": 0.2,
+      "recommendation": "use"
+    },
+    {
+      "pattern_id": "pat_2805e618",
+      "agent_role": "design",
+      "tool": "analyze_solenoid_valve",
+      "valve_type": "generic",
+      "count": 2,
+      "success_rate": 1.0,
+      "avg_duration_ms": 820.2,
+      "sample_decision_keys": [
+        "tool",
+        "inputs_keys"
+      ],
+      "confidence": 0.2,
+      "recommendation": "use"
+    },
+    {
+      "pattern_id": "pat_0c95be90",
+      "agent_role": "process",
+      "tool": "recommend_process",
+      "valve_type": "generic",
+      "count": 2,
+      "success_rate": 0.0,
+      "avg_duration_ms": 0.0,
+      "sample_decision_keys": [
+        "tool",
+        "inputs_keys"
+      ],
+      "confidence": 0.2,
+      "recommendation": "avoid"
+    }
+  ]
+}

@@ -343,6 +343,25 @@ class AIAgentEngine:
             'Automatically generate a complete process route from a finished valve design (solenoid/PRV/check).',
             {'design_result': 'object (the JSON returned by analyze_solenoid_valve / analyze_pressure_valve / analyze_check_valve)'}
         )
+        # Sprint 13: Seal Pair Designer v4.0 (Hertz + Roth leak model)
+        self.tools.register(
+            'design_seal_pair',
+            self._tool_design_seal_pair,
+            'Design a seal pair (valve seat + seal element) using Hertz contact theory and Roth molecular-flow leak model. Supports 6 contact types, 15+ materials, ISO 5208 leak classes AA-G.',
+            {'seat_diameter_mm': 'number', 'pressure_bar': 'number', 'seat_material': 'string', 'seal_material': 'string', 'contact_type': 'string (sphere_on_cone/concave_on_cone/sphere_on_flat/etc)', 'gas': 'string'}
+        )
+        self.tools.register(
+            'compare_seal_pairs',
+            self._tool_compare_seal_pairs,
+            'Compare multiple seal pair design configurations side-by-side (material selection trade studies).',
+            {'configs': 'array of seal pair parameter sets', 'gas': 'string (optional, default N2)'}
+        )
+        self.tools.register(
+            'seal_sensitivity',
+            self._tool_seal_sensitivity,
+            'Run sensitivity analysis on a seal pair design parameter (e.g. roughness, force, diameter).',
+            {'base_config': 'object (seal pair parameters)', 'param_name': 'string', 'values': 'array of numbers'}
+        )
     
     # ---- Tool Implementations ----
     
@@ -616,6 +635,30 @@ class AIAgentEngine:
             from design_to_route import auto_route_from_design
             route = auto_route_from_design(design)
             return route
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def _tool_design_seal_pair(self, **kwargs) -> Dict:
+        """Seal pair design via tool_bridge (Sprint 13)."""
+        try:
+            from tool_bridge import TOOL_BRIDGE
+            return TOOL_BRIDGE['design_seal_pair'](kwargs)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def _tool_compare_seal_pairs(self, **kwargs) -> Dict:
+        """Compare seal pair designs via tool_bridge (Sprint 13)."""
+        try:
+            from tool_bridge import TOOL_BRIDGE
+            return TOOL_BRIDGE['compare_seal_pairs'](kwargs)
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def _tool_seal_sensitivity(self, **kwargs) -> Dict:
+        """Seal pair sensitivity analysis via tool_bridge (Sprint 13)."""
+        try:
+            from tool_bridge import TOOL_BRIDGE
+            return TOOL_BRIDGE['seal_sensitivity'](kwargs)
         except Exception as e:
             return {'success': False, 'error': str(e)}
 

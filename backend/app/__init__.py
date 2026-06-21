@@ -112,7 +112,9 @@ def create_app(config_name=None):
     app.register_blueprint(search_bp)
     
     # Sprint 7: Knowledge Graph (migrated to avis_bp at /api/avis/kg/*)
-    # Legacy graph_bp removed - superseded by avis knowledge_graph endpoints
+    # Legacy graph_bp provides backward-compatible /api/graph/* routes
+    from app.blueprints.graph_bp import graph_bp
+    app.register_blueprint(graph_bp)
 
     # Sprint 11: Avis Intelligent Agent Platform
     try:
