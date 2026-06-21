@@ -125,6 +125,10 @@ def create_app(config_name=None):
     from app.blueprints.valve_process import valve_process_bp
     app.register_blueprint(valve_process_bp)
 
+    # Sprint 13: Seal Pair Designer v4.0 (Hertz + Roth, ISO 5208 / ANSI FCI 70-2)
+    from app.blueprints.seal_pair_bp import seal_pair_bp
+    app.register_blueprint(seal_pair_bp)
+
     # Auto-import any new news markdown files on startup
     _auto_import_news(app)
 
@@ -171,6 +175,16 @@ def _register_page_routes(app):
     @app.route('/docs')
     def docs_page():
         return render_template('docs.html')
+
+    @app.route('/seal_pair')
+    def seal_pair_page():
+        """Seal Pair Designer v4.0 - Hertz + Roth leak model, ISO 5208."""
+        return render_template('seal_pair.html')
+
+    @app.route('/safety_valve')
+    def safety_valve_page():
+        """Safety Valve Designer."""
+        return render_template('safety_valve.html')
 
     @app.route('/avis')
     def avis_dashboard_page():
