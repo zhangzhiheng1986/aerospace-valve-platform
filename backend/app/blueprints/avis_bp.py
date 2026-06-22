@@ -245,6 +245,51 @@ def avis_get_session(session_id):
 
 
 # ============================================================
+# Session Management (CRUD)
+# ============================================================
+
+@avis_bp.route('/api/avis/sessions', methods=['GET'])
+def avis_list_sessions():
+    """GET /api/avis/sessions — list all saved sessions."""
+    orch = _get_orchestrator()
+    if not orch:
+        return jsonify({'error': 'Orchestrator not available'}), 503
+    try:
+        sessions = orch.list_sessions()
+        return jsonify({'sessions': sessions, 'count': len(sessions)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/session/<session_id>', methods=['DELETE'])
+def avis_delete_session(session_id):
+    """DELETE /api/avis/session/<id> — delete a session."""
+    orch = _get_orchestrator()
+    if not orch:
+        return jsonify({'error': 'Orchestrator not available'}), 503
+    try:
+        deleted = orch.delete_session(session_id)
+        if deleted:
+            return jsonify({'success': True, 'deleted': session_id})
+        return jsonify({'error': 'session not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@avis_bp.route('/api/avis/sessions', methods=['DELETE'])
+def avis_clear_sessions():
+    """DELETE /api/avis/sessions — clear all sessions."""
+    orch = _get_orchestrator()
+    if not orch:
+        return jsonify({'error': 'Orchestrator not available'}), 503
+    try:
+        count = orch.clear_all_sessions()
+        return jsonify({'success': True, 'deleted_count': count})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================
 # Agents
 # ============================================================
 
