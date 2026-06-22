@@ -609,12 +609,15 @@
         // Reload messages from this session
         try {
             const data = await API.get('/api/avis/session/' + sid);
-            if (data.messages) {
+            if (data.messages !== undefined) {
                 const container = document.getElementById('chatContainer');
-                container.innerHTML = '';
                 const welcome = document.getElementById('welcomeScreen');
+                container.innerHTML = '';
                 if (data.messages.length === 0) {
-                    if (welcome) welcome.style.display = '';
+                    if (welcome) {
+                        welcome.style.display = '';
+                        container.appendChild(welcome);
+                    }
                 } else {
                     if (welcome) welcome.style.display = 'none';
                     data.messages.forEach(m => {
@@ -632,7 +635,6 @@
         badge.textContent = 'S:' + sid.slice(-8);
         badge.style.display = 'inline-block';
 
-        // Refresh session list to update active state
         loadSessionList();
     }
 
@@ -641,10 +643,10 @@
             const data = await API.post('/api/avis/session');
             if (data.session_id) {
                 sessionId = data.session_id;
-                // Clear chat UI
+                // Clear chat UI — capture welcome BEFORE clearing innerHTML
                 const container = document.getElementById('chatContainer');
-                container.innerHTML = '';
                 const welcome = document.getElementById('welcomeScreen');
+                container.innerHTML = '';
                 if (welcome) {
                     welcome.style.display = '';
                     container.appendChild(welcome);
@@ -665,7 +667,7 @@
         if (!confirm('确定要删除这个会话吗？此操作不可恢复。')) return;
         try {
             await API.delete('/api/avis/session/' + sid);
-            Toaster.success('会话已删除');
+            Toast.success('会话已删除');
             // If we deleted the current session, create a new one
             if (sid === sessionId) {
                 sessionId = '';
