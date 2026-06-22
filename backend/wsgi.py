@@ -1,19 +1,15 @@
-"""
-Aerospace Valve R&D Platform - Application Entry Point
-=====================================================
-Uses the Flask Application Factory pattern for scalability and testability.
-For development:  python app.py
-For production:    gunicorn app:app --bind 0.0.0.0:$PORT
-"""
+"""WSGI entry point for gunicorn production deployment.
 
+Usage:
+    gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 wsgi:app
+"""
+import sys
 import os
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+from config import default_config
+config_name = os.environ.get('FLASK_ENV', default_config)
+
 from app import create_app
-
-# Create application instance
-# FLASK_ENV can be 'development' (default), 'production', or 'test'
-app = create_app(os.environ.get('FLASK_ENV'))
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = app.config.get('DEBUG', False)
-    app.run(host='0.0.0.0', port=port, debug=debug)
+app = create_app(config_name)

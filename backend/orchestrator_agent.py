@@ -61,6 +61,7 @@ class AgentRole(Enum):
     SIMULATION = "simulation"
     PROCESS = "process"
     KNOWLEDGE = "knowledge"
+    DEBATE = "debate"
     COST = "cost"
 
 @dataclass
@@ -526,6 +527,20 @@ class OrchestratorAgent:
             name="Cost Expert",
             capabilities=["estimate_cost", "compare_costs", "cost_breakdown"],
             description="成本专家: 材料/工艺/加工成本估算, 预算对比"
+        )
+        for tool_name, handler in handler_map.items():
+            if tool_name in agent.capabilities:
+                agent.register_tool(tool_name, handler)
+        self.registry.register(agent)
+        return self
+
+    def register_debate_agent(self, handler_map: Dict[str, Callable]) -> 'OrchestratorAgent':
+        """Sprint 14: Debate Moderator — multi-agent design review debates."""
+        agent = SubAgent(
+            role=AgentRole.DEBATE,
+            name="Debate Moderator",
+            capabilities=["create_debate", "debate_templates", "get_debate"],
+            description="辩论主持人: 多智能体设计评审辩论, 材料选型辩论, 安全裕度讨论"
         )
         for tool_name, handler in handler_map.items():
             if tool_name in agent.capabilities:

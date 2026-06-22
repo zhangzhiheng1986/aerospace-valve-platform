@@ -125,6 +125,17 @@ if r.get('success'):
 else:
     print('  FAIL  PAOR chat with knowledge  error={}'.format(r.get('error', '??')[:100]))
 
+# --- 10. Debate engine integration ---
+print('--- 10. Debate engine ---')
+c, r = api('/api/avis/debate/templates', 'GET')
+chk('Debate templates', c == 200 and len(r.get('templates', {})) >= 4,
+    'code={} n={}'.format(c, len(r.get('templates', {}))))
+
+body = {'topic': 'Test valve material debate', 'description': 'E2E test', 'design_params': {'T': 300}}
+c, r = api('/api/avis/debate/create', 'POST', body)
+chk('Debate create', c == 200 and r.get('topic') and r.get('id'),
+    'code={} id={}'.format(c, r.get('id', '??')[:12]))
+
 total = passed + failed
 print('\n' + '=' * 60)
 print('RESULTS: {}/{} passed ({:.1f}%)'.format(passed, total, 100*passed/total if total else 0))

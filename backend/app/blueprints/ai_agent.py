@@ -606,6 +606,7 @@ def _init_orchestrator():
         _list_processes, _get_process_detail, _recommend_process, _get_process_route,
         _search_knowledge, _semantic_search, _graph_search, _graph_neighbors,
         _estimate_cost, _compare_costs, _cost_breakdown,
+        _create_debate, _get_debate_templates, _get_debate,
     )
 
     # Wrap: orchestrator calls handler(**inputs), but tool_bridge expects handler(kwargs dict)
@@ -668,6 +669,13 @@ def _init_orchestrator():
         'cost_breakdown': _wrap(_cost_breakdown),
     }
     orch.register_cost_agent(cost_handlers)
+
+    debate_handlers = {
+        'create_debate': _wrap(_create_debate),
+        'debate_templates': _wrap(_get_debate_templates),
+        'get_debate': _wrap(_get_debate),
+    }
+    orch.register_debate_agent(debate_handlers)
 
     return orch
 

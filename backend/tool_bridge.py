@@ -852,6 +852,62 @@ def _seal_sensitivity(kwargs):
         return {'success': False, 'error': str(e), '_tool': 'seal_sensitivity'}
 
 
+# ============================================================================
+# Debate Engine tools (Sprint 14)
+# ============================================================================
+
+_debate_engine_instance = None
+
+
+def _get_debate_engine():
+    global _debate_engine_instance
+    if _debate_engine_instance is None:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(__file__))
+        from debate_engine import DebateEngine
+        _debate_engine_instance = DebateEngine()
+    return _debate_engine_instance
+
+
+def _get_debate_templates(kwargs):
+    """Get available debate templates (design/materials/compliance/safety)."""
+    try:
+        engine = _get_debate_engine()
+        templates = engine.get_templates()
+        return {'success': True, '_tool': 'debate_templates', 'count': len(templates), 'templates': templates}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'debate_templates'}
+
+
+def _create_debate(kwargs):
+    """Create a new debate session with given topic and agents."""
+    try:
+        topic = kwargs.get('topic', '')
+        if not topic:
+            return {'success': False, 'error': 'topic is required', '_tool': 'create_debate'}
+        description = kwargs.get('description', '')
+        design_params = kwargs.get('design_params', {})
+        agent_names = kwargs.get('agent_names', None)
+        engine = _get_debate_engine()
+        session = engine.create_session(topic, description, design_params, agent_names)
+        return {'success': True, '_tool': 'create_debate', 'session': session}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'create_debate'}
+
+
+def _get_debate(kwargs):
+    """Get debate session by id."""
+    try:
+        session_id = kwargs.get('session_id', '')
+        if not session_id:
+            return {'success': False, 'error': 'session_id required', '_tool': 'get_debate'}
+        engine = _get_debate_engine()
+        session = engine.get_session(session_id)
+        return {'success': True, '_tool': 'get_debate', 'session': session}
+    except Exception as e:
+        return {'success': False, 'error': str(e), '_tool': 'get_debate'}
+
+
 TOOL_BRIDGE = {
     # Material
     'query_material': _material_query,
@@ -887,6 +943,10 @@ TOOL_BRIDGE = {
     'design_seal_pair': _design_seal_pair,
     'compare_seal_pairs': _compare_seal_pairs,
     'seal_sensitivity': _seal_sensitivity,
+    # Debate Engine (Sprint 14)
+    'create_debate': _create_debate,
+    'debate_templates': _get_debate_templates,
+    'get_debate': _get_debate,
 }
 
 

@@ -23,5 +23,6 @@ RUN mkdir -p /app/backend/data && \
 
 EXPOSE 5000
 
-# Use gunicorn in production
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
+# Use gunicorn in production (wsgi.py is the v2 Blueprint-compatible entry point)
+ENV PORT=5000
+CMD gunicorn --bind 0.0.0.0:${PORT} --workers 2 --threads 4 --timeout 120 wsgi:app
